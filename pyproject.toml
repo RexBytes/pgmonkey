@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=65.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pgmonkey"
+version = "0.0.4"
+authors = [
+  { name="Good Boy", email="pythonic@rexbytes.com" },
+]
+description = "A tool to assist with postgresql database connections"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Database",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "psycopg[binary]>=3.2.1",
+    "psycopg_pool>=3.2.2",
+    "PyYAML>=6.0.2",
+]
+
+[tool.setuptools.package-data]
+pgmonkey = [ "settings/app_settings.yaml", "common/templates/*"]
+
+[project.urls]
+"Homepage" = "https://github.com/RexBytes/pgmonkey"
+"Bug Tracker" = "https://github.com/RexBytes/pgmonkey"
+
+[project.scripts]
+pgmonkey="cli.cli:main"
+

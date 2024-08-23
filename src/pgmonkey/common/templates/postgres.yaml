@@ -1,0 +1,38 @@
+postgresql:
+  connection_type: 'normal'  # Options: 'normal', 'pool', 'async', 'async_pool'
+  connection_settings:
+    connectionName: 'default_connection'
+    description: 'Default PostgreSQL connection setup'
+    user: 'postgres'
+    password: 'password'
+    host: 'localhost'
+    port: '5432'
+    dbname: 'mydatabase'
+    sslmode: 'prefer'  # Options: disable, allow, prefer, require, verify-ca, verify-full
+    sslcert: ''  # Path to the client SSL certificate, if needed
+    sslkey: ''  # Path to the client SSL key, if needed
+    sslrootcert: ''  # Path to the root SSL certificate, if needed
+    connect_timeout: '10'  # Maximum wait for connection, in seconds
+    application_name: 'myapp'
+    keepalives: '1'  # If set to 1, TCP keepalives are used; if set to 0, they are not used
+    keepalives_idle: '60'  # The time in seconds before sending a keepalive probe
+    keepalives_interval: '15'  # The time in seconds between sending keepalive probes
+    keepalives_count: '5'  # The maximum number of keepalive probes to send before giving up and closing the connection
+
+  pool_settings:
+    min_size: 5
+    max_size: 20
+    max_idle: 300  # Time in seconds a connection can remain idle before being closed
+    max_lifetime: 3600  # Time in seconds a connection can be reused
+
+
+  async_settings:
+    command_timeout: 30  # Time in seconds to wait for a command before cancelling (example setting)
+    # Add any additional async-specific settings as needed
+
+  async_pool_settings:
+    min_size: 5
+    max_size: 20
+    max_idle: 300
+    max_lifetime: 3600
+    # Add any additional async pool-specific settings as needed
