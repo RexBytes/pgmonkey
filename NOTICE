@@ -1,0 +1,33 @@
+NOTICE
+
+This project, pgmonkey, https://pgmonkey.net/, has dependencies upon third-party software components listed below. 
+Each component is subject to its own license, as indicated.
+
+-------------------------------------------------------------------------------
+
+1. psycopg[binary] (version 3.2.1)
+   License: GNU Lesser General Public License (LGPL) v3.0
+   URL: https://www.psycopg.org/
+
+2. psycopg_pool (version 3.2.2)
+   License: GNU Lesser General Public License (LGPL) v3.0
+   URL: https://www.psycopg.org/
+
+3. PyYAML (version 6.0.2)
+   License: MIT License
+   URL: https://pyyaml.org/
+
+-------------------------------------------------------------------------------
+
+Your use of these components is subject to the terms of their respective licenses. The full text of these licenses can be found at the URLs provided above or in the LICENSE files distributed with each dependency.
+
+-------------------------------------------------------------------------------
+
+pgmonkey is licensed under the MIT License. A copy of the MIT License is provided with this project in the file LICENSE.
+
+-------------------------------------------------------------------------------
+
+Copyright (c) 2024 RexBytes
+
+All rights reserved.
+
