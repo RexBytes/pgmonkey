@@ -1,7 +1,7 @@
 from pathlib import Path
 import yaml
 from importlib import resources
-from tests.database_integration_test import DatabaseIntegrationTest
+from pgmonkey.tools.database_connection_tester import DatabaseConnectionTester
 import asyncio
 from .settings_manager import SettingsManager
 from pgmonkey.common.utils.pathutils import PathUtils
@@ -64,7 +64,7 @@ class PGConfigManager:
         print(f"{database_type} database config file has been detected...")
 
         # Step 2:
-        integration_tester = DatabaseIntegrationTest()
+        integration_tester = DatabaseConnectionTester()
 
         if database_type == 'postgresql':
             asyncio.run(integration_tester.test_postgresql_connection(config_file_path))

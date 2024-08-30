@@ -2,7 +2,7 @@ from pgmonkey.managers.pgconnection_manager import PGConnectionManager
 import yaml
 
 
-class DatabaseIntegrationTest:
+class DatabaseConnectionTester:
     def __init__(self):
         self.pgconnection_manager = PGConnectionManager()
 
