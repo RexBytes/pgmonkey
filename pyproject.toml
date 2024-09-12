@@ -11,7 +11,7 @@ authors = [
 description = "A tool to assist with postgresql database connections"
 readme = "README.md"
 license = { file="LICENSE" }
-requires-python = ">=3.12"
+requires-python = ">=3.8,<3.13"
 classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
@@ -21,9 +21,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "psycopg[binary]>=3.2.1",
-    "psycopg_pool>=3.2.2",
-    "PyYAML>=6.0.2",
+    "psycopg[binary]>=3.0.18,<3.3.0",
+    "psycopg_pool>=3.0.3,<3.3.0",
+    "PyYAML>=5.3.1,<7.0",
 ]
 
 [tool.setuptools.package-data]
