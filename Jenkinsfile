@@ -62,6 +62,9 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
 
+                                    # Install build tools for packages like PyYAML
+                                    pip install --upgrade pip setuptools wheel
+
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
@@ -151,6 +154,9 @@ pipeline {
                                     # Create and activate a virtual environment
                                     python -m venv venv
                                     . venv/bin/activate
+
+                                    # Install build tools for packages like PyYAML
+                                    pip install --upgrade pip setuptools wheel
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
@@ -242,6 +248,10 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
 
+
+                                    # Install build tools for packages like PyYAML
+                                    pip install --upgrade pip setuptools wheel
+
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
@@ -331,6 +341,10 @@ pipeline {
                                     # Create and activate a virtual environment
                                     python -m venv venv
                                     . venv/bin/activate
+
+
+                                    # Install build tools for packages like PyYAML
+                                    pip install --upgrade pip setuptools wheel
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
