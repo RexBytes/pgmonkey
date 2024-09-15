@@ -67,13 +67,15 @@ pipeline {
                                     # Upgrade pip to the latest version
                                     pip install --upgrade pip
 
-                                    # Install build tools for packages like PyYAML
-                                    pip install --upgrade setuptools wheel
+                                    # Install build tools
+                                    pip install --upgrade setuptools wheel Cython
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION}
+
+                                    # Try installing the latest stable PyYAML instead of the version from source
+                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
                                 """
                             }
                         }
@@ -165,14 +167,15 @@ pipeline {
                                     # Upgrade pip to the latest version
                                     pip install --upgrade pip
 
-                                    # Install build tools for packages like PyYAML
-                                    pip install --upgrade setuptools wheel
+                                    # Install build tools
+                                    pip install --upgrade setuptools wheel Cython
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION}
-                                """
+
+                                    # Try installing the latest stable PyYAML instead of the version from source
+                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver                                """
                             }
                         }
                     }
@@ -263,13 +266,15 @@ pipeline {
                                     # Upgrade pip to the latest version
                                     pip install --upgrade pip
 
-                                    # Install build tools for packages like PyYAML
-                                    pip install --upgrade setuptools wheel
+                                    # Install build tools
+                                    pip install --upgrade setuptools wheel Cython
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION}
+
+                                    # Try installing the latest stable PyYAML instead of the version from source
+                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
                                 """
                             }
                         }
@@ -361,13 +366,15 @@ pipeline {
                                     # Upgrade pip to the latest version
                                     pip install --upgrade pip
 
-                                    # Install build tools for packages like PyYAML
-                                    pip install --upgrade setuptools wheel
+                                    # Install build tools
+                                    pip install --upgrade setuptools wheel Cython
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION}
+
+                                    # Try installing the latest stable PyYAML instead of the version from source
+                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
                                 """
                             }
                         }
