@@ -58,17 +58,17 @@ pipeline {
                                     pyenv global ${PYTHON_VERSION}
                                     pyenv rehash
 
-                                    # Create virtual environment without ensurepip
-                                    python -m venv --without-pip venv
+                                    # Create the virtual environment (with pip)
+                                    python -m venv venv
 
-                                    # Manually install pip
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    # Activate the virtual environment
                                     . venv/bin/activate
-                                    python get-pip.py
-                                    rm get-pip.py
+
+                                    # Upgrade pip to the latest version
+                                    pip install --upgrade pip
 
                                     # Install build tools for packages like PyYAML
-                                    pip install --upgrade pip setuptools wheel
+                                    pip install --upgrade setuptools wheel
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
@@ -156,17 +156,17 @@ pipeline {
                                     pyenv global ${PYTHON_VERSION}
                                     pyenv rehash
 
-                                    # Create virtual environment without ensurepip
-                                    python -m venv --without-pip venv
+                                    # Create the virtual environment (with pip)
+                                    python -m venv venv
 
-                                    # Manually install pip
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    # Activate the virtual environment
                                     . venv/bin/activate
-                                    python get-pip.py
-                                    rm get-pip.py
+
+                                    # Upgrade pip to the latest version
+                                    pip install --upgrade pip
 
                                     # Install build tools for packages like PyYAML
-                                    pip install --upgrade pip setuptools wheel
+                                    pip install --upgrade setuptools wheel
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
@@ -254,18 +254,17 @@ pipeline {
                                     pyenv global ${PYTHON_VERSION}
                                     pyenv rehash
 
-                                    # Create virtual environment without ensurepip
-                                    python -m venv --without-pip venv
+                                    # Create the virtual environment (with pip)
+                                    python -m venv venv
 
-                                    # Manually install pip
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    # Activate the virtual environment
                                     . venv/bin/activate
-                                    python get-pip.py
-                                    rm get-pip.py
 
+                                    # Upgrade pip to the latest version
+                                    pip install --upgrade pip
 
                                     # Install build tools for packages like PyYAML
-                                    pip install --upgrade pip setuptools wheel
+                                    pip install --upgrade setuptools wheel
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
@@ -353,18 +352,17 @@ pipeline {
                                     pyenv global ${PYTHON_VERSION}
                                     pyenv rehash
 
-                                    # Create virtual environment without ensurepip
-                                    python -m venv --without-pip venv
+                                    # Create the virtual environment (with pip)
+                                    python -m venv venv
 
-                                    # Manually install pip
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    # Activate the virtual environment
                                     . venv/bin/activate
-                                    python get-pip.py
-                                    rm get-pip.py
 
+                                    # Upgrade pip to the latest version
+                                    pip install --upgrade pip
 
                                     # Install build tools for packages like PyYAML
-                                    pip install --upgrade pip setuptools wheel
+                                    pip install --upgrade setuptools wheel
 
                                     # Install the specific versions of dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
