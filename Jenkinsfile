@@ -4,6 +4,11 @@ pipeline {
         PIP_NO_CACHE_DIR = "off"
     }
     stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
         // First batch of combinations (2 Python, 2 psycopg, 2 psycopg_pool, 2 PyYAML)
         stage('Matrix Batch 1') {
             matrix {
@@ -184,7 +189,7 @@ pipeline {
         // Integration Tests
         stage('Run Integration Tests') {
             steps {
-                sh 'pytest /home/ubuntu/pgmonkey/src/tests/integration/test_pgconnection_manager_integration.py'
+                sh 'pytest src/tests/integration/test_pgconnection_manager_integration.py'
             }
         }
 
