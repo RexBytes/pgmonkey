@@ -53,6 +53,9 @@ pipeline {
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
+                                    # Ensure pytest is installed
+                                    pip install pytest
+
                                     # Run tests
                                     pytest tests/
 
@@ -116,6 +119,9 @@ pipeline {
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
+                                    # Ensure pytest is installed
+                                    pip install pytest
+
                                     # Run tests
                                     pytest tests/
 
@@ -178,6 +184,9 @@ pipeline {
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
+
+                                    # Ensure pytest is installed
+                                    pip install pytest
 
                                     # Run tests
                                     pytest tests/
