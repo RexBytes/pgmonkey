@@ -4,6 +4,14 @@ pipeline {
         PIP_NO_CACHE_DIR = "off"
     }
     stages {
+        // Checkout the code from the repository
+        stage('Checkout Code') {
+            steps {
+                script {
+                    checkout scm
+                }
+            }
+        }
         // Matrix for Python 3.12.x (newer versions of dependencies)
         stage('Matrix Python 3.12') {
             matrix {
