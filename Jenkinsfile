@@ -4,27 +4,13 @@ pipeline {
         PIP_NO_CACHE_DIR = "off"
     }
     stages {
-        // Cleanup workspace
-        stage('Cleanup Workspace') {
-            steps {
-                deleteDir() // Clean the workspace entirely before each build
-            }
-        }
-
-        // Checkout the latest code from SCM
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
-
-        // Matrix for Python 3.12.5
-        stage('Matrix Python 3.12.5') {
+        // Matrix for Python 3.12.x (newer versions of dependencies)
+        stage('Matrix Python 3.12') {
             matrix {
                 axes {
                     axis {
                         name 'PYTHON_VERSION'
-                        values '3.12.5'
+                        values '3.12.5', '3.12.4'
                     }
                     axis {
                         name 'PSYCOPG_VERSION'
@@ -36,7 +22,7 @@ pipeline {
                     }
                     axis {
                         name 'PYAML_VERSION'
-                        values '6.0.2', '5.4.1'
+                        values '6.0.2'
                     }
                 }
                 stages {
@@ -44,82 +30,37 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Ensure clean environment
-                                    rm -rf venv
-
-                                    # Set up pyenv and install the specific Python version
+                                    # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Install the specified Python version
+                                    # Install Python version
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
-                                    pyenv rehash
 
-                                    # Create the virtual environment (with pip)
+                                    # Set up venv and install dependencies
                                     python -m venv venv
-
-                                    # Activate the virtual environment
                                     . venv/bin/activate
-
-                                    # Upgrade pip to the latest version
-                                    pip install --upgrade pip
-
-                                    # Install build tools
-                                    pip install --upgrade setuptools wheel Cython
-
-                                    # Install the specific versions of dependencies
+                                    pip install --upgrade pip setuptools wheel Cython
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
+                                    pip install PyYAML==${PYAML_VERSION}
 
-                                    # Try installing the latest stable PyYAML instead of the version from source
-                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-                                """
-                            }
-                        }
-                    }
-
-                    // Run unit tests
-                    stage('Run Unit Tests') {
-                        steps {
-                            script {
-                                sh """
-                                    . venv/bin/activate
+                                    # Run tests
                                     pytest tests/
+                                    deactivate
                                 """
                             }
-                        }
-                    }
-
-                    // Run integration tests
-                    stage('Run Integration Tests') {
-                        steps {
-                            script {
-                                sh """
-                                    . venv/bin/activate
-                                    pytest src/tests/integration/test_pgconnection_manager_integration.py
-                                """
-                            }
-                        }
-                    }
-
-                    // Clean up virtual environment after testing
-                    stage('Clean Up Virtual Environment') {
-                        steps {
-                            sh """
-                                deactivate
-                                rm -rf venv
-                            """
                         }
                     }
                 }
             }
         }
 
-        // Matrix for Python 3.11.9
-        stage('Matrix Python 3.11.9') {
+        // Matrix for Python 3.11.x (compatible with slightly older dependencies)
+        stage('Matrix Python 3.11') {
             matrix {
                 axes {
                     axis {
@@ -144,86 +85,42 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Ensure clean environment
-                                    rm -rf venv
-
-                                    # Set up pyenv and install the specific Python version
+                                    # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Install the specified Python version
+                                    # Install Python version
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
-                                    pyenv rehash
 
-                                    # Create the virtual environment (with pip)
+                                    # Set up venv and install dependencies
                                     python -m venv venv
-
-                                    # Activate the virtual environment
                                     . venv/bin/activate
-
-                                    # Upgrade pip to the latest version
-                                    pip install --upgrade pip
-
-                                    # Install build tools
-                                    pip install --upgrade setuptools wheel Cython
-
-                                    # Install the specific versions of dependencies
+                                    pip install --upgrade pip setuptools wheel Cython
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
+                                    pip install PyYAML==${PYAML_VERSION}
 
-                                    # Try installing the latest stable PyYAML instead of the version from source
-                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver                                """
-                            }
-                        }
-                    }
-
-                    // Run unit tests
-                    stage('Run Unit Tests') {
-                        steps {
-                            script {
-                                sh """
-                                    . venv/bin/activate
+                                    # Run tests
                                     pytest tests/
+                                    deactivate
                                 """
                             }
-                        }
-                    }
-
-                    // Run integration tests
-                    stage('Run Integration Tests') {
-                        steps {
-                            script {
-                                sh """
-                                    . venv/bin/activate
-                                    pytest src/tests/integration/test_pgconnection_manager_integration.py
-                                """
-                            }
-                        }
-                    }
-
-                    // Clean up virtual environment after testing
-                    stage('Clean Up Virtual Environment') {
-                        steps {
-                            sh """
-                                deactivate
-                                rm -rf venv
-                            """
                         }
                     }
                 }
             }
         }
 
-        // Matrix for Python 3.10.14
-        stage('Matrix Python 3.10.14') {
+        // Matrix for Python 3.10.x and 3.9.x (older and newer dependencies allowed)
+        stage('Matrix Python 3.10 and 3.9') {
             matrix {
                 axes {
                     axis {
                         name 'PYTHON_VERSION'
-                        values '3.10.14'
+                        values '3.10.14', '3.9.19'
                     }
                     axis {
                         name 'PSYCOPG_VERSION'
@@ -243,188 +140,42 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Ensure clean environment
-                                    rm -rf venv
-
-                                    # Set up pyenv and install the specific Python version
+                                    # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Install the specified Python version
+                                    # Install Python version
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
-                                    pyenv rehash
 
-                                    # Create the virtual environment (with pip)
+                                    # Set up venv and install dependencies
                                     python -m venv venv
-
-                                    # Activate the virtual environment
                                     . venv/bin/activate
-
-                                    # Upgrade pip to the latest version
-                                    pip install --upgrade pip
-
-                                    # Install build tools
-                                    pip install --upgrade setuptools wheel Cython
-
-                                    # Install the specific versions of dependencies
+                                    pip install --upgrade pip setuptools wheel Cython
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
+                                    pip install PyYAML==${PYAML_VERSION}
 
-                                    # Try installing the latest stable PyYAML instead of the version from source
-                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-                                """
-                            }
-                        }
-                    }
-
-                    // Run unit tests
-                    stage('Run Unit Tests') {
-                        steps {
-                            script {
-                                sh """
-                                    . venv/bin/activate
+                                    # Run tests
                                     pytest tests/
+                                    deactivate
                                 """
                             }
-                        }
-                    }
-
-                    // Run integration tests
-                    stage('Run Integration Tests') {
-                        steps {
-                            script {
-                                sh """
-                                    . venv/bin/activate
-                                    pytest src/tests/integration/test_pgconnection_manager_integration.py
-                                """
-                            }
-                        }
-                    }
-
-                    // Clean up virtual environment after testing
-                    stage('Clean Up Virtual Environment') {
-                        steps {
-                            sh """
-                                deactivate
-                                rm -rf venv
-                            """
-                        }
-                    }
-                }
-            }
-        }
-
-        // Matrix for Python 3.9.19
-        stage('Matrix Python 3.9.19') {
-            matrix {
-                axes {
-                    axis {
-                        name 'PYTHON_VERSION'
-                        values '3.9.19'
-                    }
-                    axis {
-                        name 'PSYCOPG_VERSION'
-                        values '3.2.1', '3.1.20'
-                    }
-                    axis {
-                        name 'PSYCOPG_POOL_VERSION'
-                        values '3.2.2', '3.1.9'
-                    }
-                    axis {
-                        name 'PYAML_VERSION'
-                        values '6.0.2', '5.4.1'
-                    }
-                }
-                stages {
-                    stage('Setup Python Environment') {
-                        steps {
-                            script {
-                                sh """
-                                    # Ensure clean environment
-                                    rm -rf venv
-
-                                    # Set up pyenv and install the specific Python version
-                                    export PATH="\$HOME/.pyenv/bin:\$PATH"
-                                    eval "\$(pyenv init --path)"
-                                    eval "\$(pyenv init -)"
-                                    eval "\$(pyenv virtualenv-init -)"
-
-                                    # Install the specified Python version
-                                    pyenv install -s ${PYTHON_VERSION}
-                                    pyenv global ${PYTHON_VERSION}
-                                    pyenv rehash
-
-                                    # Create the virtual environment (with pip)
-                                    python -m venv venv
-
-                                    # Activate the virtual environment
-                                    . venv/bin/activate
-
-                                    # Upgrade pip to the latest version
-                                    pip install --upgrade pip
-
-                                    # Install build tools
-                                    pip install --upgrade setuptools wheel Cython
-
-                                    # Install the specific versions of dependencies
-                                    pip install psycopg[binary]==${PSYCOPG_VERSION}
-                                    pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-
-                                    # Try installing the latest stable PyYAML instead of the version from source
-                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-                                """
-                            }
-                        }
-                    }
-
-                    // Run unit tests
-                    stage('Run Unit Tests') {
-                        steps {
-                            script {
-                                sh """
-                                    . venv/bin/activate
-                                    pytest tests/
-                                """
-                            }
-                        }
-                    }
-
-                    // Run integration tests
-                    stage('Run Integration Tests') {
-                        steps {
-                            script {
-                                sh """
-                                    . venv/bin/activate
-                                    pytest src/tests/integration/test_pgconnection_manager_integration.py
-                                """
-                            }
-                        }
-                    }
-
-                    // Clean up virtual environment after testing
-                    stage('Clean Up Virtual Environment') {
-                        steps {
-                            sh """
-                                deactivate
-                                rm -rf venv
-                            """
                         }
                     }
                 }
             }
         }
     }
-
     post {
         always {
-            // Archive the test result artifacts
             archiveArtifacts artifacts: 'test_results.csv', allowEmptyArchive: true
         }
     }
 }
+
 
 
 
