@@ -4,12 +4,14 @@ pipeline {
         PIP_NO_CACHE_DIR = "off"
     }
     stages {
+        // Checkout code from SCM
         stage('Checkout Code') {
             steps {
                 checkout scm
             }
         }
-        // First batch of combinations (2 Python, 2 psycopg, 2 psycopg_pool, 2 PyYAML)
+
+        // Matrix Batch 1
         stage('Matrix Batch 1') {
             matrix {
                 axes {
@@ -35,13 +37,14 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Set up pyenv
+                                    # Clean up previous virtual environment
+                                    rm -rf venv
+
+                                    # Set up pyenv and install the specific Python version
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
-
-                                    # Install the specific Python version
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
@@ -57,7 +60,7 @@ pipeline {
                                     # Run tests
                                     pytest tests/
 
-                                    # Clean up
+                                    # Clean up virtual environment
                                     deactivate
                                     rm -rf venv
                                 """
@@ -68,7 +71,7 @@ pipeline {
             }
         }
 
-        // Second batch of combinations
+        // Matrix Batch 2
         stage('Matrix Batch 2') {
             matrix {
                 axes {
@@ -94,13 +97,14 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Set up pyenv
+                                    # Clean up previous virtual environment
+                                    rm -rf venv
+
+                                    # Set up pyenv and install the specific Python version
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
-
-                                    # Install the specific Python version
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
@@ -116,7 +120,7 @@ pipeline {
                                     # Run tests
                                     pytest tests/
 
-                                    # Clean up
+                                    # Clean up virtual environment
                                     deactivate
                                     rm -rf venv
                                 """
@@ -127,7 +131,7 @@ pipeline {
             }
         }
 
-        // Third batch of combinations
+        // Matrix Batch 3
         stage('Matrix Batch 3') {
             matrix {
                 axes {
@@ -153,13 +157,14 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Set up pyenv
+                                    # Clean up previous virtual environment
+                                    rm -rf venv
+
+                                    # Set up pyenv and install the specific Python version
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
-
-                                    # Install the specific Python version
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
@@ -175,7 +180,7 @@ pipeline {
                                     # Run tests
                                     pytest tests/
 
-                                    # Clean up
+                                    # Clean up virtual environment
                                     deactivate
                                     rm -rf venv
                                 """
@@ -192,13 +197,14 @@ pipeline {
                 sh 'pytest src/tests/integration/test_pgconnection_manager_integration.py'
             }
         }
-
     }
+
     post {
         always {
-            // Archive the CSV file
+            // Archive the test result artifacts
             archiveArtifacts artifacts: 'test_results.csv', allowEmptyArchive: true
         }
     }
 }
+
 
