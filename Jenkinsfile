@@ -30,6 +30,9 @@ pipeline {
                         steps {
                             script {
                                 sh """
+                                    # Clean up any existing venv
+                                    rm -rf venv
+
                                     # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
@@ -44,13 +47,18 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
                                     pip install --upgrade pip setuptools wheel Cython
+
+                                    # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION}
+                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
                                     # Run tests
                                     pytest tests/
+
+                                    # Clean up venv
                                     deactivate
+                                    rm -rf venv
                                 """
                             }
                         }
@@ -85,6 +93,9 @@ pipeline {
                         steps {
                             script {
                                 sh """
+                                    # Clean up any existing venv
+                                    rm -rf venv
+
                                     # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
@@ -99,13 +110,18 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
                                     pip install --upgrade pip setuptools wheel Cython
+
+                                    # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION}
+                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
                                     # Run tests
                                     pytest tests/
+
+                                    # Clean up venv
                                     deactivate
+                                    rm -rf venv
                                 """
                             }
                         }
@@ -140,6 +156,9 @@ pipeline {
                         steps {
                             script {
                                 sh """
+                                    # Clean up any existing venv
+                                    rm -rf venv
+
                                     # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
@@ -154,13 +173,18 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
                                     pip install --upgrade pip setuptools wheel Cython
+
+                                    # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION}
+                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
                                     # Run tests
                                     pytest tests/
+
+                                    # Clean up venv
                                     deactivate
+                                    rm -rf venv
                                 """
                             }
                         }
