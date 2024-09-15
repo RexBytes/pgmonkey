@@ -56,6 +56,9 @@ pipeline {
                                     # Ensure pytest is installed
                                     pip install pytest
 
+                                    # Install the checked-out pgmonkey package in editable mode
+                                    pip install -e .
+
                                     # Run tests
                                     pytest src/tests/integration/
 
@@ -122,6 +125,9 @@ pipeline {
                                     # Ensure pytest is installed
                                     pip install pytest
 
+                                    # Install the checked-out pgmonkey package in editable mode
+                                    pip install -e .
+
                                     # Run tests
                                     pytest src/tests/integration/
 
@@ -187,6 +193,9 @@ pipeline {
 
                                     # Ensure pytest is installed
                                     pip install pytest
+
+                                    # Install the checked-out pgmonkey package in editable mode
+                                    pip install -e .
 
                                     # Run tests
                                     pytest src/tests/integration/
