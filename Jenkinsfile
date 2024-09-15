@@ -28,15 +28,15 @@ pipeline {
                     }
                     axis {
                         name 'PSYCOPG_VERSION'
-                        values '3.2.1', '3.1.20', '3.0.18'
+                        values '3.2.1', '3.1.20'
                     }
                     axis {
                         name 'PSYCOPG_POOL_VERSION'
-                        values '3.2.2', '3.1.9', '3.0.3'
+                        values '3.2.2', '3.1.9'
                     }
                     axis {
                         name 'PYAML_VERSION'
-                        values '6.0.2', '5.4.1', '5.3.1'
+                        values '6.0.2', '5.4.1'
                     }
                 }
                 stages {
@@ -118,15 +118,15 @@ pipeline {
                     }
                     axis {
                         name 'PSYCOPG_VERSION'
-                        values '3.2.1', '3.1.20', '3.0.18'
+                        values '3.2.1', '3.1.20'
                     }
                     axis {
                         name 'PSYCOPG_POOL_VERSION'
-                        values '3.2.2', '3.1.9', '3.0.3'
+                        values '3.2.2', '3.1.9'
                     }
                     axis {
                         name 'PYAML_VERSION'
-                        values '6.0.2', '5.4.1', '5.3.1'
+                        values '6.0.2', '5.4.1'
                     }
                 }
                 stages {
@@ -208,15 +208,15 @@ pipeline {
                     }
                     axis {
                         name 'PSYCOPG_VERSION'
-                        values '3.2.1', '3.1.20', '3.0.18'
+                        values '3.2.1', '3.1.20'
                     }
                     axis {
                         name 'PSYCOPG_POOL_VERSION'
-                        values '3.2.2', '3.1.9', '3.0.3'
+                        values '3.2.2', '3.1.9'
                     }
                     axis {
                         name 'PYAML_VERSION'
-                        values '6.0.2', '5.4.1', '5.3.1'
+                        values '6.0.2', '5.4.1'
                     }
                 }
                 stages {
@@ -298,15 +298,15 @@ pipeline {
                     }
                     axis {
                         name 'PSYCOPG_VERSION'
-                        values '3.2.1', '3.1.20', '3.0.18'
+                        values '3.2.1', '3.1.20'
                     }
                     axis {
                         name 'PSYCOPG_POOL_VERSION'
-                        values '3.2.2', '3.1.9', '3.0.3'
+                        values '3.2.2', '3.1.9'
                     }
                     axis {
                         name 'PYAML_VERSION'
-                        values '6.0.2', '5.4.1', '5.3.1'
+                        values '6.0.2', '5.4.1'
                     }
                 }
                 stages {
