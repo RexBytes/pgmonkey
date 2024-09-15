@@ -57,7 +57,7 @@ pipeline {
                                     pip install pytest
 
                                     # Run tests
-                                    pytest tests/
+                                    pytest src/tests/integration/
 
                                     # Clean up venv
                                     deactivate
@@ -123,7 +123,7 @@ pipeline {
                                     pip install pytest
 
                                     # Run tests
-                                    pytest tests/
+                                    pytest src/tests/integration/
 
                                     # Clean up venv
                                     deactivate
@@ -189,7 +189,7 @@ pipeline {
                                     pip install pytest
 
                                     # Run tests
-                                    pytest tests/
+                                    pytest src/tests/integration/
 
                                     # Clean up venv
                                     deactivate
