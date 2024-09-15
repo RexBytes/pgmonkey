@@ -58,9 +58,14 @@ pipeline {
                                     pyenv global ${PYTHON_VERSION}
                                     pyenv rehash
 
-                                    # Create and activate a virtual environment
-                                    python -m venv venv
+                                    # Create virtual environment without ensurepip
+                                    python -m venv --without-pip venv
+
+                                    # Manually install pip
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
                                     . venv/bin/activate
+                                    python get-pip.py
+                                    rm get-pip.py
 
                                     # Install build tools for packages like PyYAML
                                     pip install --upgrade pip setuptools wheel
@@ -151,9 +156,14 @@ pipeline {
                                     pyenv global ${PYTHON_VERSION}
                                     pyenv rehash
 
-                                    # Create and activate a virtual environment
-                                    python -m venv venv
+                                    # Create virtual environment without ensurepip
+                                    python -m venv --without-pip venv
+
+                                    # Manually install pip
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
                                     . venv/bin/activate
+                                    python get-pip.py
+                                    rm get-pip.py
 
                                     # Install build tools for packages like PyYAML
                                     pip install --upgrade pip setuptools wheel
@@ -244,9 +254,14 @@ pipeline {
                                     pyenv global ${PYTHON_VERSION}
                                     pyenv rehash
 
-                                    # Create and activate a virtual environment
-                                    python -m venv venv
+                                    # Create virtual environment without ensurepip
+                                    python -m venv --without-pip venv
+
+                                    # Manually install pip
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
                                     . venv/bin/activate
+                                    python get-pip.py
+                                    rm get-pip.py
 
 
                                     # Install build tools for packages like PyYAML
@@ -338,9 +353,14 @@ pipeline {
                                     pyenv global ${PYTHON_VERSION}
                                     pyenv rehash
 
-                                    # Create and activate a virtual environment
-                                    python -m venv venv
+                                    # Create virtual environment without ensurepip
+                                    python -m venv --without-pip venv
+
+                                    # Manually install pip
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
                                     . venv/bin/activate
+                                    python get-pip.py
+                                    rm get-pip.py
 
 
                                     # Install build tools for packages like PyYAML
