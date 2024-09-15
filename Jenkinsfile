@@ -63,7 +63,7 @@ pipeline {
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
                                     # Ensure pytest is installed
-                                    pip install pytest
+                                    pip install pytest pytest-asyncio
 
                                     # Install the checked-out pgmonkey package in editable mode
                                     pip install -e .
@@ -132,7 +132,7 @@ pipeline {
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
                                     # Ensure pytest is installed
-                                    pip install pytest
+                                    pip install pytest pytest-asyncio
 
                                     # Install the checked-out pgmonkey package in editable mode
                                     pip install -e .
@@ -201,7 +201,7 @@ pipeline {
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
                                     # Ensure pytest is installed
-                                    pip install pytest
+                                    pip install pytest pytest-asyncio
 
                                     # Install the checked-out pgmonkey package in editable mode
                                     pip install -e .
