@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         PIP_NO_CACHE_DIR = "off"
+        PYTHONPATH = "${WORKSPACE}" // Add the workspace root to PYTHONPATH
     }
     stages {
         // Checkout the code from the repository
