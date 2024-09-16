@@ -55,7 +55,7 @@ pipeline {
                                     # Set up venv and install dependencies
                                     python -m venv venv
                                     . venv/bin/activate
-                                    pip install --upgrade pip setuptools wheel Cython
+                                    pip install --upgrade pip wheel Cython
 
                                     # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
@@ -124,7 +124,7 @@ pipeline {
                                     # Set up venv and install dependencies
                                     python -m venv venv
                                     . venv/bin/activate
-                                    pip install --upgrade pip setuptools wheel Cython
+                                    pip install --upgrade pip wheel Cython
 
                                     # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
@@ -193,7 +193,7 @@ pipeline {
                                     # Set up venv and install dependencies
                                     python -m venv venv
                                     . venv/bin/activate
-                                    pip install --upgrade pip setuptools wheel Cython
+                                    pip install --upgrade pip wheel Cython
 
                                     # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
