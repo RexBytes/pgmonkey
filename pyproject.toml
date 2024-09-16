@@ -36,3 +36,7 @@ pgmonkey = [ "settings/app_settings.yaml", "common/templates/*"]
 [project.scripts]
 pgmonkey="cli.cli:main"
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"  # or "strict" for future-proofing
+
+
