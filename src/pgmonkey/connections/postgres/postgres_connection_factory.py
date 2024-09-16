@@ -27,15 +27,21 @@ class PostgresConnectionFactory:
 
         if connection_type == 'normal':
             # Only connection_settings are needed for a normal connection
-            return PGNormalConnection(self.config)
+            connection = PGNormalConnection(self.config)
         elif connection_type == 'pool':
             # Merge connection_settings with pool_settings
-            return PGPoolConnection(self.config, self.pool_settings)
+            connection = PGPoolConnection(self.config, self.pool_settings)
         elif connection_type == 'async':
             # Merge connection_settings with async_settings
-            return PGAsyncConnection(self.config, post_connect_async_settings=self.async_settings)
+            connection = PGAsyncConnection(self.config, post_connect_async_settings=self.async_settings)
         elif connection_type == 'async_pool':
             # Merge connection_settings with async_pool_settings
-            return PGAsyncPoolConnection(config=self.config, pool_settings=self.async_pool_settings)
+            connection = PGAsyncPoolConnection(config=self.config, pool_settings=self.async_pool_settings)
         else:
             raise ValueError(f"Unsupported connection type: {connection_type}")
+
+        # Set connection_type as an attribute of the connection object
+        connection.connection_type = self.connection_type
+
+        return connection
+

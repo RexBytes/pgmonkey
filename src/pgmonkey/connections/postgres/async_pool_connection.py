@@ -1,3 +1,4 @@
+import warnings
 from psycopg_pool import AsyncConnectionPool
 from .base_connection import PostgresBaseConnection
 
@@ -14,6 +15,9 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
         # This assumes all keys in self.config are for the connection,
         # adjust if your config includes other types of settings.
         return " ".join([f"{k}={v}" for k, v in self.config.items()])
+
+    # Suppress the psycopg RuntimeWarning
+    warnings.filterwarnings('ignore', category=RuntimeWarning, module='psycopg_pool')
 
     async def connect(self):
         dsn = self.construct_dsn()
