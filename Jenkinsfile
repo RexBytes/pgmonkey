@@ -42,6 +42,12 @@ pipeline {
                                     # Clean up any existing venv
                                     rm -rf venv
 
+                                    # Unset PYTHONPATH to avoid conflicts
+                                    export PYTHONPATH=""
+
+                                    # Clean up any existing setuptools, wheel, or Cython in pyenv
+                                    rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
+
                                     # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
@@ -55,7 +61,12 @@ pipeline {
                                     # Set up venv and install dependencies
                                     python -m venv venv
                                     . venv/bin/activate
-                                    pip install --upgrade pip wheel Cython
+
+                                    # Ensure pip and setuptools are updated
+                                    pip install --no-cache-dir --upgrade pip setuptools wheel Cython
+
+                                    # Log the setuptools version to trace any issues
+                                    pip show setuptools
 
                                     # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
@@ -111,6 +122,12 @@ pipeline {
                                     # Clean up any existing venv
                                     rm -rf venv
 
+                                    # Unset PYTHONPATH to avoid conflicts
+                                    export PYTHONPATH=""
+
+                                    # Clean up any existing setuptools, wheel, or Cython in pyenv
+                                    rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
+
                                     # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
@@ -124,7 +141,12 @@ pipeline {
                                     # Set up venv and install dependencies
                                     python -m venv venv
                                     . venv/bin/activate
-                                    pip install --upgrade pip wheel Cython
+
+                                    # Ensure pip and setuptools are updated
+                                    pip install --no-cache-dir --upgrade pip setuptools wheel Cython
+
+                                    # Log the setuptools version to trace any issues
+                                    pip show setuptools
 
                                     # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
@@ -180,6 +202,12 @@ pipeline {
                                     # Clean up any existing venv
                                     rm -rf venv
 
+                                    # Unset PYTHONPATH to avoid conflicts
+                                    export PYTHONPATH=""
+
+                                    # Clean up any existing setuptools, wheel, or Cython in pyenv
+                                    rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
+
                                     # Set up pyenv
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
@@ -193,7 +221,12 @@ pipeline {
                                     # Set up venv and install dependencies
                                     python -m venv venv
                                     . venv/bin/activate
-                                    pip install --upgrade pip wheel Cython
+
+                                    # Ensure pip and setuptools are updated
+                                    pip install --no-cache-dir --upgrade pip setuptools wheel Cython
+
+                                    # Log the setuptools version to trace any issues
+                                    pip show setuptools
 
                                     # Install specific versions
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
