@@ -2,7 +2,14 @@ import asyncio
 import pytest
 from pgmonkey import PGConnectionManager
 
+
 @pytest.mark.asyncio
+@pytest.mark.parametrize("config_file, config_name", [
+    ("/home/ubuntu/myconnectionconfigs/pg_async_pool.yaml", "pg_async_pool.yaml"),
+    ("/home/ubuntu/myconnectionconfigs/pg_async.yaml", "pg_async.yaml"),
+    ("/home/ubuntu/myconnectionconfigs/pg_normal.yaml", "pg_normal.yaml"),
+    ("/home/ubuntu/myconnectionconfigs/pg_pool.yaml", "pg_pool.yaml"),
+])
 async def test_database_connection(config_file, config_name):
     """Test real database connection with the provided config."""
     connection_manager = PGConnectionManager()
@@ -43,20 +50,6 @@ async def test_database_connection(config_file, config_name):
         # Close connection
         await connection.disconnect() if asyncio.iscoroutinefunction(connection.disconnect) else connection.disconnect()
 
-@pytest.mark.asyncio
-async def test_real_connections():
-    """Test all real database connections using various configuration files."""
-    base_dir = '/home/ubuntu/myconnectionconfigs/'  # Corrected path for configs on Jenkins node
-    config_files = {
-        'pg_async_pool.yaml': base_dir + 'pg_async_pool.yaml',
-        'pg_async.yaml': base_dir + 'pg_async.yaml',
-        'pg_normal.yaml': base_dir + 'pg_normal.yaml',
-        'pg_pool.yaml': base_dir + 'pg_pool.yaml'
-    }
-
-    for config_name, config_file in config_files.items():
-        print(f"Testing connection with config: {config_name}")
-        await test_database_connection(config_file, config_name)
 
 
 
