@@ -62,6 +62,10 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
 
+                                    # Manually install pip
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    python get-pip.py
+
                                     # Ensure pip and setuptools are updated
                                     pip install --no-cache-dir --upgrade pip setuptools wheel Cython
 
@@ -144,6 +148,10 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
 
+                                    # Manually install pip
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    python get-pip.py
+
                                     # Ensure pip and setuptools are updated
                                     pip install --no-cache-dir --upgrade pip setuptools wheel Cython
 
@@ -225,6 +233,10 @@ pipeline {
                                     # Set up venv and install dependencies
                                     python -m venv venv
                                     . venv/bin/activate
+
+                                    # Manually install pip
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    python get-pip.py
 
                                     # Ensure pip and setuptools are updated
                                     pip install --no-cache-dir --upgrade pip setuptools wheel Cython
