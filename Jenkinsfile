@@ -79,8 +79,10 @@ pipeline {
                                     # Install the checked-out pgmonkey package in editable mode
                                     pip install -e .
 
-                                    # Run tests
-                                    pytest src/tests/integration/
+                                    # Run tests and capture result
+                                    set +e  # Allow the pipeline to continue even if tests fail
+                                    pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                    set -e  # Reinstate failure on error
 
                                     # Clean up venv
                                     deactivate
@@ -159,8 +161,10 @@ pipeline {
                                     # Install the checked-out pgmonkey package in editable mode
                                     pip install -e .
 
-                                    # Run tests
-                                    pytest src/tests/integration/
+                                    # Run tests and capture result
+                                    set +e  # Allow the pipeline to continue even if tests fail
+                                    pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                    set -e  # Reinstate failure on error
 
                                     # Clean up venv
                                     deactivate
@@ -239,8 +243,10 @@ pipeline {
                                     # Install the checked-out pgmonkey package in editable mode
                                     pip install -e .
 
-                                    # Run tests
-                                    pytest src/tests/integration/
+                                    # Run tests and capture result
+                                    set +e  # Allow the pipeline to continue even if tests fail
+                                    pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                    set -e  # Reinstate failure on error
 
                                     # Clean up venv
                                     deactivate
