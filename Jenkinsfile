@@ -51,22 +51,22 @@ pipeline {
                                         rm ~/.pyenv/versions/pgmonkey_venv
                                     fi
 
-                                    # Delete the virtual environment directory manually if it exists
+                                    # Check if the virtual environment exists and remove it using pyenv
+                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
+                                        echo "Uninstalling existing pgmonkey_venv..."
+                                        pyenv uninstall -f pgmonkey_venv
+                                    fi
+
+                                    # Double-check if the environment directory still exists and remove it manually
                                     if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing existing pgmonkey_venv environment directory..."
+                                        echo "Manually removing remaining pgmonkey_venv environment directory..."
                                         rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
-                                    # Remove symlinks pointing to other versions
+                                    # Recheck for any symbolic links pointing to the environment
                                     if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing symbolic link in ${PYTHON_VERSION} pointing to another environment..."
+                                        echo "Removing any remaining symbolic link in ${PYTHON_VERSION} pointing to another environment..."
                                         rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Recheck and force removal if necessary
-                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
-                                        echo "pgmonkey_venv still found, forcing uninstall through pyenv..."
-                                        pyenv uninstall -f pgmonkey_venv
                                     fi
 
                                     # Install the specific Python version via pyenv if not installed
@@ -146,22 +146,22 @@ pipeline {
                                         rm ~/.pyenv/versions/pgmonkey_venv
                                     fi
 
-                                    # Delete the virtual environment directory manually if it exists
+                                    # Check if the virtual environment exists and remove it using pyenv
+                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
+                                        echo "Uninstalling existing pgmonkey_venv..."
+                                        pyenv uninstall -f pgmonkey_venv
+                                    fi
+
+                                    # Double-check if the environment directory still exists and remove it manually
                                     if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing existing pgmonkey_venv environment directory..."
+                                        echo "Manually removing remaining pgmonkey_venv environment directory..."
                                         rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
-                                    # Remove symlinks pointing to other versions
+                                    # Recheck for any symbolic links pointing to the environment
                                     if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing symbolic link in ${PYTHON_VERSION} pointing to another environment..."
+                                        echo "Removing any remaining symbolic link in ${PYTHON_VERSION} pointing to another environment..."
                                         rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Recheck and force removal if necessary
-                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
-                                        echo "pgmonkey_venv still found, forcing uninstall through pyenv..."
-                                        pyenv uninstall -f pgmonkey_venv
                                     fi
 
                                     # Install the specific Python version via pyenv if not installed
@@ -241,22 +241,22 @@ pipeline {
                                         rm ~/.pyenv/versions/pgmonkey_venv
                                     fi
 
-                                    # Delete the virtual environment directory manually if it exists
+                                    # Check if the virtual environment exists and remove it using pyenv
+                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
+                                        echo "Uninstalling existing pgmonkey_venv..."
+                                        pyenv uninstall -f pgmonkey_venv
+                                    fi
+
+                                    # Double-check if the environment directory still exists and remove it manually
                                     if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing existing pgmonkey_venv environment directory..."
+                                        echo "Manually removing remaining pgmonkey_venv environment directory..."
                                         rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
-                                    # Remove symlinks pointing to other versions
+                                    # Recheck for any symbolic links pointing to the environment
                                     if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing symbolic link in ${PYTHON_VERSION} pointing to another environment..."
+                                        echo "Removing any remaining symbolic link in ${PYTHON_VERSION} pointing to another environment..."
                                         rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Recheck and force removal if necessary
-                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
-                                        echo "pgmonkey_venv still found, forcing uninstall through pyenv..."
-                                        pyenv uninstall -f pgmonkey_venv
                                     fi
 
                                     # Install the specific Python version via pyenv if not installed
