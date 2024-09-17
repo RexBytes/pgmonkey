@@ -55,7 +55,7 @@ pipeline {
                                     eval "\$(pyenv virtualenv-init -)"
 
                                     # Install Python version
-                                    pyenv install --with-ensurepip -s ${PYTHON_VERSION}
+                                    pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
                                     # Set up venv and ensure pip is available
@@ -144,7 +144,7 @@ pipeline {
                                     eval "\$(pyenv virtualenv-init -)"
 
                                     # Install Python version
-                                    pyenv install --with-ensurepip -s ${PYTHON_VERSION}
+                                    pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
                                     # Set up venv and ensure pip is available
@@ -233,7 +233,7 @@ pipeline {
                                     eval "\$(pyenv virtualenv-init -)"
 
                                     # Install Python version
-                                    pyenv install --with-ensurepip -s ${PYTHON_VERSION}
+                                    pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
                                     # Set up venv and ensure pip is available
