@@ -39,62 +39,38 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Clean up any existing venv
+                                    # Clean up existing venv
                                     rm -rf venv
 
-                                    # Unset PYTHONPATH to avoid conflicts
-                                    export PYTHONPATH=""
-
-                                    # Clean up any existing packages in pyenv
-                                    rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
-
-                                    # Set up pyenv
-                                    export PATH="\$HOME/.pyenv/bin:\$PATH"
-                                    eval "\$(pyenv init --path)"
-                                    eval "\$(pyenv init -)"
-                                    eval "\$(pyenv virtualenv-init -)"
-
-                                    # Install Python version
+                                    # Install Python version via pyenv (if needed)
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Set up venv and ensure pip is available
+                                    # Create a new virtual environment
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Ensure no traces of pip are left in site-packages
-                                    rm -rf venv/lib/python*/site-packages/pip*
-                                    rm -rf venv/lib/python*/site-packages/~ip*  # To remove invalid '~ip' files
+                                    # Upgrade pip, setuptools, and wheel
+                                    python -m pip install --upgrade pip setuptools wheel
 
-                                    # Download and reinstall pip using get-pip.py
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-                                    python get-pip.py --force-reinstall
-
-                                    # Ensure pip, setuptools, and wheel are updated
-                                    pip install --no-cache-dir --upgrade pip setuptools wheel Cython
-
-                                    # Log the setuptools version to trace any issues
-                                    pip show setuptools
-
-                                    # Install specific versions
+                                    # Install project dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
-                                    # Ensure pytest is installed
+                                    # Install testing dependencies
                                     pip install pytest==8.3.3 pytest-asyncio==0.17.0
 
-                                    # Install the checked-out pgmonkey package in editable mode
+                                    # Install the project itself (editable mode)
                                     pip install -e .
 
-                                    # Run tests and capture result
+                                    # Run tests
                                     set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
                                     set -e
 
-                                    # Clean up venv
+                                    # Deactivate the virtual environment
                                     deactivate
-                                    rm -rf venv
                                 """
                             }
                         }
@@ -129,62 +105,38 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Clean up any existing venv
+                                    # Clean up existing venv
                                     rm -rf venv
 
-                                    # Unset PYTHONPATH to avoid conflicts
-                                    export PYTHONPATH=""
-
-                                    # Clean up any existing packages in pyenv
-                                    rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
-
-                                    # Set up pyenv
-                                    export PATH="\$HOME/.pyenv/bin:\$PATH"
-                                    eval "\$(pyenv init --path)"
-                                    eval "\$(pyenv init -)"
-                                    eval "\$(pyenv virtualenv-init -)"
-
-                                    # Install Python version
+                                    # Install Python version via pyenv (if needed)
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Set up venv and ensure pip is available
+                                    # Create a new virtual environment
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Ensure no traces of pip are left in site-packages
-                                    rm -rf venv/lib/python*/site-packages/pip*
-                                    rm -rf venv/lib/python*/site-packages/~ip*  # To remove invalid '~ip' files
+                                    # Upgrade pip, setuptools, and wheel
+                                    python -m pip install --upgrade pip setuptools wheel
 
-                                    # Download and reinstall pip using get-pip.py
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-                                    python get-pip.py --force-reinstall
-
-                                    # Ensure pip, setuptools, and wheel are updated
-                                    pip install --no-cache-dir --upgrade pip setuptools wheel Cython
-
-                                    # Log the setuptools version to trace any issues
-                                    pip show setuptools
-
-                                    # Install specific versions
+                                    # Install project dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
-                                    # Ensure pytest is installed
+                                    # Install testing dependencies
                                     pip install pytest==8.3.3 pytest-asyncio==0.17.0
 
-                                    # Install the checked-out pgmonkey package in editable mode
+                                    # Install the project itself (editable mode)
                                     pip install -e .
 
-                                    # Run tests and capture result
+                                    # Run tests
                                     set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
                                     set -e
 
-                                    # Clean up venv
+                                    # Deactivate the virtual environment
                                     deactivate
-                                    rm -rf venv
                                 """
                             }
                         }
@@ -219,62 +171,38 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Clean up any existing venv
+                                    # Clean up existing venv
                                     rm -rf venv
 
-                                    # Unset PYTHONPATH to avoid conflicts
-                                    export PYTHONPATH=""
-
-                                    # Clean up any existing packages in pyenv
-                                    rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
-
-                                    # Set up pyenv
-                                    export PATH="\$HOME/.pyenv/bin:\$PATH"
-                                    eval "\$(pyenv init --path)"
-                                    eval "\$(pyenv init -)"
-                                    eval "\$(pyenv virtualenv-init -)"
-
-                                    # Install Python version
+                                    # Install Python version via pyenv (if needed)
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Set up venv and ensure pip is available
+                                    # Create a new virtual environment
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Ensure no traces of pip are left in site-packages
-                                    rm -rf venv/lib/python*/site-packages/pip*
-                                    rm -rf venv/lib/python*/site-packages/~ip*  # To remove invalid '~ip' files
+                                    # Upgrade pip, setuptools, and wheel
+                                    python -m pip install --upgrade pip setuptools wheel
 
-                                    # Download and reinstall pip using get-pip.py
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-                                    python get-pip.py --force-reinstall
-
-                                    # Ensure pip, setuptools, and wheel are updated
-                                    pip install --no-cache-dir --upgrade pip setuptools wheel Cython
-
-                                    # Log the setuptools version to trace any issues
-                                    pip show setuptools
-
-                                    # Install specific versions
+                                    # Install project dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
-                                    # Ensure pytest is installed
+                                    # Install testing dependencies
                                     pip install pytest==8.3.3 pytest-asyncio==0.17.0
 
-                                    # Install the checked-out pgmonkey package in editable mode
+                                    # Install the project itself (editable mode)
                                     pip install -e .
 
-                                    # Run tests and capture result
+                                    # Run tests
                                     set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
                                     set -e
 
-                                    # Clean up venv
+                                    # Deactivate the virtual environment
                                     deactivate
-                                    rm -rf venv
                                 """
                             }
                         }
