@@ -72,8 +72,9 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        # Run tests and generate JUnit-style XML report
-                                        pytest --junitxml=pytest_output.xml src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                        # Run pytest and save logs uniquely per combination to avoid overwriting
+                                        pytest src/tests/integration/ 2>&1 | tee pytest_output_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}.log || \
+                                        echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
                                         pyenv deactivate
                                         pyenv uninstall -f ${VENV_NAME}
@@ -134,8 +135,9 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        # Run tests and generate JUnit-style XML report
-                                        pytest --junitxml=pytest_output.xml src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                        # Run pytest and save logs uniquely per combination to avoid overwriting
+                                        pytest src/tests/integration/ 2>&1 | tee pytest_output_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}.log || \
+                                        echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
                                         pyenv deactivate
                                         pyenv uninstall -f ${VENV_NAME}
@@ -196,8 +198,9 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        # Run tests and generate JUnit-style XML report
-                                        pytest --junitxml=pytest_output.xml src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                        # Run pytest and save logs uniquely per combination to avoid overwriting
+                                        pytest src/tests/integration/ 2>&1 | tee pytest_output_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}.log || \
+                                        echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
                                         pyenv deactivate
                                         pyenv uninstall -f ${VENV_NAME}
