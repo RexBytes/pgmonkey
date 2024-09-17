@@ -444,6 +444,34 @@ if __name__ == "__main__":
     asyncio.run(main())
 </code></pre>
 
+        <h2>Raspberry Pi Users: Installation via PiWheels</h2>
+
+<p>If you're using a Raspberry Pi and need to manage PostgreSQL connections in Python, you're in luck! <code>pgmonkey</code> is now available on <a href="https://www.piwheels.org/project/pgmonkey/">PiWheels</a>, which provides pre-built Python packages optimized for Raspberry Pi.</p>
+
+<h3>Installation</h3>
+<p>Installing <code>pgmonkey</code> on Raspberry Pi is straightforward and doesn't require building from source. Simply use the following command:</p>
+
+<pre><code>pip3 install pgmonkey</code></pre>
+
+<p>PiWheels ensures that the package is compiled and ready to work on Raspberry Pi devices, meaning you can get started faster and avoid the overhead of compiling the package yourself.</p>
+
+<h3>Supported Raspberry Pi OS Versions</h3>
+<p><code>pgmonkey</code> has been successfully built for the following Raspberry Pi OS versions:</p>
+<ul>
+    <li><strong>Bullseye</strong> (Python 3.9)</li>
+    <li><strong>Bookworm</strong> (Python 3.11)</li>
+</ul>
+
+<p>These versions of Raspberry Pi OS come pre-installed with Python 3, so you'll be able to integrate <code>pgmonkey</code> in your Python projects seamlessly.</p>
+
+<h3>Why Use pgmonkey on Raspberry Pi?</h3>
+<p>Raspberry Pi is widely used for educational and IoT projects, many of which involve database management. With <code>pgmonkey</code>, you can:</p>
+<ul>
+    <li>Easily manage PostgreSQL connections using simple YAML configurations.</li>
+    <li>Take advantage of async and connection pooling features for performance-critical tasks.</li>
+    <li>Run projects efficiently on lower-powered hardware like Raspberry Pi.</li>
+</ul>
+
     </div>
 
     <footer>
