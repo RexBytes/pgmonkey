@@ -48,10 +48,17 @@ pipeline {
                                     # Clean up existing virtual environment if it exists
                                     if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
                                         echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
-                                        pyenv uninstall -f pgmonkey_venv
+                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete pgmonkey_venv. Trying to delete manually."
+                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv || echo "Manual deletion failed."
                                     fi
 
-                                    # Install Python version via pyenv
+                                    # Recheck to ensure no leftover environment
+                                    if [ -d ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv ]; then
+                                        echo "pgmonkey_venv directory still exists, attempting forced removal."
+                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv
+                                    fi
+
+                                    # Install Python version via pyenv if not already installed
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
@@ -125,10 +132,17 @@ pipeline {
                                     # Clean up existing virtual environment if it exists
                                     if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
                                         echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
-                                        pyenv uninstall -f pgmonkey_venv
+                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete pgmonkey_venv. Trying to delete manually."
+                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv || echo "Manual deletion failed."
                                     fi
 
-                                    # Install Python version via pyenv
+                                    # Recheck to ensure no leftover environment
+                                    if [ -d ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv ]; then
+                                        echo "pgmonkey_venv directory still exists, attempting forced removal."
+                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv
+                                    fi
+
+                                    # Install Python version via pyenv if not already installed
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
@@ -202,10 +216,17 @@ pipeline {
                                     # Clean up existing virtual environment if it exists
                                     if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
                                         echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
-                                        pyenv uninstall -f pgmonkey_venv
+                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete pgmonkey_venv. Trying to delete manually."
+                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv || echo "Manual deletion failed."
                                     fi
 
-                                    # Install Python version via pyenv
+                                    # Recheck to ensure no leftover environment
+                                    if [ -d ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv ]; then
+                                        echo "pgmonkey_venv directory still exists, attempting forced removal."
+                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv
+                                    fi
+
+                                    # Install Python version via pyenv if not already installed
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
