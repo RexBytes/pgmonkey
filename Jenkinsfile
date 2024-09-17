@@ -62,13 +62,9 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Remove any existing pip that might be broken
-                                    # First remove files, then directory
-                                    rm -rf venv/lib/python*/site-packages/pip/*
-                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info/*
-                                    rm -rf venv/lib/python*/site-packages/pip
-                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info
-
+                                    # Ensure no traces of pip are left in site-packages
+                                    rm -rf venv/lib/python*/site-packages/pip*
+                                    rm -rf venv/lib/python*/site-packages/~ip*  # To remove invalid '~ip' files
 
                                     # Download and reinstall pip using get-pip.py
                                     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
@@ -156,13 +152,9 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Remove any existing pip that might be broken
-                                    # First remove files, then directory
-                                    rm -rf venv/lib/python*/site-packages/pip/*
-                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info/*
-                                    rm -rf venv/lib/python*/site-packages/pip
-                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info
-
+                                    # Ensure no traces of pip are left in site-packages
+                                    rm -rf venv/lib/python*/site-packages/pip*
+                                    rm -rf venv/lib/python*/site-packages/~ip*  # To remove invalid '~ip' files
 
                                     # Download and reinstall pip using get-pip.py
                                     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
@@ -250,13 +242,9 @@ pipeline {
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Remove any existing pip that might be broken
-                                    # First remove files, then directory
-                                    rm -rf venv/lib/python*/site-packages/pip/*
-                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info/*
-                                    rm -rf venv/lib/python*/site-packages/pip
-                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info
-
+                                    # Ensure no traces of pip are left in site-packages
+                                    rm -rf venv/lib/python*/site-packages/pip*
+                                    rm -rf venv/lib/python*/site-packages/~ip*  # To remove invalid '~ip' files
 
                                     # Download and reinstall pip using get-pip.py
                                     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
