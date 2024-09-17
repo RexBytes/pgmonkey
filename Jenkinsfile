@@ -39,59 +39,39 @@ pipeline {
                         steps {
                             script {
                                 sh """
+                                    # Generate a unique virtual environment name based on the matrix parameters
+                                    VENV_NAME="pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+
                                     # Ensure pyenv is initialized properly
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Forcefully remove any existing symbolic links and environments
-                                    if [ -L ~/.pyenv/versions/pgmonkey_venv ]; then
-                                        echo "Removing symbolic link for pgmonkey_venv..."
-                                        rm ~/.pyenv/versions/pgmonkey_venv
+                                    # Check if the virtual environment already exists
+                                    if pyenv virtualenvs | grep -q "${VENV_NAME}"; then
+                                        echo "${VENV_NAME} already exists. Activating..."
+                                        pyenv activate ${VENV_NAME}
+                                    else
+                                        # Create a new virtual environment if it doesn't exist
+                                        echo "Creating new virtual environment: ${VENV_NAME}..."
+                                        pyenv virtualenv ${PYTHON_VERSION} ${VENV_NAME}
+                                        pyenv activate ${VENV_NAME}
+
+                                        # Upgrade pip, setuptools, and wheel
+                                        python -m pip install --upgrade pip setuptools wheel
+
+                                        # Install dependencies
+                                        pip install psycopg[binary]==${PSYCOPG_VERSION}
+                                        pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
+                                        pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
+
+                                        # Install pytest and testing dependencies
+                                        pip install pytest==8.3.3 pytest-asyncio==0.17.0
+
+                                        # Install the project itself (editable mode)
+                                        pip install -e .
                                     fi
-
-                                    # Check if the virtual environment exists and remove it using pyenv
-                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
-                                        echo "Uninstalling existing pgmonkey_venv..."
-                                        pyenv uninstall -f pgmonkey_venv
-                                    fi
-
-                                    # Double-check if the environment directory still exists and remove it manually
-                                    if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Manually removing remaining pgmonkey_venv environment directory..."
-                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Recheck for any symbolic links pointing to the environment
-                                    if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing any remaining symbolic link in ${PYTHON_VERSION} pointing to another environment..."
-                                        rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Install the specific Python version via pyenv if not installed
-                                    pyenv install -s ${PYTHON_VERSION}
-                                    pyenv global ${PYTHON_VERSION}
-
-                                    # Create a new virtual environment
-                                    pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
-
-                                    # Activate the new environment
-                                    pyenv activate pgmonkey_venv
-
-                                    # Upgrade pip, setuptools, and wheel
-                                    python -m pip install --upgrade pip setuptools wheel
-
-                                    # Install dependencies
-                                    pip install psycopg[binary]==${PSYCOPG_VERSION}
-                                    pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-
-                                    # Install pytest and testing dependencies
-                                    pip install pytest==8.3.3 pytest-asyncio==0.17.0
-
-                                    # Install the project itself (editable mode)
-                                    pip install -e .
 
                                     # Run tests
                                     set +e
@@ -134,59 +114,39 @@ pipeline {
                         steps {
                             script {
                                 sh """
+                                    # Generate a unique virtual environment name based on the matrix parameters
+                                    VENV_NAME="pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+
                                     # Ensure pyenv is initialized properly
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Forcefully remove any existing symbolic links and environments
-                                    if [ -L ~/.pyenv/versions/pgmonkey_venv ]; then
-                                        echo "Removing symbolic link for pgmonkey_venv..."
-                                        rm ~/.pyenv/versions/pgmonkey_venv
+                                    # Check if the virtual environment already exists
+                                    if pyenv virtualenvs | grep -q "${VENV_NAME}"; then
+                                        echo "${VENV_NAME} already exists. Activating..."
+                                        pyenv activate ${VENV_NAME}
+                                    else
+                                        # Create a new virtual environment if it doesn't exist
+                                        echo "Creating new virtual environment: ${VENV_NAME}..."
+                                        pyenv virtualenv ${PYTHON_VERSION} ${VENV_NAME}
+                                        pyenv activate ${VENV_NAME}
+
+                                        # Upgrade pip, setuptools, and wheel
+                                        python -m pip install --upgrade pip setuptools wheel
+
+                                        # Install dependencies
+                                        pip install psycopg[binary]==${PSYCOPG_VERSION}
+                                        pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
+                                        pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
+
+                                        # Install pytest and testing dependencies
+                                        pip install pytest==8.3.3 pytest-asyncio==0.17.0
+
+                                        # Install the project itself (editable mode)
+                                        pip install -e .
                                     fi
-
-                                    # Check if the virtual environment exists and remove it using pyenv
-                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
-                                        echo "Uninstalling existing pgmonkey_venv..."
-                                        pyenv uninstall -f pgmonkey_venv
-                                    fi
-
-                                    # Double-check if the environment directory still exists and remove it manually
-                                    if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Manually removing remaining pgmonkey_venv environment directory..."
-                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Recheck for any symbolic links pointing to the environment
-                                    if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing any remaining symbolic link in ${PYTHON_VERSION} pointing to another environment..."
-                                        rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Install the specific Python version via pyenv if not installed
-                                    pyenv install -s ${PYTHON_VERSION}
-                                    pyenv global ${PYTHON_VERSION}
-
-                                    # Create a new virtual environment
-                                    pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
-
-                                    # Activate the new environment
-                                    pyenv activate pgmonkey_venv
-
-                                    # Upgrade pip, setuptools, and wheel
-                                    python -m pip install --upgrade pip setuptools wheel
-
-                                    # Install dependencies
-                                    pip install psycopg[binary]==${PSYCOPG_VERSION}
-                                    pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-
-                                    # Install pytest and testing dependencies
-                                    pip install pytest==8.3.3 pytest-asyncio==0.17.0
-
-                                    # Install the project itself (editable mode)
-                                    pip install -e .
 
                                     # Run tests
                                     set +e
@@ -229,59 +189,39 @@ pipeline {
                         steps {
                             script {
                                 sh """
+                                    # Generate a unique virtual environment name based on the matrix parameters
+                                    VENV_NAME="pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+
                                     # Ensure pyenv is initialized properly
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
                                     eval "\$(pyenv init --path)"
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Forcefully remove any existing symbolic links and environments
-                                    if [ -L ~/.pyenv/versions/pgmonkey_venv ]; then
-                                        echo "Removing symbolic link for pgmonkey_venv..."
-                                        rm ~/.pyenv/versions/pgmonkey_venv
+                                    # Check if the virtual environment already exists
+                                    if pyenv virtualenvs | grep -q "${VENV_NAME}"; then
+                                        echo "${VENV_NAME} already exists. Activating..."
+                                        pyenv activate ${VENV_NAME}
+                                    else
+                                        # Create a new virtual environment if it doesn't exist
+                                        echo "Creating new virtual environment: ${VENV_NAME}..."
+                                        pyenv virtualenv ${PYTHON_VERSION} ${VENV_NAME}
+                                        pyenv activate ${VENV_NAME}
+
+                                        # Upgrade pip, setuptools, and wheel
+                                        python -m pip install --upgrade pip setuptools wheel
+
+                                        # Install dependencies
+                                        pip install psycopg[binary]==${PSYCOPG_VERSION}
+                                        pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
+                                        pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
+
+                                        # Install pytest and testing dependencies
+                                        pip install pytest==8.3.3 pytest-asyncio==0.17.0
+
+                                        # Install the project itself (editable mode)
+                                        pip install -e .
                                     fi
-
-                                    # Check if the virtual environment exists and remove it using pyenv
-                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
-                                        echo "Uninstalling existing pgmonkey_venv..."
-                                        pyenv uninstall -f pgmonkey_venv
-                                    fi
-
-                                    # Double-check if the environment directory still exists and remove it manually
-                                    if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Manually removing remaining pgmonkey_venv environment directory..."
-                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Recheck for any symbolic links pointing to the environment
-                                    if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
-                                        echo "Removing any remaining symbolic link in ${PYTHON_VERSION} pointing to another environment..."
-                                        rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
-                                    fi
-
-                                    # Install the specific Python version via pyenv if not installed
-                                    pyenv install -s ${PYTHON_VERSION}
-                                    pyenv global ${PYTHON_VERSION}
-
-                                    # Create a new virtual environment
-                                    pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
-
-                                    # Activate the new environment
-                                    pyenv activate pgmonkey_venv
-
-                                    # Upgrade pip, setuptools, and wheel
-                                    python -m pip install --upgrade pip setuptools wheel
-
-                                    # Install dependencies
-                                    pip install psycopg[binary]==${PSYCOPG_VERSION}
-                                    pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                    pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-
-                                    # Install pytest and testing dependencies
-                                    pip install pytest==8.3.3 pytest-asyncio==0.17.0
-
-                                    # Install the project itself (editable mode)
-                                    pip install -e .
 
                                     # Run tests
                                     set +e
