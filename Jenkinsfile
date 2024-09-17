@@ -52,9 +52,11 @@ pipeline {
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a virtual environment
-                                    python -m venv venv
-                                    . venv/bin/activate
+                                    # Create a virtual environment using pyenv-virtualenv
+                                    pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
+
+                                    # Activate the pyenv virtual environment
+                                    pyenv activate pgmonkey_venv
 
                                     # Upgrade pip, setuptools, and wheel
                                     python -m pip install --upgrade pip setuptools wheel
@@ -76,7 +78,7 @@ pipeline {
                                     set -e
 
                                     # Deactivate the virtual environment
-                                    deactivate
+                                    pyenv deactivate
                                 """
                             }
                         }
@@ -124,9 +126,11 @@ pipeline {
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a virtual environment
-                                    python -m venv venv
-                                    . venv/bin/activate
+                                    # Create a virtual environment using pyenv-virtualenv
+                                    pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
+
+                                    # Activate the pyenv virtual environment
+                                    pyenv activate pgmonkey_venv
 
                                     # Upgrade pip, setuptools, and wheel
                                     python -m pip install --upgrade pip setuptools wheel
@@ -148,7 +152,7 @@ pipeline {
                                     set -e
 
                                     # Deactivate the virtual environment
-                                    deactivate
+                                    pyenv deactivate
                                 """
                             }
                         }
@@ -196,9 +200,11 @@ pipeline {
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a virtual environment
-                                    python -m venv venv
-                                    . venv/bin/activate
+                                    # Create a virtual environment using pyenv-virtualenv
+                                    pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
+
+                                    # Activate the pyenv virtual environment
+                                    pyenv activate pgmonkey_venv
 
                                     # Upgrade pip, setuptools, and wheel
                                     python -m pip install --upgrade pip setuptools wheel
@@ -220,7 +226,7 @@ pipeline {
                                     set -e
 
                                     # Deactivate the virtual environment
-                                    deactivate
+                                    pyenv deactivate
                                 """
                             }
                         }
