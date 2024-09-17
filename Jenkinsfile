@@ -43,53 +43,35 @@ pipeline {
                                     def VENV_NAME = "pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
 
                                     sh """
-                                        # Generate a unique virtual environment name based on the matrix parameters
-                                        export VENV_NAME=${VENV_NAME}
-
+                                        set +e  # Allow errors
                                         # Ensure pyenv is initialized properly
                                         export PATH="\$HOME/.pyenv/bin:\$PATH"
                                         eval "\$(pyenv init --path)"
                                         eval "\$(pyenv init -)"
                                         eval "\$(pyenv virtualenv-init -)"
 
-                                        # Check if the virtual environment already exists
+                                        # Create or activate the virtual environment
                                         if pyenv virtualenvs | grep -q "${VENV_NAME}"; then
-                                            echo "${VENV_NAME} already exists. Activating..."
                                             pyenv activate ${VENV_NAME}
                                         else
-                                            # Create a new virtual environment if it doesn't exist
-                                            echo "Creating new virtual environment: ${VENV_NAME}..."
                                             pyenv virtualenv ${PYTHON_VERSION} ${VENV_NAME}
                                             pyenv activate ${VENV_NAME}
-
-                                            # Upgrade pip, setuptools, and wheel
-                                            python -m pip install --upgrade pip setuptools wheel
-
-                                            # Install dependencies
-                                            pip install psycopg[binary]==${PSYCOPG_VERSION}
-                                            pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                            pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-
-                                            # Install pytest and testing dependencies
-                                            pip install pytest==8.3.3 pytest-asyncio==0.17.0
-
-                                            # Install the project itself (editable mode)
+                                            pip install --upgrade pip setuptools wheel
+                                            pip install psycopg[binary]==${PSYCOPG_VERSION} psycopg_pool==${PSYCOPG_POOL_VERSION} PyYAML==${PYAML_VERSION} pytest==8.3.3 pytest-asyncio==0.17.0
                                             pip install -e .
                                         fi
 
                                         # Run tests
-                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log
-                                        set +e
-                                        pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
-                                        set -e
+                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
-                                        # Deactivate the virtual environment
+                                        # Deactivate and cleanup environment
                                         pyenv deactivate
+                                        pyenv uninstall -f ${VENV_NAME}
                                     """
                                 } catch (Exception err) {
-                            echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
-                            sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
-                            }
+                                    echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
+                                    sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
+                                }
                             }
                         }
                     }
@@ -123,57 +105,34 @@ pipeline {
                         steps {
                             script {
                                 try {
-                                    // Define the virtual environment name in Groovy
                                     def VENV_NAME = "pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
 
                                     sh """
-                                        # Generate a unique virtual environment name based on the matrix parameters
-                                        export VENV_NAME=${VENV_NAME}
-
-                                        # Ensure pyenv is initialized properly
+                                        set +e
                                         export PATH="\$HOME/.pyenv/bin:\$PATH"
                                         eval "\$(pyenv init --path)"
                                         eval "\$(pyenv init -)"
                                         eval "\$(pyenv virtualenv-init -)"
 
-                                        # Check if the virtual environment already exists
                                         if pyenv virtualenvs | grep -q "${VENV_NAME}"; then
-                                            echo "${VENV_NAME} already exists. Activating..."
                                             pyenv activate ${VENV_NAME}
                                         else
-                                            # Create a new virtual environment if it doesn't exist
-                                            echo "Creating new virtual environment: ${VENV_NAME}..."
                                             pyenv virtualenv ${PYTHON_VERSION} ${VENV_NAME}
                                             pyenv activate ${VENV_NAME}
-
-                                            # Upgrade pip, setuptools, and wheel
-                                            python -m pip install --upgrade pip setuptools wheel
-
-                                            # Install dependencies
-                                            pip install psycopg[binary]==${PSYCOPG_VERSION}
-                                            pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                            pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-
-                                            # Install pytest and testing dependencies
-                                            pip install pytest==8.3.3 pytest-asyncio==0.17.0
-
-                                            # Install the project itself (editable mode)
+                                            pip install --upgrade pip setuptools wheel
+                                            pip install psycopg[binary]==${PSYCOPG_VERSION} psycopg_pool==${PSYCOPG_POOL_VERSION} PyYAML==${PYAML_VERSION} pytest==8.3.3 pytest-asyncio==0.17.0
                                             pip install -e .
                                         fi
 
-                                        # Run tests
-                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log
-                                        set +e
-                                        pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
-                                        set -e
+                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
-                                        # Deactivate the virtual environment
                                         pyenv deactivate
+                                        pyenv uninstall -f ${VENV_NAME}
                                     """
                                 } catch (Exception err) {
-                            echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
-                            sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
-                            }
+                                    echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
+                                    sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
+                                }
                             }
                         }
                     }
@@ -181,7 +140,7 @@ pipeline {
             }
         }
 
-        // Matrix for Python 3.10.x and 3.9.x (older and newer dependencies allowed)
+        // Matrix for Python 3.10.x and 3.9.x
         stage('Matrix Python 3.10 and 3.9') {
             matrix {
                 axes {
@@ -207,57 +166,34 @@ pipeline {
                         steps {
                             script {
                                 try {
-                                    // Define the virtual environment name in Groovy
                                     def VENV_NAME = "pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
 
                                     sh """
-                                        # Generate a unique virtual environment name based on the matrix parameters
-                                        export VENV_NAME=${VENV_NAME}
-
-                                        # Ensure pyenv is initialized properly
+                                        set +e
                                         export PATH="\$HOME/.pyenv/bin:\$PATH"
                                         eval "\$(pyenv init --path)"
                                         eval "\$(pyenv init -)"
                                         eval "\$(pyenv virtualenv-init -)"
 
-                                        # Check if the virtual environment already exists
                                         if pyenv virtualenvs | grep -q "${VENV_NAME}"; then
-                                            echo "${VENV_NAME} already exists. Activating..."
                                             pyenv activate ${VENV_NAME}
                                         else
-                                            # Create a new virtual environment if it doesn't exist
-                                            echo "Creating new virtual environment: ${VENV_NAME}..."
                                             pyenv virtualenv ${PYTHON_VERSION} ${VENV_NAME}
                                             pyenv activate ${VENV_NAME}
-
-                                            # Upgrade pip, setuptools, and wheel
-                                            python -m pip install --upgrade pip setuptools wheel
-
-                                            # Install dependencies
-                                            pip install psycopg[binary]==${PSYCOPG_VERSION}
-                                            pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
-                                            pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
-
-                                            # Install pytest and testing dependencies
-                                            pip install pytest==8.3.3 pytest-asyncio==0.17.0
-
-                                            # Install the project itself (editable mode)
+                                            pip install --upgrade pip setuptools wheel
+                                            pip install psycopg[binary]==${PSYCOPG_VERSION} psycopg_pool==${PSYCOPG_POOL_VERSION} PyYAML==${PYAML_VERSION} pytest==8.3.3 pytest-asyncio==0.17.0
                                             pip install -e .
                                         fi
 
-                                        # Run tests
-                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log
-                                        set +e
-                                        pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
-                                        set -e
+                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
-                                        # Deactivate the virtual environment
                                         pyenv deactivate
+                                        pyenv uninstall -f ${VENV_NAME}
                                     """
                                 } catch (Exception err) {
-                            echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
-                            sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
-                            }
+                                    echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
+                                    sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
+                                }
                             }
                         }
                     }
@@ -271,7 +207,3 @@ pipeline {
         }
     }
 }
-
-
-
-
