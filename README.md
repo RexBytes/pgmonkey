@@ -24,7 +24,8 @@ This tutorial will walk you through the process of installing **pgmonkey**, crea
    - [Running Database Queries](#running-database-queries)
    - [Handling Different Connection Types](#handling-different-connection-types)
 6. [Example Use Case: Testing Multiple Connections](#example-use-case-testing-multiple-connections)
-7. [Conclusion](#conclusion)
+7. [Example Use Case:  Test Pooling Capability](#example-use-case-test-pooling-capability)
+8. [Conclusion](#conclusion)
 
 ## Installation
 
@@ -349,6 +350,78 @@ if __name__ == "__main__":
 ```
 
 This script loops through multiple configurations and tests each connection, printing the PostgreSQL version to confirm that the connection works as expected.
+
+## Example Use Case:  Test Pooling Capability
+
+In the following script we test the pooling capability by creating
+5 connections taken from the pool.  Make sure your config file specifies enough pool connections.
+
+```python
+async def test_multiple_async_pool_connections(config_file, num_connections):
+    connection_manager = PGConnectionManager()
+    connections = []
+
+    # Acquire multiple connections from the pool
+    for _ in range(num_connections):
+        connection = await connection_manager.get_database_connection(config_file)  # Async call
+        connections.append(connection)
+
+    try:
+        # Use each connection
+        for idx, connection in enumerate(connections):
+            async with connection as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute('SELECT version();')
+                    version = await cur.fetchone()
+                    print(f"Async Connection {idx + 1}: {version}")
+    finally:
+        # Disconnect all connections
+        for connection in connections:
+            await connection.disconnect()
+
+
+async def test_multiple_sync_pool_connections(config_file, num_connections):
+    connection_manager = PGConnectionManager()
+    connections = []
+
+    # Acquire multiple connections from the pool (sync version)
+    for _ in range(num_connections):
+        connection = await connection_manager.get_database_connection(config_file)  # Await for sync
+        connections.append(connection)
+
+    try:
+        # Use each connection
+        for idx, connection in enumerate(connections):
+            with connection as conn:
+                with conn.cursor() as cur:
+                    cur.execute('SELECT version();')
+                    version = cur.fetchone()
+                    print(f"Sync Connection {idx + 1}: {version}")
+    finally:
+        # Disconnect all connections
+        for connection in connections:
+            connection.disconnect()  # Ensure async disconnect if needed
+
+
+async def main():
+    base_dir = '/path/to/your/configs/'
+    config_files = {
+        'async_pool': base_dir + 'async_pool.yaml',
+        'pool': base_dir + 'pool.yaml'
+    }
+
+    num_connections = 5  # Number of connections to checkout from the pool
+
+    print("Testing async pool connections:")
+    await test_multiple_async_pool_connections(config_files['async_pool'], num_connections)
+
+    print("\nTesting sync pool connections:")
+    await test_multiple_sync_pool_connections(config_files['pool'], num_connections)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 ## Conclusion
 
