@@ -13,6 +13,19 @@ pipeline {
                 }
             }
         }
+        stage('Prepare Environment') {
+            steps {
+                script {
+                    // Delete test_results.csv if it exists
+                    sh """
+                        if [ -f test_results.csv ]; then
+                            rm test_results.csv
+                        fi
+                        touch test_results.csv
+                    """
+                }
+            }
+        }
         // Matrix for Python 3.12.x (newer versions of dependencies)
         stage('Matrix Python 3.12') {
             matrix {
