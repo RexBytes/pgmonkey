@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pgmonkey - Reference Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        nav {
+            margin-top: 20px;
+        }
+        nav a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: bold;
+        }
+        .content {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        footer {
+            padding: 20px;
+            text-align: center;
+            background-color: #007BFF;
+            color: #fff;
+            margin-top: 40px;
+        }
+        h2 {
+            margin-top: 40px;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>pgmonkey - Reference Guide</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="https://github.com/RexBytes/pgmonkey">GitHub</a>
+            <a href="https://pypi.org/project/pgmonkey/">PyPI</a>
+            <a href="https://github.com/RexBytes/pgmonkey/blob/main/README.md">Documentation</a>
+            <a href="reference.html">Quick Reference</a>
+            <a href="compatibility_tests.html">Dependency Compatibility Tests</a>
+        </nav>
+    </header>
+
+    <div class="content">
+        <h2>CLI Commands Overview</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                    <th>Example Usage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>pgmonkey settings</td>
+                    <td>Manage application settings.</td>
+                    <td><code>pgmonkey settings --help</code></td>
+                </tr>
+                <tr>
+                    <td>pgmonkey pgconfig create</td>
+                    <td>Create a new PostgreSQL configuration template.</td>
+                    <td><code>pgmonkey pgconfig create --filepath config.yaml</code></td>
+                </tr>
+                <tr>
+                    <td>pgmonkey pgconfig test</td>
+                    <td>Test a database connection using a configuration file.</td>
+                    <td><code>pgmonkey pgconfig test --filepath config.yaml</code></td>
+                </tr>
+                <tr>
+                    <td>pgmonkey pgserverconfig</td>
+                    <td>Generate PostgreSQL server configuration recommendations.</td>
+                    <td><code>pgmonkey pgserverconfig --filepath config.yaml</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+<h2>YAML Configuration Options</h2>
+
+        <h3>Full YAML Configuration (Async Pool, SSL, Keepalives, etc.)</h3>
+<pre><code>postgresql:
+  connection_type: 'async_pool'  # Options: 'normal', 'pool', 'async', 'async_pool'
+  connection_settings:
+    connectionName: 'async_pool_connection'
+    description: 'Default PostgreSQL connection setup'
+    user: 'postgres'
+    password: 'password'
+    host: '192.168.0.183'
+    port: 5432
+    sslmode: 'verify-ca'  # Options: disable, allow, prefer, require, verify-ca, verify-full
+    sslcert: '/home/ubuntu/mycerts/clientcerts/work/client.crt'  # Path to the client SSL certificate, if needed
+    sslkey: '/home/ubuntu/mycerts/clientcerts/work/client.key'  # Path to the client SSL key, if needed
+    sslrootcert: '/home/ubuntu/mycerts/clientcerts/work/ca.crt'  # Path to the root SSL certificate, if needed
+    connect_timeout: 10  # Maximum wait for connection, in seconds
+    application_name: 'myapp'
+    keepalives: 1  # Enable TCP keepalives
+    keepalives_idle: 60  # Time in seconds before sending a keepalive probe
+    keepalives_interval: 15  # Time in seconds between keepalive probes
+    keepalives_count: 5  # Maximum number of keepalive probes before closing the connection
+
+  pool_settings:
+    min_size: 5
+    max_size: 20
+    max_idle: 300  # Time in seconds a connection can remain idle before being closed
+    max_lifetime: 3600  # Time in seconds a connection can be reused
+
+  async_settings:
+    command_timeout: 30  # Time in seconds to wait for a command before cancelling
+
+  async_pool_settings:
+    min_size: 5
+    max_size: 20
+    max_idle: 300
+    max_lifetime: 3600
+</code></pre>
+
+        <h3>Basic YAML Configuration (No Pooling, Async, or SSL)</h3>
+<pre><code>postgresql:
+  connection_type: 'normal'  # Basic synchronous connection
+  connection_settings:
+    connectionName: 'basic_connection'
+    user: 'postgres'
+    password: 'password'
+    host: 'localhost'
+    port: 5432
+    dbname: 'mydatabase'
+    connect_timeout: 10  # Time in seconds to wait for connection
+    application_name: 'basic_app'
+</code></pre>
+
+        <h3>YAML Configuration for Pooling (No Async or SSL)</h3>
+<pre><code>postgresql:
+  connection_type: 'pool'  # Connection pooling enabled
+  connection_settings:
+    connectionName: 'pool_connection'
+    user: 'postgres'
+    password: 'password'
+    host: 'localhost'
+    port: 5432
+    dbname: 'mydatabase'
+    connect_timeout: 10  # Time in seconds to wait for connection
+    application_name: 'pool_app'
+
+  pool_settings:
+    min_size: 5  # Minimum number of connections in the pool
+    max_size: 20  # Maximum number of connections in the pool
+    max_idle: 300  # Maximum idle time in seconds
+    max_lifetime: 3600  # Maximum time in seconds a connection can be reused
+</code></pre>
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Parameter</th>
+            <th>Description</th>
+            <th>Example Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>postgresql.connection_type</td>
+            <td>Type of connection to establish (normal, pool, async, async_pool).</td>
+            <td><code>'async_pool'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.connectionName</td>
+            <td>Custom name for the connection.</td>
+            <td><code>'async_pool_connection'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.description</td>
+            <td>Description of the connection's purpose.</td>
+            <td><code>'Default PostgreSQL connection setup'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.user</td>
+            <td>Username to connect to the PostgreSQL database.</td>
+            <td><code>'postgres'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.password</td>
+            <td>Password for the database user.</td>
+            <td><code>'your password'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.host</td>
+            <td>Database server host address.</td>
+            <td><code>'192.168.0.183'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.port</td>
+            <td>Database server port.</td>
+            <td><code>5432</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.dbname</td>
+            <td>Name of the PostgreSQL database to connect to.</td>
+            <td><code>'postgres'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.sslmode</td>
+            <td>SSL mode for securing the connection (e.g., disable, allow, prefer, require, verify-ca, verify-full).</td>
+            <td><code>'verify-ca'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.sslcert</td>
+            <td>Path to the client SSL certificate, if needed for secure connections.</td>
+            <td><code>'/home/ubuntu/mycerts/clientcerts/work/client.crt'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.sslkey</td>
+            <td>Path to the client SSL key, if needed for secure connections.</td>
+            <td><code>'/home/ubuntu/mycerts/clientcerts/work/client.key'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.sslrootcert</td>
+            <td>Path to the root SSL certificate, if needed to verify the server's SSL certificate.</td>
+            <td><code>'/home/ubuntu/mycerts/clientcerts/work/ca.crt'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.connect_timeout</td>
+            <td>Maximum time in seconds to wait for a connection.</td>
+            <td><code>10</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.application_name</td>
+            <td>Application name to report to the PostgreSQL server.</td>
+            <td><code>'myapp'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.keepalives</td>
+            <td>Enables or disables TCP keepalives (1 to enable, 0 to disable).</td>
+            <td><code>1</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.keepalives_idle</td>
+            <td>Time in seconds before sending a keepalive probe.</td>
+            <td><code>60</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.keepalives_interval</td>
+            <td>Time in seconds between sending keepalive probes.</td>
+            <td><code>15</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.connection_settings.keepalives_count</td>
+            <td>Maximum number of keepalive probes to send before closing the connection.</td>
+            <td><code>5</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.pool_settings.min_size</td>
+            <td>Minimum number of connections in the pool.</td>
+            <td><code>5</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.pool_settings.max_size</td>
+            <td>Maximum number of connections in the pool.</td>
+            <td><code>20</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.pool_settings.max_idle</td>
+            <td>Maximum idle time (in seconds) for connections before they are closed.</td>
+            <td><code>300</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.pool_settings.max_lifetime</td>
+            <td>Maximum lifetime (in seconds) a connection can be reused before being closed.</td>
+            <td><code>3600</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.async_settings.command_timeout</td>
+            <td>Maximum time to wait for an async command before canceling (in seconds).</td>
+            <td><code>30</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.async_pool_settings.min_size</td>
+            <td>Minimum number of connections in the asynchronous pool.</td>
+            <td><code>5</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.async_pool_settings.max_size</td>
+            <td>Maximum number of connections in the asynchronous pool.</td>
+            <td><code>20</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.async_pool_settings.max_idle</td>
+            <td>Maximum idle time (in seconds) for asynchronous connections before they are closed.</td>
+            <td><code>300</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.async_pool_settings.max_lifetime</td>
+            <td>Maximum lifetime (in seconds) an asynchronous connection can be reused before being closed.</td>
+            <td><code>3600</code></td>
+        </tr>
+    </tbody>
+</table>
+
+
+        <h2>Working with PGConnectionManager</h2>
+        <p>In <code>pgmonkey</code>, users interact with the PostgreSQL connection using the <code>PGConnectionManager</code> class, which simplifies both synchronous and asynchronous database connections based on YAML configuration files.</p>
+
+        <h3>Basic Usage</h3>
+<pre><code>import asyncio
+from pgmonkey import PGConnectionManager
+
+async def main():
+    # Path to your configuration YAML file
+    config_file = '/path/to/your/config.yaml'
+
+    # Initialize the connection manager
+    connection_manager = PGConnectionManager()
+
+    # Get the PostgreSQL connection
+    connection = await connection_manager.get_database_connection(config_file)
+
+    # Use the connection (async or sync depending on configuration)
+    try:
+        if connection.connection_type in ['async', 'async_pool']:
+            async with connection as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute('SELECT version();')
+                    print(await cur.fetchone())
+        else:
+            with connection as conn:
+                with conn.connection.cursor() as cur:
+                    cur.execute('SELECT version();')
+                    print(cur.fetchone())
+    finally:
+        await connection.disconnect() if hasattr(connection, 'disconnect') else connection.disconnect()
+
+# Run the async main function
+if __name__ == "__main__":
+    asyncio.run(main())
+</code></pre>
+
+        <h3>Example: Testing Pooling Capability</h3>
+<pre><code>import asyncio
+from pgmonkey import PGConnectionManager
+
+async def test_multiple_async_pool_connections(config_file, num_connections):
+    connection_manager = PGConnectionManager()
+    connections = []
+
+    # Acquire multiple connections from the pool
+    for _ in range(num_connections):
+        connection = await connection_manager.get_database_connection(config_file)  # Async call
+        connections.append(connection)
+
+    try:
+        # Use each connection
+        for idx, connection in enumerate(connections):
+            async with connection as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute('SELECT version();')
+                    version = await cur.fetchone()
+                    print(f"Async Connection {idx + 1}: {version}")
+    finally:
+        # Disconnect all connections
+        for connection in connections:
+            await connection.disconnect()
+
+async def test_multiple_sync_pool_connections(config_file, num_connections):
+    connection_manager = PGConnectionManager()
+    connections = []
+
+    # Acquire multiple connections from the pool (sync version)
+    for _ in range(num_connections):
+        connection = await connection_manager.get_database_connection(config_file)
+        connections.append(connection)
+
+    try:
+        # Use each connection
+        for idx, connection in enumerate(connections):
+            with connection as conn:
+                with conn.cursor() as cur:
+                    cur.execute('SELECT version();')
+                    version = cur.fetchone()
+                    print(f"Sync Connection {idx + 1}: {version}")
+    finally:
+        # Disconnect all connections
+        for connection in connections:
+            connection.disconnect()
+
+async def main():
+    base_dir = '/path/to/your/configs/'
+    config_files = {
+        'async_pool': base_dir + 'pg_async_pool.yaml',
+        'pool': base_dir + 'pg_pool.yaml'
+    }
+
+    num_connections = 5  # Number of connections to checkout from the pool
+
+    print("Testing async pool connections:")
+    await test_multiple_async_pool_connections(config_files['async_pool'], num_connections)
+
+    print("\nTesting sync pool connections:")
+    await test_multiple_sync_pool_connections(config_files['pool'], num_connections)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+</code></pre>
+
+    </div>
+
+    <footer>
+        <p>© 2024 pgmonkey by <a href="https://github.com/RexBytes">RexBytes</a>. <a href="https://github.com/RexBytes/pgmonkey">GitHub</a> | <a href="https://pypi.org/project/pgmonkey/">PyPI</a></p>
+    </footer>
+</body>
+</html>

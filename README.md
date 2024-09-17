@@ -357,6 +357,10 @@ In the following script we test the pooling capability by creating
 5 connections taken from the pool.  Make sure your config file specifies enough pool connections.
 
 ```python
+#!/usr/bin/env python3
+import asyncio
+from pgmonkey import PGConnectionManager
+
 async def test_multiple_async_pool_connections(config_file, num_connections):
     connection_manager = PGConnectionManager()
     connections = []
