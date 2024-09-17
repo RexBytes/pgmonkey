@@ -74,6 +74,7 @@ pipeline {
                                     fi
 
                                     # Run tests
+                                    pytest src/tests/integration/ 2>&1 | tee pytest_output.log
                                     set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
                                     set -e
@@ -149,6 +150,7 @@ pipeline {
                                     fi
 
                                     # Run tests
+                                    pytest src/tests/integration/ 2>&1 | tee pytest_output.log
                                     set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
                                     set -e
@@ -224,6 +226,7 @@ pipeline {
                                     fi
 
                                     # Run tests
+                                    pytest src/tests/integration/ 2>&1 | tee pytest_output.log
                                     set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
                                     set -e
