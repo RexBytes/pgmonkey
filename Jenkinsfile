@@ -85,6 +85,9 @@ pipeline {
                                     # Deactivate the virtual environment
                                     pyenv deactivate
                                 """
+                            } catch (Exception err) {
+                            echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
+                            sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
                             }
                         }
                     }
@@ -164,6 +167,9 @@ pipeline {
                                     # Deactivate the virtual environment
                                     pyenv deactivate
                                 """
+                            } catch (Exception err) {
+                            echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
+                            sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
                             }
                         }
                     }
@@ -243,6 +249,9 @@ pipeline {
                                     # Deactivate the virtual environment
                                     pyenv deactivate
                                 """
+                            } catch (Exception err) {
+                            echo "Error in ${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ${err.message}"
+                            sh "echo '${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: ERROR - ${err.message}' >> test_results.csv"
                             }
                         }
                     }
