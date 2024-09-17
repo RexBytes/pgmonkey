@@ -45,14 +45,17 @@ pipeline {
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Clean up existing virtual environment
-                                    rm -rf venv
+                                    # Clean up existing virtual environment if it exists
+                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
+                                        echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
+                                        pyenv uninstall -f pgmonkey_venv
+                                    fi
 
                                     # Install Python version via pyenv
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a virtual environment using pyenv-virtualenv
+                                    # Create a new virtual environment using pyenv-virtualenv
                                     pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
 
                                     # Activate the pyenv virtual environment
@@ -119,14 +122,17 @@ pipeline {
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Clean up existing virtual environment
-                                    rm -rf venv
+                                    # Clean up existing virtual environment if it exists
+                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
+                                        echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
+                                        pyenv uninstall -f pgmonkey_venv
+                                    fi
 
                                     # Install Python version via pyenv
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a virtual environment using pyenv-virtualenv
+                                    # Create a new virtual environment using pyenv-virtualenv
                                     pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
 
                                     # Activate the pyenv virtual environment
@@ -193,14 +199,17 @@ pipeline {
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Clean up existing virtual environment
-                                    rm -rf venv
+                                    # Clean up existing virtual environment if it exists
+                                    if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
+                                        echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
+                                        pyenv uninstall -f pgmonkey_venv
+                                    fi
 
                                     # Install Python version via pyenv
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a virtual environment using pyenv-virtualenv
+                                    # Create a new virtual environment using pyenv-virtualenv
                                     pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
 
                                     # Activate the pyenv virtual environment
