@@ -45,7 +45,7 @@ pipeline {
                                     # Unset PYTHONPATH to avoid conflicts
                                     export PYTHONPATH=""
 
-                                    # Clean up any existing setuptools, wheel, or Cython in pyenv
+                                    # Clean up any existing packages in pyenv
                                     rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
 
                                     # Set up pyenv
@@ -58,15 +58,18 @@ pipeline {
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Set up venv and install dependencies
+                                    # Set up venv and ensure pip is available
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Manually install pip
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-                                    python get-pip.py
+                                    # Remove any existing pip that might be broken
+                                    rm -rf venv/lib/python*/site-packages/pip*
 
-                                    # Ensure pip and setuptools are updated
+                                    # Download and reinstall pip using get-pip.py
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    python get-pip.py --force-reinstall
+
+                                    # Ensure pip, setuptools, and wheel are updated
                                     pip install --no-cache-dir --upgrade pip setuptools wheel Cython
 
                                     # Log the setuptools version to trace any issues
@@ -84,9 +87,9 @@ pipeline {
                                     pip install -e .
 
                                     # Run tests and capture result
-                                    set +e  # Allow the pipeline to continue even if tests fail
+                                    set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
-                                    set -e  # Reinstate failure on error
+                                    set -e
 
                                     # Clean up venv
                                     deactivate
@@ -131,7 +134,7 @@ pipeline {
                                     # Unset PYTHONPATH to avoid conflicts
                                     export PYTHONPATH=""
 
-                                    # Clean up any existing setuptools, wheel, or Cython in pyenv
+                                    # Clean up any existing packages in pyenv
                                     rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
 
                                     # Set up pyenv
@@ -144,15 +147,18 @@ pipeline {
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Set up venv and install dependencies
+                                    # Set up venv and ensure pip is available
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Manually install pip
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-                                    python get-pip.py
+                                    # Remove any existing pip that might be broken
+                                    rm -rf venv/lib/python*/site-packages/pip*
 
-                                    # Ensure pip and setuptools are updated
+                                    # Download and reinstall pip using get-pip.py
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    python get-pip.py --force-reinstall
+
+                                    # Ensure pip, setuptools, and wheel are updated
                                     pip install --no-cache-dir --upgrade pip setuptools wheel Cython
 
                                     # Log the setuptools version to trace any issues
@@ -170,9 +176,9 @@ pipeline {
                                     pip install -e .
 
                                     # Run tests and capture result
-                                    set +e  # Allow the pipeline to continue even if tests fail
+                                    set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
-                                    set -e  # Reinstate failure on error
+                                    set -e
 
                                     # Clean up venv
                                     deactivate
@@ -217,7 +223,7 @@ pipeline {
                                     # Unset PYTHONPATH to avoid conflicts
                                     export PYTHONPATH=""
 
-                                    # Clean up any existing setuptools, wheel, or Cython in pyenv
+                                    # Clean up any existing packages in pyenv
                                     rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/lib/python*/site-packages/*
 
                                     # Set up pyenv
@@ -230,15 +236,18 @@ pipeline {
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Set up venv and install dependencies
+                                    # Set up venv and ensure pip is available
                                     python -m venv venv
                                     . venv/bin/activate
 
-                                    # Manually install pip
-                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-                                    python get-pip.py
+                                    # Remove any existing pip that might be broken
+                                    rm -rf venv/lib/python*/site-packages/pip*
 
-                                    # Ensure pip and setuptools are updated
+                                    # Download and reinstall pip using get-pip.py
+                                    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                                    python get-pip.py --force-reinstall
+
+                                    # Ensure pip, setuptools, and wheel are updated
                                     pip install --no-cache-dir --upgrade pip setuptools wheel Cython
 
                                     # Log the setuptools version to trace any issues
@@ -256,9 +265,9 @@ pipeline {
                                     pip install -e .
 
                                     # Run tests and capture result
-                                    set +e  # Allow the pipeline to continue even if tests fail
+                                    set +e
                                     pytest src/tests/integration/ || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
-                                    set -e  # Reinstate failure on error
+                                    set -e
 
                                     # Clean up venv
                                     deactivate
