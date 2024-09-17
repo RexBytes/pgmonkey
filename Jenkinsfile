@@ -45,38 +45,44 @@ pipeline {
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Clean up existing virtual environment if it exists
+                                    # Check if the symbolic link exists and remove it
+                                    if [ -L ~/.pyenv/versions/pgmonkey_venv ]; then
+                                        echo "Symbolic link for pgmonkey_venv exists. Deleting it..."
+                                        rm ~/.pyenv/versions/pgmonkey_venv
+                                    fi
+
+                                    # Check if the virtual environment exists and remove it
                                     if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
                                         echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
-                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete pgmonkey_venv. Trying to delete manually."
-                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv || echo "Manual deletion failed."
+                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete via pyenv, attempting manual removal."
+                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv || echo "Manual deletion failed."
                                     fi
 
-                                    # Recheck to ensure no leftover environment
-                                    if [ -d ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv ]; then
-                                        echo "pgmonkey_venv directory still exists, attempting forced removal."
-                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv
+                                    # Recheck if any directory still exists and force removal if necessary
+                                    if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
+                                        echo "Directory still exists, performing forced removal."
+                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
-                                    # Install Python version via pyenv if not already installed
+                                    # Install the specific Python version via pyenv if not installed
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a new virtual environment using pyenv-virtualenv
+                                    # Create a new virtual environment
                                     pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
 
-                                    # Activate the pyenv virtual environment
+                                    # Activate the new environment
                                     pyenv activate pgmonkey_venv
 
                                     # Upgrade pip, setuptools, and wheel
                                     python -m pip install --upgrade pip setuptools wheel
 
-                                    # Install project dependencies
+                                    # Install dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
-                                    # Install testing dependencies
+                                    # Install pytest and testing dependencies
                                     pip install pytest==8.3.3 pytest-asyncio==0.17.0
 
                                     # Install the project itself (editable mode)
@@ -129,38 +135,44 @@ pipeline {
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Clean up existing virtual environment if it exists
+                                    # Check if the symbolic link exists and remove it
+                                    if [ -L ~/.pyenv/versions/pgmonkey_venv ]; then
+                                        echo "Symbolic link for pgmonkey_venv exists. Deleting it..."
+                                        rm ~/.pyenv/versions/pgmonkey_venv
+                                    fi
+
+                                    # Check if the virtual environment exists and remove it
                                     if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
                                         echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
-                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete pgmonkey_venv. Trying to delete manually."
-                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv || echo "Manual deletion failed."
+                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete via pyenv, attempting manual removal."
+                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv || echo "Manual deletion failed."
                                     fi
 
-                                    # Recheck to ensure no leftover environment
-                                    if [ -d ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv ]; then
-                                        echo "pgmonkey_venv directory still exists, attempting forced removal."
-                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv
+                                    # Recheck if any directory still exists and force removal if necessary
+                                    if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
+                                        echo "Directory still exists, performing forced removal."
+                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
-                                    # Install Python version via pyenv if not already installed
+                                    # Install the specific Python version via pyenv if not installed
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a new virtual environment using pyenv-virtualenv
+                                    # Create a new virtual environment
                                     pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
 
-                                    # Activate the pyenv virtual environment
+                                    # Activate the new environment
                                     pyenv activate pgmonkey_venv
 
                                     # Upgrade pip, setuptools, and wheel
                                     python -m pip install --upgrade pip setuptools wheel
 
-                                    # Install project dependencies
+                                    # Install dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
-                                    # Install testing dependencies
+                                    # Install pytest and testing dependencies
                                     pip install pytest==8.3.3 pytest-asyncio==0.17.0
 
                                     # Install the project itself (editable mode)
@@ -213,38 +225,44 @@ pipeline {
                                     eval "\$(pyenv init -)"
                                     eval "\$(pyenv virtualenv-init -)"
 
-                                    # Clean up existing virtual environment if it exists
+                                    # Check if the symbolic link exists and remove it
+                                    if [ -L ~/.pyenv/versions/pgmonkey_venv ]; then
+                                        echo "Symbolic link for pgmonkey_venv exists. Deleting it..."
+                                        rm ~/.pyenv/versions/pgmonkey_venv
+                                    fi
+
+                                    # Check if the virtual environment exists and remove it
                                     if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
                                         echo "Virtual environment pgmonkey_venv already exists. Deleting it..."
-                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete pgmonkey_venv. Trying to delete manually."
-                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv || echo "Manual deletion failed."
+                                        pyenv uninstall -f pgmonkey_venv || echo "Could not delete via pyenv, attempting manual removal."
+                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv || echo "Manual deletion failed."
                                     fi
 
-                                    # Recheck to ensure no leftover environment
-                                    if [ -d ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv ]; then
-                                        echo "pgmonkey_venv directory still exists, attempting forced removal."
-                                        rm -rf ~/.pyenv/versions/3.12.5/envs/pgmonkey_venv
+                                    # Recheck if any directory still exists and force removal if necessary
+                                    if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
+                                        echo "Directory still exists, performing forced removal."
+                                        rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
-                                    # Install Python version via pyenv if not already installed
+                                    # Install the specific Python version via pyenv if not installed
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a new virtual environment using pyenv-virtualenv
+                                    # Create a new virtual environment
                                     pyenv virtualenv ${PYTHON_VERSION} pgmonkey_venv
 
-                                    # Activate the pyenv virtual environment
+                                    # Activate the new environment
                                     pyenv activate pgmonkey_venv
 
                                     # Upgrade pip, setuptools, and wheel
                                     python -m pip install --upgrade pip setuptools wheel
 
-                                    # Install project dependencies
+                                    # Install dependencies
                                     pip install psycopg[binary]==${PSYCOPG_VERSION}
                                     pip install psycopg_pool==${PSYCOPG_POOL_VERSION}
                                     pip install PyYAML==${PYAML_VERSION} --use-deprecated=legacy-resolver
 
-                                    # Install testing dependencies
+                                    # Install pytest and testing dependencies
                                     pip install pytest==8.3.3 pytest-asyncio==0.17.0
 
                                     # Install the project itself (editable mode)
