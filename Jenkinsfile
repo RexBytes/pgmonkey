@@ -57,6 +57,12 @@ pipeline {
                                         rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
+                                    # Remove symlinks pointing to other versions
+                                    if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
+                                        echo "Removing symbolic link in ${PYTHON_VERSION} pointing to another environment..."
+                                        rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
+                                    fi
+
                                     # Recheck and force removal if necessary
                                     if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
                                         echo "pgmonkey_venv still found, forcing uninstall through pyenv..."
@@ -146,6 +152,12 @@ pipeline {
                                         rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
+                                    # Remove symlinks pointing to other versions
+                                    if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
+                                        echo "Removing symbolic link in ${PYTHON_VERSION} pointing to another environment..."
+                                        rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
+                                    fi
+
                                     # Recheck and force removal if necessary
                                     if pyenv virtualenvs | grep -q 'pgmonkey_venv'; then
                                         echo "pgmonkey_venv still found, forcing uninstall through pyenv..."
@@ -233,6 +245,12 @@ pipeline {
                                     if [ -d ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
                                         echo "Removing existing pgmonkey_venv environment directory..."
                                         rm -rf ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
+                                    fi
+
+                                    # Remove symlinks pointing to other versions
+                                    if [ -L ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv ]; then
+                                        echo "Removing symbolic link in ${PYTHON_VERSION} pointing to another environment..."
+                                        rm ~/.pyenv/versions/${PYTHON_VERSION}/envs/pgmonkey_venv
                                     fi
 
                                     # Recheck and force removal if necessary
