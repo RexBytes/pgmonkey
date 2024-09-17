@@ -1,7 +1,19 @@
 import asyncio
+import psycopg
+import psycopg_pool
+import yaml
+import sys
 import pytest
 from pgmonkey import PGConnectionManager
 
+
+
+# Print version information at the start of the test
+def print_version_info():
+    print(f"Python version: {sys.version}")
+    print(f"psycopg version: {psycopg.__version__}")
+    print(f"psycopg_pool version: {psycopg_pool.__version__}")
+    print(f"PyYAML version: {yaml.__version__}")
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("config_file, config_name", [
@@ -12,6 +24,8 @@ from pgmonkey import PGConnectionManager
 ])
 async def test_database_connection(config_file, config_name):
     """Test real database connection with the provided config."""
+    print_version_info()  # Print version information at the start
+
     connection_manager = PGConnectionManager()
     connection = await connection_manager.get_database_connection(config_file)
 
@@ -32,7 +46,6 @@ async def test_database_connection(config_file, config_name):
                     print(f"{config_name}: {version}")
     finally:
         await connection.disconnect() if asyncio.iscoroutinefunction(connection.disconnect) else connection.disconnect()
-
 
 
 

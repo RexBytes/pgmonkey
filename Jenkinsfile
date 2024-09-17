@@ -72,7 +72,10 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        # Run pytest and save logs uniquely per combination to avoid overwriting
+                                        # Log Python and library versions
+                                        python -c "import sys, psycopg, psycopg_pool, yaml; print(f'Python {sys.version}'); print(f'psycopg version: {psycopg.__version__}'); print(f'psycopg_pool version: {psycopg_pool.__version__}'); print(f'PyYAML version: {yaml.__version__}')"
+
+                                        # Run pytest and save logs uniquely per combination
                                         pytest src/tests/integration/ 2>&1 | tee pytest_output_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}.log || \
                                         echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
@@ -135,7 +138,10 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        # Run pytest and save logs uniquely per combination to avoid overwriting
+                                        # Log Python and library versions
+                                        python -c "import sys, psycopg, psycopg_pool, yaml; print(f'Python {sys.version}'); print(f'psycopg version: {psycopg.__version__}'); print(f'psycopg_pool version: {psycopg_pool.__version__}'); print(f'PyYAML version: {yaml.__version__}')"
+
+                                        # Run pytest and save logs uniquely per combination
                                         pytest src/tests/integration/ 2>&1 | tee pytest_output_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}.log || \
                                         echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
@@ -198,7 +204,10 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        # Run pytest and save logs uniquely per combination to avoid overwriting
+                                        # Log Python and library versions
+                                        python -c "import sys, psycopg, psycopg_pool, yaml; print(f'Python {sys.version}'); print(f'psycopg version: {psycopg.__version__}'); print(f'psycopg_pool version: {psycopg_pool.__version__}'); print(f'PyYAML version: {yaml.__version__}')"
+
+                                        # Run pytest and save logs uniquely per combination
                                         pytest src/tests/integration/ 2>&1 | tee pytest_output_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}.log || \
                                         echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
