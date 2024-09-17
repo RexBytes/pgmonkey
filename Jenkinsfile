@@ -63,7 +63,12 @@ pipeline {
                                     . venv/bin/activate
 
                                     # Remove any existing pip that might be broken
-                                    rm -rf venv/lib/python*/site-packages/pip*
+                                    # First remove files, then directory
+                                    rm -rf venv/lib/python*/site-packages/pip/*
+                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info/*
+                                    rm -rf venv/lib/python*/site-packages/pip
+                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info
+
 
                                     # Download and reinstall pip using get-pip.py
                                     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
@@ -152,7 +157,12 @@ pipeline {
                                     . venv/bin/activate
 
                                     # Remove any existing pip that might be broken
-                                    rm -rf venv/lib/python*/site-packages/pip*
+                                    # First remove files, then directory
+                                    rm -rf venv/lib/python*/site-packages/pip/*
+                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info/*
+                                    rm -rf venv/lib/python*/site-packages/pip
+                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info
+
 
                                     # Download and reinstall pip using get-pip.py
                                     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
@@ -241,7 +251,12 @@ pipeline {
                                     . venv/bin/activate
 
                                     # Remove any existing pip that might be broken
-                                    rm -rf venv/lib/python*/site-packages/pip*
+                                    # First remove files, then directory
+                                    rm -rf venv/lib/python*/site-packages/pip/*
+                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info/*
+                                    rm -rf venv/lib/python*/site-packages/pip
+                                    rm -rf venv/lib/python*/site-packages/pip-*.dist-info
+
 
                                     # Download and reinstall pip using get-pip.py
                                     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
