@@ -56,14 +56,12 @@ pipeline {
                                     def VENV_NAME = "pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
 
                                     sh """
-                                        set +e  # Allow errors
-                                        # Ensure pyenv is initialized properly
+                                        set +e
                                         export PATH="\$HOME/.pyenv/bin:\$PATH"
                                         eval "\$(pyenv init --path)"
                                         eval "\$(pyenv init -)"
                                         eval "\$(pyenv virtualenv-init -)"
 
-                                        # Create or activate the virtual environment
                                         if pyenv virtualenvs | grep -q "${VENV_NAME}"; then
                                             pyenv activate ${VENV_NAME}
                                         else
@@ -74,10 +72,9 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        # Run tests
-                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                        # Run tests and generate JUnit-style XML report
+                                        pytest --junitxml=pytest_output.xml src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
-                                        # Deactivate and cleanup environment
                                         pyenv deactivate
                                         pyenv uninstall -f ${VENV_NAME}
                                     """
@@ -137,7 +134,8 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                        # Run tests and generate JUnit-style XML report
+                                        pytest --junitxml=pytest_output.xml src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
                                         pyenv deactivate
                                         pyenv uninstall -f ${VENV_NAME}
@@ -198,7 +196,8 @@ pipeline {
                                             pip install -e .
                                         fi
 
-                                        pytest src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
+                                        # Run tests and generate JUnit-style XML report
+                                        pytest --junitxml=pytest_output.xml src/tests/integration/ 2>&1 | tee pytest_output.log || echo "${PYTHON_VERSION}, ${PSYCOPG_VERSION}, ${PSYCOPG_POOL_VERSION}, ${PYAML_VERSION}: FAILED" >> test_results.csv
 
                                         pyenv deactivate
                                         pyenv uninstall -f ${VENV_NAME}
@@ -216,7 +215,8 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'test_results.csv', allowEmptyArchive: true
-        }
+        archiveArtifacts artifacts: 'test_results.csv', allowEmptyArchive: true
+        junit 'pytest_output.xml'  // This will allow Jenkins to display test results in the UI
+    }
     }
 }
