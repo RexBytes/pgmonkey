@@ -39,14 +39,20 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Clean up existing venv
+                                    # Ensure pyenv is initialized properly
+                                    export PATH="\$HOME/.pyenv/bin:\$PATH"
+                                    eval "\$(pyenv init --path)"
+                                    eval "\$(pyenv init -)"
+                                    eval "\$(pyenv virtualenv-init -)"
+
+                                    # Clean up existing virtual environment
                                     rm -rf venv
 
-                                    # Install Python version via pyenv (if needed)
+                                    # Install Python version via pyenv
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a new virtual environment
+                                    # Create a virtual environment
                                     python -m venv venv
                                     . venv/bin/activate
 
@@ -105,14 +111,20 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Clean up existing venv
+                                    # Ensure pyenv is initialized properly
+                                    export PATH="\$HOME/.pyenv/bin:\$PATH"
+                                    eval "\$(pyenv init --path)"
+                                    eval "\$(pyenv init -)"
+                                    eval "\$(pyenv virtualenv-init -)"
+
+                                    # Clean up existing virtual environment
                                     rm -rf venv
 
-                                    # Install Python version via pyenv (if needed)
+                                    # Install Python version via pyenv
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a new virtual environment
+                                    # Create a virtual environment
                                     python -m venv venv
                                     . venv/bin/activate
 
@@ -171,14 +183,20 @@ pipeline {
                         steps {
                             script {
                                 sh """
-                                    # Clean up existing venv
+                                    # Ensure pyenv is initialized properly
+                                    export PATH="\$HOME/.pyenv/bin:\$PATH"
+                                    eval "\$(pyenv init --path)"
+                                    eval "\$(pyenv init -)"
+                                    eval "\$(pyenv virtualenv-init -)"
+
+                                    # Clean up existing virtual environment
                                     rm -rf venv
 
-                                    # Install Python version via pyenv (if needed)
+                                    # Install Python version via pyenv
                                     pyenv install -s ${PYTHON_VERSION}
                                     pyenv global ${PYTHON_VERSION}
 
-                                    # Create a new virtual environment
+                                    # Create a virtual environment
                                     python -m venv venv
                                     . venv/bin/activate
 
