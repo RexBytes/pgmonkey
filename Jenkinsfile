@@ -38,9 +38,12 @@ pipeline {
                     stage('Setup Python Environment') {
                         steps {
                             script {
+                                // Define the virtual environment name in Groovy
+                                def VENV_NAME = "pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+
                                 sh """
                                     # Generate a unique virtual environment name based on the matrix parameters
-                                    VENV_NAME="pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+                                    export VENV_NAME=${VENV_NAME}
 
                                     # Ensure pyenv is initialized properly
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
@@ -114,9 +117,12 @@ pipeline {
                     stage('Setup Python Environment') {
                         steps {
                             script {
+                                // Define the virtual environment name in Groovy
+                                def VENV_NAME = "pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+
                                 sh """
                                     # Generate a unique virtual environment name based on the matrix parameters
-                                    VENV_NAME="pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+                                    export VENV_NAME=${VENV_NAME}
 
                                     # Ensure pyenv is initialized properly
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
@@ -190,9 +196,12 @@ pipeline {
                     stage('Setup Python Environment') {
                         steps {
                             script {
+                                // Define the virtual environment name in Groovy
+                                def VENV_NAME = "pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+
                                 sh """
                                     # Generate a unique virtual environment name based on the matrix parameters
-                                    VENV_NAME="pgmonkey_venv_${PYTHON_VERSION}_${PSYCOPG_VERSION}_${PSYCOPG_POOL_VERSION}_${PYAML_VERSION}"
+                                    export VENV_NAME=${VENV_NAME}
 
                                     # Ensure pyenv is initialized properly
                                     export PATH="\$HOME/.pyenv/bin:\$PATH"
