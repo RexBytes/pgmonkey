@@ -11,6 +11,7 @@ class PGPoolConnection(PostgresBaseConnection):
         self.pool_settings = pool_settings or {}
         # Directly pass connection parameters and pool settings to ConnectionPool
         self.pool = ConnectionPool(conninfo=self.construct_conninfo(self.config), **self.pool_settings)
+        self._conn = None
 
     @staticmethod
     def construct_conninfo(config):
@@ -44,9 +45,13 @@ class PGPoolConnection(PostgresBaseConnection):
         pass
 
     def __enter__(self):
-        # Return self to make it possible to use 'with PGPoolConnection(config) as conn:'
-        return self
+        """Acquire a connection from the pool."""
+        # Use `with` to correctly manage the context manager returned by the pool
+        self._conn = self.pool.connection().__enter__()  # Get a connection from the pool
+        return self._conn  # Return the connection for use in `with`
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # Ensure the pool is properly closed when exiting the context
-        self.disconnect()
+        """Close the acquired connection and return it to the pool."""
+        if self._conn:
+            self._conn.__exit__(exc_type, exc_val, exc_tb)  # Return the connection to the pool
+            self._conn = None

@@ -26,7 +26,7 @@ class PGAsyncConnection(BaseConnection):
     async def __aenter__(self):
         if self.connection is None or self.connection.closed:
             await self.connect()
-        return self
+        return self.connection
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.disconnect()

@@ -5,6 +5,11 @@ from pgmonkey.connections.postgres.async_pool_connection import PGAsyncPoolConne
 
 
 class PostgresConnectionFactory:
+
+    VALID_CONNECTION_KEYS = ['user', 'password', 'host', 'port', 'dbname', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert',
+                      'connect_timeout', 'application_name', 'keepalives', 'keepalives_idle', 'keepalives_interval',
+                      'keepalives_count']
+
     def __init__(self, config):
         self.connection_type = config['postgresql']['connection_type']
         self.config = self.filter_config(config['postgresql']['connection_settings'])
@@ -15,11 +20,11 @@ class PostgresConnectionFactory:
     @staticmethod
     def filter_config(config):
         # List of valid psycopg connection parameters
-        valid_keys = ['user', 'password', 'host', 'port', 'dbname', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert',
-                      'connect_timeout', 'application_name', 'keepalives', 'keepalives_idle', 'keepalives_interval',
-                      'keepalives_count']
+        #valid_keys = ['user', 'password', 'host', 'port', 'dbname', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert',
+        #              'connect_timeout', 'application_name', 'keepalives', 'keepalives_idle', 'keepalives_interval',
+        #              'keepalives_count']
         # Filter the config dictionary to include only the valid keys
-        return {key: config[key] for key in valid_keys if key in config}
+        return {key: config[key] for key in PostgresConnectionFactory.VALID_CONNECTION_KEYS if key in config}
 
     def get_connection(self):
         # print(self.config)

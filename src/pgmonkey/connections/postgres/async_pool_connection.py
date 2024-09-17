@@ -9,6 +9,7 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
         self.config = config
         self.pool_settings = pool_settings or {}
         self.pool = None
+        self._conn = None
 
     def construct_dsn(self):
         """Assuming self.config directly contains connection info as a dict."""
@@ -28,9 +29,13 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
     async def __aenter__(self):
         if not self.pool:
             await self.connect()
-        return self
+        # Acquire a connection from the pool
+        self._conn = await self.pool.connection().__aenter__()
+        return self._conn  # Return the actual connection for use in `async with`
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        # Release the connection back to the pool
+        await self._conn.__aexit__(exc_type, exc_val, exc_tb)
         await self.disconnect()
 
     async def test_connection(self):

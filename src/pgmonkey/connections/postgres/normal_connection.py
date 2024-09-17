@@ -31,7 +31,7 @@ class PGNormalConnection(PostgresBaseConnection):
         # Ensures the connection is established when entering the context.
         if not self.connection:
             self.connect()
-        return self
+        return self.connection
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # Closes the connection when exiting the context.
