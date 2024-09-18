@@ -444,6 +444,46 @@ if __name__ == "__main__":
     asyncio.run(main())
 </code></pre>
 
+<h2>Testing Your Connection Configurations with pgmonkey CLI</h2>
+
+<p>pgmonkey provides a powerful <strong>command-line interface (CLI)</strong> that allows users to quickly test their PostgreSQL connection configurations without needing to write or run any code. This feature is perfect for troubleshooting or verifying configurations before they are integrated into an application.</p>
+
+<h3>How to Use the CLI to Test a Connection</h3>
+
+<pre><code>
+# Test your PostgreSQL connection using the pgconfig test command
+pgmonkey pgconfig test --filepath /path/to/your/config.yaml
+</code></pre>
+
+<p>In this example:</p>
+<ul>
+    <li><strong>--filepath</strong>: Specifies the path to your YAML configuration file. This file should contain the necessary details for the connection (e.g., host, port, user, password, etc.).</li>
+</ul>
+
+<h3>Example Command</h3>
+
+<pre><code>
+pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_normal.yaml
+</code></pre>
+
+<p>This command will attempt to establish a connection based on the details in the <code>pg_normal.yaml</code> configuration file. If successful, the output will show details such as the PostgreSQL server version.</p>
+
+<h3>Other CLI Commands</h3>
+
+<p>The pgmonkey CLI also offers additional commands for managing PostgreSQL configurations and server settings:</p>
+
+<ul>
+    <li><code>pgmonkey pgconfig create</code>: Create a new configuration template.</li>
+    <li><code>pgmonkey pgserverconfig</code>: Generate server configuration recommendations based on your YAML file.</li>
+</ul>
+
+<p>For more information on how to use the CLI, run the <code>--help</code> command:</p>
+
+<pre><code>
+pgmonkey --help
+</code></pre>
+
+
         <h2>Raspberry Pi Users: Installation via PiWheels</h2>
 
 <p>If you're using a Raspberry Pi and need to manage PostgreSQL connections in Python, you're in luck! <code>pgmonkey</code> is now available on <a href="https://www.piwheels.org/project/pgmonkey/">PiWheels</a>, which provides pre-built Python packages optimized for Raspberry Pi.</p>
