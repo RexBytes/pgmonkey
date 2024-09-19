@@ -265,23 +265,33 @@ import asyncio
 from pgmonkey import PGConnectionManager
 
 async def main():
-    config_file = '/path/to/your/connection.yaml'
+    config_file = '/path/to/your/configs/pg_async.yaml'
     connection_manager = PGConnectionManager()
-    connection = await connection_manager.get_database_connection(config_file)
+
+    # Check if connection should be asynchronous or synchronous
+    if 'async' in config_file:
+        connection = await connection_manager.get_database_connection(config_file)
+    else:
+        connection = connection_manager.get_database_connection(config_file)  # Sync connection
 
     try:
-        if connection.connection_type == 'async' or connection.connection_type == 'async_pool':
+        # Handle async connection types
+        if connection.connection_type in ['async', 'async_pool']:
             async with connection as conn:
-                async with conn.connection.cursor() as cur:
+                async with conn.cursor() as cur:
                     await cur.execute('SELECT version();')
                     print(await cur.fetchone())
+
+        # Handle sync connection types
         else:
             with connection as conn:
-                with conn.connection.cursor() as cur:
+                with conn.cursor() as cur:
                     cur.execute('SELECT version();')
                     print(cur.fetchone())
+
     finally:
-        await connection.disconnect() if asyncio.iscoroutinefunction(connection.disconnect) else connection.disconnect()
+        await connection.disconnect()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -317,36 +327,62 @@ Let’s create a script that tests multiple database connections using different
 import asyncio
 from pgmonkey import PGConnectionManager
 
+# Function to test asynchronous connections
+async def test_async_connection(connection, config_name):
+    """Test an asynchronous database connection."""
+    async with connection as conn:
+        async with conn.cursor() as cur:
+            await cur.execute('SELECT version();')
+            print(f"{config_name}: {await cur.fetchone()}")
+
+# Function to test synchronous connections
+def test_sync_connection(connection, config_name):
+    """Test a synchronous database connection."""
+    with connection as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT version();')
+            print(f"{config_name}: {cur.fetchone()}")
+
 async def test_database_connection(config_file, config_name):
+    """Determine connection type and test accordingly."""
     connection_manager = PGConnectionManager()
-    connection = await connection_manager.get_database_connection(config_file)
+
+    # Check if the connection is async or sync
+    if 'async' in config_file:
+        connection = await connection_manager.get_database_connection(config_file)
+    else:
+        connection = connection_manager.get_database_connection(config_file)  # Sync connection
 
     try:
+        # Handle async connection
         if connection.connection_type in ['async', 'async_pool']:
-            async with connection as conn:
-                async with conn.connection.cursor() as cur:
-                    await cur.execute('SELECT version();')
-                    print(f"{config_name}: {await cur.fetchone()}")
+            await test_async_connection(connection, config_name)
+        # Handle sync connection
         else:
-            with connection as conn:
-                with conn.connection.cursor() as cur:
-                    cur.execute('SELECT version();')
-                    print(f"{config_name}: {cur.fetchone()}")
+            test_sync_connection(connection, config_name)
     finally:
-        await connection.disconnect() if asyncio.iscoroutinefunction(connection.disconnect) else connection.disconnect()
+        # Disconnect appropriately based on async/sync
+        if asyncio.iscoroutinefunction(connection.disconnect):
+            await connection.disconnect()
+        else:
+            connection.disconnect()
 
-if __name__ == "__main__":
+def main():
     base_dir = '/path/to/your/configs/'
     config_files = {
-        'async_pool.yaml': base_dir + 'async_pool.yaml',
-        'async.yaml': base_dir + 'async.yaml',
-        'normal.yaml': base_dir + 'normal.yaml',
-        'pool.yaml': base_dir + 'pool.yaml'
+        'pg_async_pool.yaml': base_dir + 'pg_async_pool.yaml',
+        'pg_async.yaml': base_dir + 'pg_async.yaml',
+        'pg_normal.yaml': base_dir + 'pg_normal.yaml',
+        'pg_pool.yaml': base_dir + 'pg_pool.yaml'
     }
 
+    # Run each connection test
     for config_name, config_file in config_files.items():
         print(f"Testing connection with config: {config_name}")
         asyncio.run(test_database_connection(config_file, config_name))
+
+if __name__ == "__main__":
+    main()
 ```
 
 This script loops through multiple configurations and tests each connection, printing the PostgreSQL version to confirm that the connection works as expected.
@@ -357,21 +393,21 @@ In the following script we test the pooling capability by creating
 5 connections taken from the pool.  Make sure your config file specifies enough pool connections.
 
 ```python
-#!/usr/bin/env python3
 import asyncio
 from pgmonkey import PGConnectionManager
 
+# Function to test multiple async pool connections
 async def test_multiple_async_pool_connections(config_file, num_connections):
     connection_manager = PGConnectionManager()
     connections = []
 
-    # Acquire multiple connections from the pool
+    # Acquire multiple async connections from the pool
     for _ in range(num_connections):
-        connection = await connection_manager.get_database_connection(config_file)  # Async call
+        connection = await connection_manager.get_database_connection(config_file)
         connections.append(connection)
 
     try:
-        # Use each connection
+        # Use each async connection
         for idx, connection in enumerate(connections):
             async with connection as conn:
                 async with conn.cursor() as cur:
@@ -379,22 +415,22 @@ async def test_multiple_async_pool_connections(config_file, num_connections):
                     version = await cur.fetchone()
                     print(f"Async Connection {idx + 1}: {version}")
     finally:
-        # Disconnect all connections
+        # Disconnect all async connections
         for connection in connections:
             await connection.disconnect()
 
-
-async def test_multiple_sync_pool_connections(config_file, num_connections):
+# Function to test multiple sync pool connections
+def test_multiple_sync_pool_connections(config_file, num_connections):
     connection_manager = PGConnectionManager()
     connections = []
 
-    # Acquire multiple connections from the pool (sync version)
+    # Acquire multiple sync connections from the pool
     for _ in range(num_connections):
-        connection = await connection_manager.get_database_connection(config_file)  # Await for sync
+        connection = connection_manager.get_database_connection(config_file)  # Sync call
         connections.append(connection)
 
     try:
-        # Use each connection
+        # Use each sync connection
         for idx, connection in enumerate(connections):
             with connection as conn:
                 with conn.cursor() as cur:
@@ -402,16 +438,15 @@ async def test_multiple_sync_pool_connections(config_file, num_connections):
                     version = cur.fetchone()
                     print(f"Sync Connection {idx + 1}: {version}")
     finally:
-        # Disconnect all connections
+        # Disconnect all sync connections
         for connection in connections:
-            connection.disconnect()  # Ensure async disconnect if needed
-
+            connection.disconnect()
 
 async def main():
-    base_dir = '/path/to/your/configs/'
+    base_dir = '/path/to/your/connection/configs/'
     config_files = {
-        'async_pool': base_dir + 'async_pool.yaml',
-        'pool': base_dir + 'pool.yaml'
+        'async_pool': base_dir + 'pg_async_pool.yaml',
+        'pool': base_dir + 'pg_pool.yaml'
     }
 
     num_connections = 5  # Number of connections to checkout from the pool
@@ -420,8 +455,7 @@ async def main():
     await test_multiple_async_pool_connections(config_files['async_pool'], num_connections)
 
     print("\nTesting sync pool connections:")
-    await test_multiple_sync_pool_connections(config_files['pool'], num_connections)
-
+    test_multiple_sync_pool_connections(config_files['pool'], num_connections)
 
 if __name__ == "__main__":
     asyncio.run(main())
