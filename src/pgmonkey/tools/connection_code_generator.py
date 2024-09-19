@@ -41,12 +41,12 @@ class ConnectionCodeGenerator:
 
 from pgmonkey import PGConnectionManager
 
-async def main():
+def main():
     connection_manager = PGConnectionManager()
     config_file_path = '{config_file_path}'
 
     # Get the PostgreSQL connection
-    connection = await connection_manager.get_database_connection(config_file_path)
+    connection = connection_manager.get_database_connection(config_file_path)
 
     try:
         # Use the connection synchronously
@@ -75,17 +75,14 @@ if __name__ == "__main__":
 
 from pgmonkey import PGConnectionManager
 
-async def main():
+def main():
     connection_manager = PGConnectionManager()
     config_file_path = '{config_file_path}'
 
     # Get the PostgreSQL connection from the pool
-    connection = await connection_manager.get_database_connection(config_file_path)
+    connections = [connection_manager.get_database_connection(config_file_path) for _ in range({num_connections})]
 
     try:
-        # Acquire {num_connections} connections from the pool synchronously
-        connections = [connection_manager.get_database_connection(config_file_path) for _ in range({num_connections})]
-
         # Use each connection
         for i, conn in enumerate(connections):
             with conn as connection:
