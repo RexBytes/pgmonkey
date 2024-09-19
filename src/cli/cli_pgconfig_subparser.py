@@ -1,9 +1,11 @@
 from pgmonkey.managers.pgconfig_manager import PGConfigManager
+from pgmonkey.managers.pgcodegen_manager import PGCodegenManager
 from pathlib import Path
 
 
 def cli_pgconfig_subparser(subparsers):
     pgconfig_manager = PGConfigManager()
+    pgcodegen_manager = PGCodegenManager()
 
 
     pgconfig_parser = subparsers.add_parser('pgconfig', help='Manage database configurations')
@@ -24,6 +26,12 @@ def cli_pgconfig_subparser(subparsers):
     test_parser.add_argument('--filepath', required=True, help='Path to the configuration file you want to test.')
     test_parser.set_defaults(func=pgconfig_test_handler, pgconfig_manager=pgconfig_manager)
 
+    # The "generate-code" subcommand
+    code_parser = pgconfig_subparsers.add_parser('generate-code', help='Generate Python code to connect using a configuration file.')
+    code_parser.add_argument('--filepath', required=True, help='Path to the configuration file you want to use.')
+    code_parser.set_defaults(func=pgconfig_generate_code_handler, pgcodegen_manager=pgcodegen_manager)
+
+
 
 
 def pgconfig_create_handler(args):
@@ -39,3 +47,7 @@ def pgconfig_create_handler(args):
 def pgconfig_test_handler(args):
     pgconfig_manager = args.pgconfig_manager
     pgconfig_manager.test_connection(args.filepath)
+
+def pgconfig_generate_code_handler(args):
+    pgcodegen_manager = args.pgcodegen_manager
+    pgcodegen_manager.generate_connection_code(args.filepath)
