@@ -33,12 +33,26 @@ class PGAsyncConnection(BaseConnection):
 
     async def test_connection(self):
         """Tests the asynchronous database connection."""
-        if self.connection is None or self.connection.closed:
-            await self.connect()
-        async with self.connection.cursor() as cur:
-            await cur.execute('SELECT 1;')
-            result = await cur.fetchone()
-            print("Async connection successful: ", result)
+        try:
+            # Ensure the connection is active and not closed
+            if self.connection is None or self.connection.closed:
+                await self.connect()
+
+            # Execute a simple query to test the connection
+            async with self.connection.cursor() as cur:
+                await cur.execute('SELECT 1;')
+                result = await cur.fetchone()
+                print("Async connection successful: ", result)
+
+        except OperationalError as e:
+            print(f"Connection failed: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+        finally:
+            # Optionally close the connection if needed
+            if self.connection and not self.connection.closed:
+                await self.connection.close()
+                print("Connection closed.")
 
     async def disconnect(self):
         """Closes the asynchronous database connection."""

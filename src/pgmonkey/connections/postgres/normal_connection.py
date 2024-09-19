@@ -15,12 +15,22 @@ class PGNormalConnection(PostgresBaseConnection):
 
 
     def test_connection(self):
+        """Tests a synchronous (normal) database connection."""
         try:
             with self.connection.cursor() as cur:
                 cur.execute('SELECT 1;')  # Execute a simple query to test the connection.
-                print("Connection successful: ", cur.fetchone())
+                result = cur.fetchone()
+                print("Connection successful: ", result)
+
         except OperationalError as e:
             print(f"Connection failed: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+        finally:
+            # Optionally close the connection if it should only be used for this test
+            if self.connection and not self.connection.closed:
+                self.connection.close()
+                print("Connection closed.")
 
     def disconnect(self):
         # Closes the connection to the database.

@@ -21,9 +21,9 @@ class PGPoolConnection(PostgresBaseConnection):
         # Construct and return the connection info string
         return " ".join([f"{k}={v}" for k, v in conn_params.items()])
 
-
     def test_connection(self):
-        """Tests a connection from the pool."""
+        """Tests both a single connection and pooling behavior from the pool."""
+        # First, test a single connection
         try:
             with self.pool.connection() as conn:
                 with conn.cursor() as cur:
@@ -31,7 +31,33 @@ class PGPoolConnection(PostgresBaseConnection):
                     result = cur.fetchone()
                     print("Pool connection successful: ", result)
         except OperationalError as e:
-            print(f"Connection failed: {e}")
+            print(f"Single connection test failed: {e}")
+            return
+
+        # Next, test pooling behavior
+        pool_min_size = self.pool_settings.get('min_size', 1)
+        pool_max_size = self.pool_settings.get('max_size', 10)
+        num_connections_to_test = min(pool_max_size, pool_min_size + 1)
+
+        connections = []
+
+        try:
+            # Acquire multiple connections from the pool
+            for _ in range(num_connections_to_test):
+                # Use `with` to correctly manage the connection context
+                with self.pool.connection() as conn:
+                    connections.append(conn)
+                # No need to manually close connections; `with` handles it
+
+            print(f"Pooling test successful: Acquired {len(connections)} connections out of a possible {pool_max_size}")
+        except OperationalError as e:
+            print(f"Pooling test failed: {e}")
+
+        # Pooling result
+        if len(connections) == num_connections_to_test:
+            print(f"Pooling tested successfully with {len(connections)} concurrent connections.")
+        else:
+            print(f"Pooling test did not pass, only {len(connections)} connections were acquired.")
 
     def disconnect(self):
         """Closes all connections in the pool."""

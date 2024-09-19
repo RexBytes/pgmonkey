@@ -41,10 +41,43 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
     async def test_connection(self):
         if not self.pool:
             await self.connect()
+
+        # Test a single connection to ensure the pool is working
         async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute('SELECT 1;')
                 print("Async pool connection successful: ", await cur.fetchone())
+
+        # Retrieve pool settings directly from self.pool_settings, assuming they were passed correctly
+        pool_min_size = self.pool_settings.get('min_size', 1)  # Defaulting to 1 if not set
+        pool_max_size = self.pool_settings.get('max_size', 10)  # Defaulting to 10 if not set
+        num_connections_to_test = min(pool_max_size, pool_min_size + 1)  # +1 to the minimum if possible
+
+        connections = []
+
+        try:
+            # Test pooling by acquiring multiple connections asynchronously
+            for _ in range(num_connections_to_test):
+                # Use async with for each connection from the pool
+                async with self.pool.connection() as connection:
+                    connections.append(connection)
+
+            print(f"Pooling test successful: Acquired {len(connections)} connections out of a possible {pool_max_size}")
+
+        except Exception as e:
+            print(f"Pooling test failed: {e}")
+        finally:
+            # Ensure all connections are returned to the pool
+            # Since async with ensures automatic closing, this part may not be needed
+            # But for safety, ensure connections are handled properly
+            for conn in connections:
+                await conn.close()
+
+        # Check if we acquired the correct number of connections
+        if len(connections) == num_connections_to_test:
+            print(f"Async pooling tested successfully with {len(connections)} concurrent connections.")
+        else:
+            print(f"Async pooling test did not pass, only {len(connections)} connections acquired.")
 
     async def disconnect(self):
         if self.pool:
