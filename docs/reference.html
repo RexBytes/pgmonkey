@@ -460,13 +460,45 @@ pgmonkey pgconfig test --filepath /path/to/your/config.yaml
     <li><strong>--filepath</strong>: Specifies the path to your YAML configuration file. This file should contain the necessary details for the connection (e.g., host, port, user, password, etc.).</li>
 </ul>
 
-<h3>Example Command</h3>
+<h3>Example Commands with Test Results</h3>
 
 <pre><code>
+# Test for a normal connection
 pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_normal.yaml
+
+Output:
+Connection successful:  (1,)
+Connection closed.
+Connection test completed successfully.
+
+# Test for an asynchronous connection
+pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_async.yaml
+
+Output:
+Async connection successful:  (1,)
+Connection closed.
+Connection test completed successfully.
+
+# Test for a pooled connection
+pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_pool.yaml
+
+Output:
+Pool connection successful:  (1,)
+Pooling test successful: Acquired 6 connections out of a possible 20
+Pooling tested successfully with 6 concurrent connections.
+Connection test completed successfully.
+
+# Test for an asynchronous pooled connection
+pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_async_pool.yaml
+
+Output:
+Async pool connection successful:  (1,)
+Pooling test successful: Acquired 6 connections out of a possible 20
+Async pooling tested successfully with 6 concurrent connections.
+Connection test completed successfully.
 </code></pre>
 
-<p>This command will attempt to establish a connection based on the details in the <code>pg_normal.yaml</code> configuration file. If successful, the output will show details such as the PostgreSQL server version.</p>
+<p>These commands will attempt to establish connections based on the details in your respective YAML configuration files. If successful, the output will show details such as the PostgreSQL server version and indicate whether connection pooling has been tested successfully for pooled configurations.</p>
 
 <h3>Other CLI Commands</h3>
 
@@ -482,6 +514,7 @@ pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_normal.yaml
 <pre><code>
 pgmonkey --help
 </code></pre>
+
 
 
         <h2>Raspberry Pi Users: Installation via PiWheels</h2>
