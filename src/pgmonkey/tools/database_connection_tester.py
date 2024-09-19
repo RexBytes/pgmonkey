@@ -11,27 +11,32 @@ class DatabaseConnectionTester:
             config = yaml.safe_load(file)
         return config
 
+    async def test_async_postgresql_connection(self, config_file_path):
+        """Test an asynchronous PostgreSQL connection."""
+        connection = await self.pgconnection_manager.get_database_connection(config_file_path)
+        await connection.test_connection()
+        print("Async connection test completed successfully.")
+        await connection.disconnect()
+
+    def test_sync_postgresql_connection(self, config_file_path):
+        """Test a synchronous PostgreSQL connection."""
+        connection = self.pgconnection_manager.get_database_connection(config_file_path)
+        connection.test_connection()
+        print("Sync connection test completed successfully.")
+        connection.disconnect()
 
     async def test_postgresql_connection(self, config_file_path):
+        """Determine if the connection is async or sync and run the correct test."""
         try:
-            # Load the configuration from the YAML file
+            # Load the configuration to check connection type
             config = await self.load_config(config_file_path)
-
-            # Retrieve the connection type from the YAML config
             connection_type = config['postgresql']['connection_type']
 
-            # Retrieve the database connection using the config file
-            connection = await self.pgconnection_manager.get_database_connection(config_file_path)
-
-            # Check if the connection type is async or sync based on the config file
+            # Test async or sync based on connection type
             if connection_type in ['async', 'async_pool']:
-                # Asynchronous connections, await the test_connection method
-                await connection.test_connection()
+                await self.test_async_postgresql_connection(config_file_path)
             else:
-                # Synchronous connections, just call test_connection
-                connection.test_connection()
-
-            print("Connection test completed successfully.")
+                self.test_sync_postgresql_connection(config_file_path)
 
         except Exception as e:
             print(f"An error occurred while testing the connection: {e}")
