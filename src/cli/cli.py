@@ -1,7 +1,9 @@
+import sys
 from .cli_toplevel_parser import cli_toplevel_parser
 from .cli_settings_subparser import cli_settings_subparser
 from .cli_pgconfig_subparser import cli_pgconfig_subparser
 from .cli_pg_server_config_subparser import  cli_pg_server_config_subparser
+from .cli_import_subparser import cli_pgimport_subparser
 
 
 class CLI:
@@ -14,10 +16,16 @@ class CLI:
         cli_settings_subparser(self.subparsers)
         cli_pgconfig_subparser(self.subparsers)
         cli_pg_server_config_subparser(self.subparsers)
+        cli_pgimport_subparser(self.subparsers)
 
     def run(self):
         # Parse all arguments from the command line into argparse.
         args = self.parser.parse_args()
+
+        # If no command is provided, print help
+        if len(sys.argv) == 1:
+            self.parser.print_help(sys.stderr)
+            sys.exit(1)
         # This bit here feels like magic, let me explain.
         # You already have defined parser and subparser logic which the argparse module understands.
         # If you give it say "pgmonkey settings --helloworld" it knows it needs to looks at your

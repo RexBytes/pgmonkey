@@ -1,4 +1,4 @@
 psycopg[binary]>=3.1.20,<3.3.0
 psycopg_pool>=3.1.9,<3.3.0
 PyYAML>=5.4.1,<7.0
-
+chardet~=5.2.0
