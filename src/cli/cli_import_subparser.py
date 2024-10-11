@@ -10,7 +10,7 @@ def cli_pgimport_subparser(subparsers):
     # Required arguments: CSV file to import, table name, and connection config
     pgimport_parser.add_argument('import_file', type=str, help='Path to the file to import.')
     pgimport_parser.add_argument('--table', type=str, required=True, help='Name of the target table in the database (schema.table or table).')
-    pgimport_parser.add_argument('--config', type=str, required=True, help='Path to the connection config file.')
+    pgimport_parser.add_argument('--connconfig', type=str, required=True, help='Path to the connection config file.')
 
     # Set the default function to handle the import command
     pgimport_parser.set_defaults(func=pgimport_handler, pgimport_manager=pgimport_manager)
@@ -31,14 +31,14 @@ def pgimport_handler(args):
     table_name = args.table
 
     # Get the mandatory connection config file
-    connection_config = Path(args.config)
+    connection_config = Path(args.connconfig)
 
     if not connection_config.exists():
         print(f"Connection config file not found: {connection_config}")
         return
 
     # Proceed with importing the file (the settings file is automatically derived)
-    print(f"Starting import for file: {import_file} into table: {table_name}")
+    # print(f"Starting import for file: {import_file} into table: {table_name}")
     pgimport_manager.import_file(import_file, table_name, connection_config)
     print("Import complete.")
 

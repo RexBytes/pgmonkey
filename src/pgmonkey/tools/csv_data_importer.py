@@ -8,6 +8,8 @@ import sys
 import aiofiles
 from pgmonkey import PGConnectionManager
 from pathlib import Path
+from tqdm import tqdm
+from tqdm.asyncio import tqdm as tqdm_async
 
 class CSVDataImporter:
     def __init__(self, config_file, csv_file, table_name, import_config_file=None):
@@ -134,7 +136,7 @@ class CSVDataImporter:
             columns_definitions = ", ".join([f"{col} TEXT" for col in formatted_headers])
             create_table_query = f"CREATE TABLE {self.schema_name}.{self.table_name} ({columns_definitions})"
             cur.execute(create_table_query)
-            print(f"Table {self.schema_name}.{self.table_name} created successfully.")
+            #print(f"Table {self.schema_name}.{self.table_name} created successfully.")
 
     async def _create_table_async(self, connection, formatted_headers):
         """Asynchronous table creation based on formatted CSV headers."""
@@ -142,7 +144,7 @@ class CSVDataImporter:
             columns_definitions = ", ".join([f"{col} TEXT" for col in formatted_headers])
             create_table_query = f"CREATE TABLE {self.schema_name}.{self.table_name} ({columns_definitions})"
             await cur.execute(create_table_query)
-            print(f"Table {self.schema_name}.{self.table_name} created successfully.")
+            #print(f"Table {self.schema_name}.{self.table_name} created successfully.")
 
     def _sync_ingest(self, connection):
         """Handles synchronous CSV ingestion using COPY for bulk insert."""
@@ -154,95 +156,104 @@ class CSVDataImporter:
                 if self.has_headers:
                     header = next(reader)  # Read the header row
                     formatted_headers = self._format_column_names(header)
-                    print(f"CSV headers: {header}")
-                    print(f"Formatted headers: {formatted_headers}")
+                    print("\nCSV Headers (Original):")
+                    print(header)
+                    print("\nFormatted Headers for DB:")
+                    print(formatted_headers)
                 else:
-                    # No headers, generate default column names based on the first row's length
                     first_row = next(reader)
                     num_columns = len(first_row)
                     formatted_headers = self._generate_column_names(num_columns)  # Generate column_1, column_2, etc.
-                    file.seek(0)  # Reset file to the start, no need to skip the first row
+                    file.seek(0)  # Reset file to the start
+
+                # Include the schema name in the output
+                print(f"\nStarting import for file: {self.csv_file} into table: {self.schema_name}.{self.table_name}")
 
                 if not self._check_table_exists_sync(connection):
-                    # If no table exists, create it based on the headers (or generated names)
+                    # If no table exists, create it based on the headers
                     self._create_table_sync(connection, formatted_headers)
-                    print(f"Table {self.schema_name}.{self.table_name} created successfully.")
+                    print(f"\nTable {self.schema_name}.{self.table_name} created successfully.")
                 else:
-                    # If table exists, compare headers to ensure they match
                     cur.execute(
-                        f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}' ORDER BY ordinal_position"
-                    )
+                        f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}' ORDER BY ordinal_position")
                     existing_columns = [row[0] for row in cur.fetchall()]
-                    print(f"Existing table columns: {existing_columns}")
-
                     if formatted_headers != existing_columns:
                         raise ValueError(f"CSV headers do not match existing table columns: {existing_columns}")
 
-                # Copy row-by-row using write_row()
-                with cur.copy(
-                        f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN") as copy:
-                    for row in reader:
-                        #print(f"Row to be copied: {row}")
-                        copy.write_row(row)
+                # Count rows for progress bar
+                total_lines = sum(1 for row in reader)
+                file.seek(0)
+                if self.has_headers:
+                    next(reader)  # Skip the header row
+
+                with tqdm(total=total_lines, desc="Importing data", unit="rows") as progress:
+                    with cur.copy(
+                            f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN") as copy:
+                        for row in reader:
+                            copy.write_row(row)
+                            progress.update(1)  # Update progress bar after each row
 
                 connection.commit()
 
                 # Check row count after COPY
                 cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
                 row_count = cur.fetchone()[0]
-                print(f"Row count after COPY: {row_count}")
+                print(f"\nRow count after COPY: {row_count}")
 
-            print(f"Data from {self.csv_file} copied to {self.table_name}.")
+            print(f"\nData from {self.csv_file} copied to {self.schema_name}.{self.table_name}.")
 
     async def _async_ingest(self, connection):
         """Handles asynchronous CSV ingestion using COPY for bulk insert."""
         async with connection.cursor() as cur:
-            # Open the CSV file to prepare for ingestion
             async with aiofiles.open(self.csv_file, mode='r', encoding=self.encoding) as file:
                 reader = csv.reader(await file.readline(), delimiter=self.delimiter, quotechar=self.quotechar)
 
                 if self.has_headers:
                     header = next(reader)  # Read the header row
                     formatted_headers = self._format_column_names(header)
-                    print(f"CSV headers: {header}")
-                    print(f"Formatted headers: {formatted_headers}")
+                    print("\nCSV Headers (Original):")
+                    print(header)
+                    print("\nFormatted Headers for DB:")
+                    print(formatted_headers)
                 else:
-                    # No headers, generate default column names based on the first row's length
                     first_row = next(reader)
                     num_columns = len(first_row)
-                    formatted_headers = self._generate_column_names(num_columns)  # Generate column_1, column_2, etc.
-                    await file.seek(0)  # Reset file to the start, no need to skip the first row
+                    formatted_headers = self._generate_column_names(num_columns)
+                    await file.seek(0)
+
+                # Include the schema name in the output
+                print(f"\nStarting import for file: {self.csv_file} into table: {self.schema_name}.{self.table_name}")
 
                 if not await self._check_table_exists_async(connection):
-                    # If no table exists, create it based on the headers (or generated names)
                     await self._create_table_async(connection, formatted_headers)
-                    print(f"Table {self.schema_name}.{self.table_name} created successfully.")
+                    print(f"\nTable {self.schema_name}.{self.table_name} created successfully.")
                 else:
-                    # If table exists, compare headers to ensure they match
                     await cur.execute(
-                        f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}' ORDER BY ordinal_position"
-                    )
+                        f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}' ORDER BY ordinal_position")
                     existing_columns = [row[0] for row in await cur.fetchall()]
-                    print(f"Existing table columns: {existing_columns}")
-
                     if formatted_headers != existing_columns:
                         raise ValueError(f"CSV headers do not match existing table columns: {existing_columns}")
 
-                # Copy row-by-row using write_row()
-                async with cur.copy(
-                        f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN") as copy:
-                    for row in reader:
-                        #print(f"Row to be copied: {row}")
-                        await copy.write_row(row)
+                total_lines = sum(1 for row in reader)
+                await file.seek(0)
+                if self.has_headers:
+                    await file.readline()  # Skip the header row
+
+                async with tqdm(total=total_lines, desc="Importing data", unit="rows") as progress:
+                    async with cur.copy(
+                            f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN") as copy:
+                        for row in reader:
+                            await copy.write_row(row)
+                            progress.update(1)  # Update progress bar after each row
 
                 await connection.commit()
 
                 # Check row count after COPY
                 await cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
                 row_count = await cur.fetchone()[0]
-                print(f"Row count after COPY: {row_count}")
+                print(f"\nRow count after COPY: {row_count}")
 
-            print(f"Data from {self.csv_file} copied to {self.table_name}.")
+            print(f"\nData from {self.csv_file} copied to {self.schema_name}.{self.table_name}.")
 
     def _check_table_exists_sync(self, connection):
         """Synchronous check if the table exists in the database."""
