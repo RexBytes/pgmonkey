@@ -205,7 +205,11 @@ class CSVDataImporter:
                         f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}' ORDER BY ordinal_position")
                     existing_columns = [row[0] for row in cur.fetchall()]
                     if formatted_headers != existing_columns:
-                        raise ValueError(f"CSV headers do not match existing table columns: {existing_columns}")
+                        raise ValueError(
+                            f"CSV headers do not match the existing table columns.\n"
+                            f"Expected columns: {existing_columns}\n"
+                            f"CSV headers: {formatted_headers}"
+                        )
 
                 # Count rows for progress bar
                 total_lines = sum(1 for row in reader)
@@ -259,7 +263,11 @@ class CSVDataImporter:
                         f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}' ORDER BY ordinal_position")
                     existing_columns = [row[0] for row in await cur.fetchall()]
                     if formatted_headers != existing_columns:
-                        raise ValueError(f"CSV headers do not match existing table columns: {existing_columns}")
+                        raise ValueError(
+                            f"CSV headers do not match the existing table columns.\n"
+                            f"Expected columns: {existing_columns}\n"
+                            f"CSV headers: {formatted_headers}"
+                        )
 
                 total_lines = sum(1 for row in reader)
                 await file.seek(0)
