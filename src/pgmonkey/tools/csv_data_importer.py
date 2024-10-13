@@ -64,7 +64,8 @@ class CSVDataImporter:
 
     def _prepopulate_import_config(self):
         """Automatically creates the import config file by analyzing the CSV file using csv.Sniffer and guessing the encoding."""
-        print(f"Import config file '{self.import_config_file}' not found. Creating it using csv.Sniffer and encoding detection.")
+        print(
+            f"Import config file '{self.import_config_file}' not found. Creating it using csv.Sniffer and encoding detection.")
 
         # Guess the file's encoding
         with open(self.csv_file, 'rb') as raw_file:
@@ -88,7 +89,7 @@ class CSVDataImporter:
             delimiter = ','
             has_headers = True
 
-        # Prepare the default import settings with appended comments
+        # Prepare the default import settings
         default_config = {
             'has_headers': has_headers,
             'auto_create_table': True,
@@ -98,9 +99,36 @@ class CSVDataImporter:
             'encoding': encoding
         }
 
-        # Write the settings and comments to the import config file
+        # Write the settings to the import config file
         with open(self.import_config_file, 'w') as config_file:
             yaml.dump(default_config, config_file)
+
+            # Append comments
+            config_file.write("""
+    # Import configuration options:
+    #
+    # Booleans here can be True or False as required. 
+    #
+    # has_headers: Boolean - True if the first row in the CSV contains column headers.
+    # auto_create_table: Boolean - If True, the importer will automatically create the table if it doesn't exist.
+    # enforce_lowercase: Boolean - If True, the importer will enforce lowercase and underscores in column names.
+    # delimiter: String - The character used to separate columns in the CSV file.
+    #    Common delimiters include:
+    #    - ',' (comma): Most common for CSV files.
+    #    - ';' (semicolon): Used in some European countries.
+    #    - '\\t' (tab): Useful for tab-separated files.
+    #    - '|' (pipe): Used when data contains commas.
+    # quotechar: String - The character used to quote fields containing special characters (e.g., commas).
+    # encoding: String - The character encoding used by the CSV file. Below are common encodings:
+    #    - utf-8: Standard encoding for most modern text, default for many systems.
+    #    - iso-8859-1: Commonly used for Western European languages (English, German, French, Spanish).
+    #    - iso-8859-2: Commonly used for Central and Eastern Europe languages (Polish, Czech, Hungarian, Croatian).
+    #    - cp1252: Common in Windows environments for Western European languages.
+    #    - utf-16: Used when working with files that have Unicode characters beyond standard utf-8.
+    #    - ascii: Older encoding, supports basic English characters only.
+    #
+    # You can modify these settings based on the specifics of your CSV file.
+    """)
 
         print(f"Import configuration file '{self.import_config_file}' has been created.")
         print("Please review the file and adjust settings if necessary before running the import process again.")
