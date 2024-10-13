@@ -4,6 +4,7 @@ from .cli_settings_subparser import cli_settings_subparser
 from .cli_pgconfig_subparser import cli_pgconfig_subparser
 from .cli_pg_server_config_subparser import  cli_pg_server_config_subparser
 from .cli_import_subparser import cli_pgimport_subparser
+from .cli_export_subparser import cli_pgexport_subparser
 
 
 class CLI:
@@ -17,6 +18,7 @@ class CLI:
         cli_pgconfig_subparser(self.subparsers)
         cli_pg_server_config_subparser(self.subparsers)
         cli_pgimport_subparser(self.subparsers)
+        cli_pgexport_subparser(self.subparsers)
 
     def run(self):
         # Parse all arguments from the command line into argparse.

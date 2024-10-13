@@ -44,7 +44,6 @@ class CSVDataImporter:
         self.has_headers = import_settings.get('has_headers', True)
         self.auto_create_table = import_settings.get('auto_create_table', True)
         self.enforce_lowercase = import_settings.get('enforce_lowercase', True)
-        self.batch_size = import_settings.get('batch_size', 1000)
         self.delimiter = import_settings.get('delimiter', ',')
         self.quotechar = import_settings.get('quotechar', '"')
         self.encoding = import_settings.get('encoding', 'utf-8')
