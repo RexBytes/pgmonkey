@@ -9,7 +9,6 @@ import aiofiles
 from pgmonkey import PGConnectionManager
 from pathlib import Path
 from tqdm import tqdm
-from tqdm.asyncio import tqdm as tqdm_async
 
 class CSVDataImporter:
     def __init__(self, config_file, csv_file, table_name, import_config_file=None):
