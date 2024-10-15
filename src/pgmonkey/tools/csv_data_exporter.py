@@ -34,12 +34,12 @@ class CSVDataExporter:
         else:
             self.export_config_file = export_config_file
 
+        # Initialize the connection manager (this was missing)
+        self.connection_manager = PGConnectionManager()
+
         # Check if the export configuration file exists
         if not os.path.exists(self.export_config_file):
             self._prepopulate_export_config()
-
-        # Initialize the connection manager
-        self.connection_manager = PGConnectionManager()
 
         # Load export settings from the config file
         with open(self.export_config_file, 'r') as config_file:
@@ -58,16 +58,24 @@ class CSVDataExporter:
             self.connection_type = connection_config['postgresql'].get('connection_type', 'normal')
 
     def _prepopulate_export_config(self):
-        """Automatically creates the export config file with default settings."""
-        print(f"Export config file '{self.export_config_file}' not found. Creating it with default settings.")
+        """Automatically creates the export config file and detects the database encoding."""
+        print(f"Export config file '{self.export_config_file}' not found. Creating it with auto-detected settings.")
 
-        # Prepare the default export settings
+        # Connect to the database and retrieve the encoding
+        with self.connection_manager.get_database_connection(self.config_file) as connection:
+            with connection.cursor() as cur:
+                # Query to detect the current database encoding
+                cur.execute("SHOW client_encoding")
+                db_encoding = cur.fetchone()[0]
+
+        # Prepare the default export settings, defaulting to UTF-8 for the export
         default_config = {
             'has_headers': True,
+            'auto_create_table': True,
             'enforce_lowercase': True,
             'delimiter': ',',
             'quotechar': '"',
-            'encoding': 'utf-8'
+            'encoding': 'utf-8'  # Default encoding for export
         }
 
         # Write the settings to the export config file
@@ -75,6 +83,7 @@ class CSVDataExporter:
             yaml.dump(default_config, config_file)
 
             # Append comments
+            config_file.write(f"# Original database encoding: {db_encoding}\n")
             config_file.write("""
     # Export configuration options:
     #
@@ -96,8 +105,6 @@ class CSVDataExporter:
     #    - cp1252: Common in Windows environments for Western European languages.
     #    - utf-16: Used when working with files that have Unicode characters beyond standard utf-8.
     #    - ascii: Older encoding, supports basic English characters only.
-    #
-    # You can modify these settings based on the specifics of your CSV file.
     """)
 
         print(f"Export configuration file '{self.export_config_file}' has been created.")
@@ -112,41 +119,75 @@ class CSVDataExporter:
             return [header.lower().replace(" ", "_") for header in headers]
         return headers
 
+    def _set_client_encoding(self, cur):
+        """Set the client encoding only if it is different from the database's default."""
+        # Get the current client encoding
+        cur.execute("SHOW client_encoding")
+        original_encoding = cur.fetchone()[0]
+
+        # Set the desired encoding if different from the original one
+        if self.encoding.lower() != original_encoding.lower():
+            cur.execute(f"SET CLIENT_ENCODING TO '{self.encoding}'")
+            print(f"Client encoding set to: {self.encoding}")
+        return original_encoding
+
+    def _restore_client_encoding(self, cur, original_encoding):
+        """Restore the original client encoding after the export."""
+        if self.encoding.lower() != original_encoding.lower():
+            cur.execute(f"SET CLIENT_ENCODING TO '{original_encoding}'")
+            print(f"Restored client encoding to: {original_encoding}")
+
     def _sync_export(self, connection):
         """Handles synchronous export of the table data to CSV using COPY TO with a progress bar."""
         with connection.cursor() as cur:
-            # Get the total number of rows for the progress bar
-            cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
-            total_rows = cur.fetchone()[0]
+            # Set client encoding if necessary
+            original_encoding = self._set_client_encoding(cur)
 
-            # Open the CSV file and write data
-            with open(self.csv_file, 'wb') as file:  # Open in binary mode
-                # Use the COPY TO command to stream the data from PostgreSQL
-                with cur.copy(f"COPY {self.schema_name}.{self.table_name} TO STDOUT WITH CSV HEADER") as copy:
-                    with tqdm(total=total_rows, desc="Exporting data", unit="rows") as progress:
-                        for data in copy:
-                            file.write(data)  # Write the memoryview directly to the file
-                            progress.update(1)  # Update progress bar after each chunk
+            try:
+                # Get the total number of rows for the progress bar
+                cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
+                total_rows = cur.fetchone()[0]
 
-            print(f"\nData from {self.schema_name}.{self.table_name} exported to {self.csv_file}.")
+                # Open the CSV file and write data
+                with open(self.csv_file, 'wb') as file:  # Open in binary mode
+                    # Use the COPY TO command to stream the data from PostgreSQL
+                    with cur.copy(f"COPY {self.schema_name}.{self.table_name} TO STDOUT WITH CSV HEADER") as copy:
+                        with tqdm(total=total_rows, desc="Exporting data", unit="rows") as progress:
+                            for data in copy:
+                                file.write(data)  # Write the memoryview directly to the file
+                                progress.update(1)  # Update progress bar after each chunk
+
+                print(f"\nData from {self.schema_name}.{self.table_name} exported to {self.csv_file}.")
+
+            finally:
+                # Restore the original client encoding
+                self._restore_client_encoding(cur, original_encoding)
 
     async def _async_export(self, connection):
         """Handles asynchronous export of the table data to CSV using COPY TO with a progress bar."""
         async with connection.cursor() as cur:
-            # Get the total number of rows for the progress bar
-            await cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
-            total_rows = (await cur.fetchone())[0]
+            # Set client encoding if necessary
+            original_encoding = await self._set_client_encoding(cur)
 
-            # Open the CSV file asynchronously and write data
-            async with aiofiles.open(self.csv_file, 'wb') as file:  # Open in binary mode
-                # Use the COPY TO command to stream the data from PostgreSQL
-                async with cur.copy(f"COPY {self.schema_name}.{self.table_name} TO STDOUT WITH CSV HEADER") as copy:
-                    with tqdm(total=total_rows, desc="Exporting data", unit="rows") as progress:
-                        async for data in copy:
-                            await file.write(data)  # Write the memoryview directly to the file
-                            progress.update(1)  # Update progress bar for each chunk
+            try:
+                # Get the total number of rows for the progress bar
+                await cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
+                total_rows = (await cur.fetchone())[0]
 
-            print(f"\nData from {self.schema_name}.{self.table_name} exported to {self.csv_file}.")
+                # Open the CSV file asynchronously and write data
+                async with aiofiles.open(self.csv_file, 'wb') as file:  # Open in binary mode
+                    # Use the COPY TO command to stream the data from PostgreSQL
+                    async with cur.copy(f"COPY {self.schema_name}.{self.table_name} TO STDOUT WITH CSV HEADER") as copy:
+                        with tqdm(total=total_rows, desc="Exporting data", unit="rows") as progress:
+                            async for data in copy:
+                                await file.write(data)  # Write the memoryview directly to the file
+                                progress.update(1)  # Update progress bar for each chunk
+
+                print(f"\nData from {self.schema_name}.{self.table_name} exported to {self.csv_file}.")
+
+            finally:
+                # Restore the original client encoding
+                await self._restore_client_encoding(cur, original_encoding)
 
     async def run(self):
         """Main method to handle connection type and start the export process."""

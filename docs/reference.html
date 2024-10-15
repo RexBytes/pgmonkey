@@ -513,6 +513,8 @@ Connection test completed successfully.
     <li><code>pgmonkey pgconfig create</code>: Create a new configuration template.</li>
     <li><code>pgmonkey pgconfig generate-code</code>: Generate example Python code to connect using your configuration file.</li>
     <li><code>pgmonkey pgserverconfig</code>: Generate server configuration recommendations based on your YAML file.</li>
+    <li><code>pgmonkey pgimport</code>: Import data from a CSV or text file into a PostgreSQL table. Requires the table name, connection configuration, and the file to be imported.</li>
+    <li><code>pgmonkey pgexport</code>: Export data from a PostgreSQL table to a CSV file. Requires the table name and connection configuration, with an optional path for the output file.</li>
 </ul>
 
 
@@ -521,6 +523,52 @@ Connection test completed successfully.
 <pre><code>
 pgmonkey --help
 </code></pre>
+
+<h2>Importing and Exporting Data</h2>
+
+<p>This section covers the usage of the <code>pgmonkey</code> command-line tool for importing and exporting data with PostgreSQL.</p>
+
+<h3>Importing Data</h3>
+<p>The <code>pgimport</code> command allows you to import CSV or text files into a specified PostgreSQL table. You must specify the table name and a connection configuration file, along with the file to import.</p>
+
+<h4>Usage:</h4>
+<pre><code>pgmonkey pgimport --table &lt;TABLE&gt; --connconfig &lt;CONFIG_FILE&gt; &lt;IMPORT_FILE&gt;</code></pre>
+
+<h4>Options:</h4>
+<ul>
+    <li><strong>import_file</strong>: The path to the CSV file or text file that you want to import into the database.</li>
+    <li><strong>--table</strong> (required): The target table name in the database. You can specify the table as <code>schema.table</code> or just <code>table</code>.</li>
+    <li><strong>--connconfig</strong> (required): The path to the connection configuration file, which defines how to connect to the PostgreSQL database.</li>
+</ul>
+
+<h4>Example Command:</h4>
+<pre><code>pgmonkey pgimport --table public.my_table --connconfig /path/to/connection_config.yaml /path/to/data.csv</code></pre>
+
+<h4>Note:</h4>
+<ul>
+    <li>If an import configuration file (YAML) doesn't exist, a template will automatically be generated for you. You can edit this template to adjust settings such as column mapping, delimiter, or encoding before running the import again.</li>
+</ul>
+
+<h3>Exporting Data</h3>
+<p>The <code>pgexport</code> command allows you to export data from a PostgreSQL table into a CSV file. You must provide the table name and connection configuration file. Optionally, you can specify a custom output file for the exported data.</p>
+
+<h4>Usage:</h4>
+<pre><code>pgmonkey pgexport --table &lt;TABLE&gt; --connconfig &lt;CONFIG_FILE&gt; [--export_file &lt;CSV_FILE&gt;]</code></pre>
+
+<h4>Options:</h4>
+<ul>
+    <li><strong>--table</strong> (required): The name of the table you want to export from the database. Specify as <code>schema.table</code> or just <code>table</code>.</li>
+    <li><strong>--connconfig</strong> (required): The path to the connection configuration file, which defines how to connect to the PostgreSQL database.</li>
+    <li><strong>--export_file</strong> (optional): The path to the CSV file where the data will be exported. If not provided, a default file will be generated using the table name.</li>
+</ul>
+
+<h4>Example Command:</h4>
+<pre><code>pgmonkey pgexport --table public.my_table --connconfig /path/to/connection_config.yaml --export_file /path/to/output.csv</code></pre>
+
+<h4>Notes:</h4>
+<ul>
+    <li>Both import and export operation
+
 
         <h2>Commands and Results for Code Generation</h2>
 
