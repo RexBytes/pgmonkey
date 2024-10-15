@@ -469,7 +469,7 @@ pgmonkey pgconfig test --filepath /path/to/your/config.yaml
 
 <pre><code>
 # Test for a normal connection
-pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_normal.yaml
+pgmonkey pgconfig test --connconfig ~/myconnectionconfigs/pg_normal.yaml
 
 Output:
 Connection successful:  (1,)
@@ -477,7 +477,7 @@ Connection closed.
 Connection test completed successfully.
 
 # Test for an asynchronous connection
-pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_async.yaml
+pgmonkey pgconfig test --connconfig ~/myconnectionconfigs/pg_async.yaml
 
 Output:
 Async connection successful:  (1,)
@@ -485,7 +485,7 @@ Connection closed.
 Connection test completed successfully.
 
 # Test for a pooled connection
-pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_pool.yaml
+pgmonkey pgconfig test --connconfig ~/myconnectionconfigs/pg_pool.yaml
 
 Output:
 Pool connection successful:  (1,)
@@ -494,7 +494,7 @@ Pooling tested successfully with 6 concurrent connections.
 Connection test completed successfully.
 
 # Test for an asynchronous pooled connection
-pgmonkey pgconfig test --filepath ~/myconnectionconfigs/pg_async_pool.yaml
+pgmonkey pgconfig test --connconfig ~/myconnectionconfigs/pg_async_pool.yaml
 
 Output:
 Async pool connection successful:  (1,)
