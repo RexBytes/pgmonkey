@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from tqdm import tqdm
 from pgmonkey import PGConnectionManager
+from copy import deepcopy  # To make a copy of the YAML configuration
 
 
 class CSVDataExporter:
@@ -34,7 +35,7 @@ class CSVDataExporter:
         else:
             self.export_config_file = export_config_file
 
-        # Initialize the connection manager (this was missing)
+        # Initialize the connection manager
         self.connection_manager = PGConnectionManager()
 
         # Check if the export configuration file exists
@@ -56,6 +57,45 @@ class CSVDataExporter:
         with open(self.config_file, 'r') as config_file:
             connection_config = yaml.safe_load(config_file)
             self.connection_type = connection_config['postgresql'].get('connection_type', 'normal')
+
+        # Modify the connection type for export/import if needed
+        self.connection_config = self.modify_connection_type_for_export(connection_config)
+
+    def modify_connection_type_for_export(self, connection_config):
+        """Modify the connection type to 'normal' if it's 'async' or 'async_pool'."""
+        current_type = connection_config['postgresql'].get('connection_type')
+
+        # Check if the connection type needs to be modified
+        if current_type in ['async', 'async_pool']:
+            print(f"Detected connection type: {current_type}.")
+            print("For export/import operations, async connections can be slower.")
+            print("Switching to 'normal' connection for better performance.")
+
+            # Deep copy the configuration so the original YAML file isn't modified
+            modified_config = deepcopy(connection_config)
+            modified_config['postgresql']['connection_type'] = 'normal'
+            return modified_config
+
+        return connection_config  # No change if it's already 'normal' or 'pool'
+
+    def _set_client_encoding(self, cur):
+        """Set the client encoding only if it is different from the database's default."""
+        # Get the current client encoding
+        cur.execute("SHOW client_encoding")
+        original_encoding = cur.fetchone()[0]
+
+        # Set the desired encoding if different from the original one
+        if self.encoding.lower() != original_encoding.lower():
+            cur.execute(f"SET CLIENT_ENCODING TO '{self.encoding}'")
+            print(f"Client encoding set to: {self.encoding}")
+
+        return original_encoding
+
+    def _restore_client_encoding(self, cur, original_encoding):
+        """Restore the original client encoding after the export."""
+        if self.encoding.lower() != original_encoding.lower():
+            cur.execute(f"SET CLIENT_ENCODING TO '{original_encoding}'")
+            print(f"Restored client encoding to: {original_encoding}")
 
     def _prepopulate_export_config(self):
         """Automatically creates the export config file and detects the database encoding."""
@@ -113,30 +153,6 @@ class CSVDataExporter:
         # Exit the process to allow the user to review the file
         sys.exit(0)
 
-    def _format_column_names(self, headers):
-        """Formats column names by lowercasing and replacing spaces with underscores."""
-        if self.enforce_lowercase:
-            return [header.lower().replace(" ", "_") for header in headers]
-        return headers
-
-    def _set_client_encoding(self, cur):
-        """Set the client encoding only if it is different from the database's default."""
-        # Get the current client encoding
-        cur.execute("SHOW client_encoding")
-        original_encoding = cur.fetchone()[0]
-
-        # Set the desired encoding if different from the original one
-        if self.encoding.lower() != original_encoding.lower():
-            cur.execute(f"SET CLIENT_ENCODING TO '{self.encoding}'")
-            print(f"Client encoding set to: {self.encoding}")
-        return original_encoding
-
-    def _restore_client_encoding(self, cur, original_encoding):
-        """Restore the original client encoding after the export."""
-        if self.encoding.lower() != original_encoding.lower():
-            cur.execute(f"SET CLIENT_ENCODING TO '{original_encoding}'")
-            print(f"Restored client encoding to: {original_encoding}")
-
     def _sync_export(self, connection):
         """Handles synchronous export of the table data to CSV using COPY TO with a progress bar."""
         with connection.cursor() as cur:
@@ -163,39 +179,27 @@ class CSVDataExporter:
                 # Restore the original client encoding
                 self._restore_client_encoding(cur, original_encoding)
 
-    async def _async_export(self, connection):
-        """Handles asynchronous export of the table data to CSV using COPY TO with a progress bar."""
-        async with connection.cursor() as cur:
-            # Set client encoding if necessary
-            original_encoding = await self._set_client_encoding(cur)
-
-            try:
-                # Get the total number of rows for the progress bar
-                await cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
-                total_rows = (await cur.fetchone())[0]
-
-                # Open the CSV file asynchronously and write data
-                async with aiofiles.open(self.csv_file, 'wb') as file:  # Open in binary mode
-                    # Use the COPY TO command to stream the data from PostgreSQL
-                    async with cur.copy(f"COPY {self.schema_name}.{self.table_name} TO STDOUT WITH CSV HEADER") as copy:
-                        with tqdm(total=total_rows, desc="Exporting data", unit="rows") as progress:
-                            async for data in copy:
-                                await file.write(data)  # Write the memoryview directly to the file
-                                progress.update(1)  # Update progress bar for each chunk
-
-                print(f"\nData from {self.schema_name}.{self.table_name} exported to {self.csv_file}.")
-
-            finally:
-                # Restore the original client encoding
-                await self._restore_client_encoding(cur, original_encoding)
-
     async def run(self):
         """Main method to handle connection type and start the export process."""
-        if self.connection_type in ['async', 'async_pool']:
-            # Async connection
-            async with self.connection_manager.get_database_connection(self.config_file) as connection:
+        # No need to load or modify the connection config again, since it's done in __init__
+        connection_config = self.connection_config  # Use the already modified connection config
+
+        # Extract the modified connection type
+        connection_type = connection_config['postgresql'].get('connection_type', 'normal')
+
+        # Check if the connection is async or sync
+        if connection_type in ['async', 'async_pool']:
+            # Async connection: await the async operations
+            async with self.connection_manager.get_database_connection_from_dict(connection_config) as connection:
                 await self._async_export(connection)
         else:
-            # Sync connection
-            with self.connection_manager.get_database_connection(self.config_file) as connection:
-                await asyncio.to_thread(self._sync_export, connection)
+            # Sync connection: run the sync export with a normal context manager (no async)
+            with self.connection_manager.get_database_connection_from_dict(connection_config) as connection:
+                self._sync_export(connection)  # Blocking sync export
+
+
+
+
+
+
+

@@ -9,6 +9,8 @@ import aiofiles
 from pgmonkey import PGConnectionManager
 from pathlib import Path
 from tqdm import tqdm
+from copy import deepcopy
+
 
 class CSVDataImporter:
     def __init__(self, config_file, csv_file, table_name, import_config_file=None):
@@ -48,10 +50,23 @@ class CSVDataImporter:
         self.quotechar = import_settings.get('quotechar', '"')
         self.encoding = import_settings.get('encoding', 'utf-8')
 
-        # Extract the connection type directly from the connection config
-        with open(self.config_file, 'r') as config_file:
-            connection_config = yaml.safe_load(config_file)
-            self.connection_type = connection_config['postgresql'].get('connection_type', 'normal')
+    def modify_connection_type_for_import(self, connection_config):
+        """Modify the connection type to 'normal' if it's 'async' or 'async_pool'."""
+        current_type = connection_config['postgresql'].get('connection_type')
+
+        # Check if the connection type needs to be modified
+        if current_type in ['async', 'async_pool']:
+            print(f"Detected connection type: {current_type}.")
+            print("For import/export operations, async connections can be slower.")
+            print("Switching to 'normal' connection for better performance.")
+
+            # Deep copy the configuration so the original YAML file isn't modified
+            modified_config = deepcopy(connection_config)
+            modified_config['postgresql']['connection_type'] = 'normal'
+            return modified_config
+
+        return connection_config  # No change if it's already 'normal' or 'pool'
+
 
     def _prepare_header_mapping(self):
         """Reads the CSV file and prepares the header mapping."""
@@ -62,8 +77,7 @@ class CSVDataImporter:
 
     def _prepopulate_import_config(self):
         """Automatically creates the import config file by analyzing the CSV file using csv.Sniffer and guessing the encoding."""
-        print(
-            f"Import config file '{self.import_config_file}' not found. Creating it using csv.Sniffer and encoding detection.")
+        print(f"Import config file '{self.import_config_file}' not found. Creating it using csv.Sniffer and encoding detection.")
 
         # Guess the file's encoding
         with open(self.csv_file, 'rb') as raw_file:
@@ -162,15 +176,6 @@ class CSVDataImporter:
             columns_definitions = ", ".join([f"{col} TEXT" for col in formatted_headers])
             create_table_query = f"CREATE TABLE {self.schema_name}.{self.table_name} ({columns_definitions})"
             cur.execute(create_table_query)
-            #print(f"Table {self.schema_name}.{self.table_name} created successfully.")
-
-    async def _create_table_async(self, connection, formatted_headers):
-        """Asynchronous table creation based on formatted CSV headers."""
-        async with connection.cursor() as cur:
-            columns_definitions = ", ".join([f"{col} TEXT" for col in formatted_headers])
-            create_table_query = f"CREATE TABLE {self.schema_name}.{self.table_name} ({columns_definitions})"
-            await cur.execute(create_table_query)
-            #print(f"Table {self.schema_name}.{self.table_name} created successfully.")
 
     def _sync_ingest(self, connection):
         """Handles synchronous CSV ingestion using COPY for bulk insert."""
@@ -232,63 +237,6 @@ class CSVDataImporter:
 
             print(f"\nData from {self.csv_file} copied to {self.schema_name}.{self.table_name}.")
 
-    async def _async_ingest(self, connection):
-        """Handles asynchronous CSV ingestion using COPY for bulk insert."""
-        async with connection.cursor() as cur:
-            async with aiofiles.open(self.csv_file, mode='r', encoding=self.encoding) as file:
-                reader = csv.reader(await file.readline(), delimiter=self.delimiter, quotechar=self.quotechar)
-
-                if self.has_headers:
-                    header = next(reader)  # Read the header row
-                    formatted_headers = self._format_column_names(header)
-                    print("\nCSV Headers (Original):")
-                    print(header)
-                    print("\nFormatted Headers for DB:")
-                    print(formatted_headers)
-                else:
-                    first_row = next(reader)
-                    num_columns = len(first_row)
-                    formatted_headers = self._generate_column_names(num_columns)
-                    await file.seek(0)
-
-                # Include the schema name in the output
-                print(f"\nStarting import for file: {self.csv_file} into table: {self.schema_name}.{self.table_name}")
-
-                if not await self._check_table_exists_async(connection):
-                    await self._create_table_async(connection, formatted_headers)
-                    print(f"\nTable {self.schema_name}.{self.table_name} created successfully.")
-                else:
-                    await cur.execute(
-                        f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}' ORDER BY ordinal_position")
-                    existing_columns = [row[0] for row in await cur.fetchall()]
-                    if formatted_headers != existing_columns:
-                        raise ValueError(
-                            f"CSV headers do not match the existing table columns.\n"
-                            f"Expected columns: {existing_columns}\n"
-                            f"CSV headers: {formatted_headers}"
-                        )
-
-                total_lines = sum(1 for row in reader)
-                await file.seek(0)
-                if self.has_headers:
-                    await file.readline()  # Skip the header row
-
-                async with tqdm(total=total_lines, desc="Importing data", unit="rows") as progress:
-                    async with cur.copy(
-                            f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN") as copy:
-                        for row in reader:
-                            await copy.write_row(row)
-                            progress.update(1)  # Update progress bar after each row
-
-                await connection.commit()
-
-                # Check row count after COPY
-                await cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
-                row_count = await cur.fetchone()[0]
-                print(f"\nRow count after COPY: {row_count}")
-
-            print(f"\nData from {self.csv_file} copied to {self.schema_name}.{self.table_name}.")
-
     def _check_table_exists_sync(self, connection):
         """Synchronous check if the table exists in the database."""
         with connection.cursor() as cur:
@@ -301,29 +249,25 @@ class CSVDataImporter:
             """)
             return cur.fetchone()[0]
 
-    async def _check_table_exists_async(self, connection):
-        """Asynchronous check if the table exists in the database."""
-        async with connection.cursor() as cur:
-            await cur.execute(f"""
-                SELECT EXISTS (
-                    SELECT 1
-                    FROM information_schema.tables
-                    WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}'
-                )
-            """)
-            return await cur.fetchone()[0]
-
     async def run(self):
         """Main method to handle connection type and start the ingestion."""
-        if self.connection_type in ['async', 'async_pool']:
-            # Async connection
-            async with self.connection_manager.get_database_connection(self.config_file) as connection:
+        # Load the YAML file into a dictionary
+        with open(self.config_file, 'r') as f:
+            connection_config = yaml.safe_load(f)
+
+        # Modify the connection type for import if needed (ensure it's called once)
+        connection_config = self.modify_connection_type_for_import(connection_config)
+
+        # Extract the modified connection type
+        connection_type = connection_config['postgresql'].get('connection_type', 'normal')
+
+        # Check if the connection is async or sync
+        if connection_type in ['async', 'async_pool']:
+            # Async connection: await the async operations
+            async with self.connection_manager.get_database_connection_from_dict(connection_config) as connection:
                 await self._async_ingest(connection)
         else:
-            # Sync connection
-            with self.connection_manager.get_database_connection(self.config_file) as connection:
-                await asyncio.to_thread(self._sync_ingest, connection)
-
-
-
+            # Sync connection: run the sync ingest with a normal context manager (no async)
+            with self.connection_manager.get_database_connection_from_dict(connection_config) as connection:
+                self._sync_ingest(connection)  # Blocking sync ingest
 

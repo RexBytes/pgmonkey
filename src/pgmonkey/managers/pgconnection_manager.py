@@ -11,14 +11,19 @@ class PGConnectionManager:
         with open(config_file_path, 'r') as f:
             config_data_dictionary = yaml.safe_load(f)
 
-        # Check if it's an async or sync connection
+        return self._get_connection(config_data_dictionary)
+
+    def get_database_connection_from_dict(self, config_data_dictionary):
+        """Establish a PostgreSQL database connection using an in-memory configuration dictionary."""
+        return self._get_connection(config_data_dictionary)
+
+    def _get_connection(self, config_data_dictionary):
+        """Helper function to establish a connection using a dictionary."""
         connection_type = config_data_dictionary['postgresql']['connection_type']
 
         if connection_type in ['normal', 'pool']:
-            # For synchronous connections, no need for async calls
             return self.get_postgresql_connection_sync(config_data_dictionary)
         elif connection_type in ['async', 'async_pool']:
-            # For asynchronous connections, handle it asynchronously
             return self.get_postgresql_connection_async(config_data_dictionary)
         else:
             raise ValueError(f"Unsupported connection type: {connection_type}")
@@ -36,5 +41,6 @@ class PGConnectionManager:
         connection = factory.get_connection()
         await connection.connect()  # Asynchronous connection
         return connection
+
 
 
