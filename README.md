@@ -23,9 +23,12 @@ This tutorial will walk you through the process of installing **pgmonkey**, crea
    - [Establishing a Connection](#establishing-a-connection)
    - [Running Database Queries](#running-database-queries)
    - [Handling Different Connection Types](#handling-different-connection-types)
-6. [Example Use Case: Testing Multiple Connections](#example-use-case-testing-multiple-connections)
-7. [Example Use Case:  Test Pooling Capability](#example-use-case-test-pooling-capability)
-8. [Conclusion](#conclusion)
+6. [Importing and Exporting Data](#importing-and-exporting-data)
+   - [Importing Data](#importing-data)
+   - [Exporting Data](#exporting-data)
+7. [Example Use Case: Testing Multiple Connections](#example-use-case-testing-multiple-connections)
+8. [Example Use Case:  Test Pooling Capability](#example-use-case-test-pooling-capability)
+9. [Conclusion](#conclusion)
 
 ## Installation
 
@@ -247,7 +250,7 @@ Once you have a configuration file, you can test the connection directly from th
 Example:
 
 ```bash
-pgmonkey pgconfig test --filepath /path/to/your/config.yaml
+pgmonkey pgconfig test --connconfig /path/to/your/config.yaml
 ```
 
 This command will attempt to connect to the PostgreSQL database using the settings in the specified YAML file. If the connection is successful, it will print the PostgreSQL version and other relevant information.
@@ -318,6 +321,62 @@ For an asynchronous pooled connection:
 if connection.connection_type == 'async_pool':
     # Handle asynchronous pooled connection
 ```
+
+## Importing and Exporting Data
+
+pgmonkey provides an easy way to import and export data to and from PostgreSQL using CSV or text files. This functionality is available via the `pgimport` and `pgexport` commands in the CLI.
+
+### Importing Data
+
+To import data from a CSV or text file into a PostgreSQL table, you can use the `pgimport` command. You need to specify the table name, the path to the YAML configuration file, and the file to import.
+
+**Usage**:
+
+```bash
+pgmonkey pgimport --table <TABLE> --connconfig <CONFIG_FILE> <IMPORT_FILE>
+```
+
+**Options**:
+- `<TABLE>`: The name of the table to import the data into. You can specify it as `schema.table` or just `table`.
+- `--connconfig <CONFIG_FILE>`: The path to the YAML configuration file that contains the connection details.
+- `<IMPORT_FILE>`: The path to the CSV or text file you wish to import.
+
+**Example**:
+
+```bash
+pgmonkey pgimport --table public.my_table --connconfig /path/to/connection_config.yaml /path/to/data.csv
+```
+
+**Note**: If an import configuration (YAML) doesn't exist, pgmonkey will automatically generate a template for you. You can then modify this template to adjust settings like column mapping, delimiter, or encoding before rerunning the import command.
+
+### Exporting Data
+
+You can also export data from a PostgreSQL table into a CSV file using the `pgexport` command.
+
+**Usage**:
+
+```bash
+pgmonkey pgexport --table <TABLE> --connconfig <CONFIG_FILE> [--export_file <CSV_FILE>]
+```
+
+**Options**:
+- `<TABLE>`: The name of the table you want to export. You can specify it as `schema.table` or just `table`.
+- `--connconfig <CONFIG_FILE>`: The path to the YAML configuration file with the database connection details.
+- `--export_file <CSV_FILE>` (optional): The path to the CSV file where the data will be exported. If not provided, a default file will be generated with the table name.
+
+**Example**:
+
+```bash
+pgmonkey pgexport --table public.my_table --connconfig /path/to/connection_config.yaml --export_file /path/to/output.csv
+```
+
+This will export the contents of the specified table into the CSV file. If no output file is specified, pgmonkey will create one with a default name based on the table.
+
+### Notes:
+- Ensure that your YAML configuration file specifies the correct database connection settings for both import and export operations.
+- You can modify the generated YAML template to fine-tune import/export options such as delimiters or encodings.
+
+
 
 ## Example Use Case: Testing Multiple Connections
 
