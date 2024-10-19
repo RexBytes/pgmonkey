@@ -27,8 +27,11 @@ postgresql:
 
 
   async_settings:
-    command_timeout: 30  # Time in seconds to wait for a command before cancelling (example setting)
-    # Add any additional async-specific settings as needed
+    # Uncomment to set specific timeouts or memory settings for async operations
+    # idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction
+    # statement_timeout: '30000'  # Cancel statements exceeding 30 seconds
+    # lock_timeout: '10000'  # Timeout for acquiring locks
+    # work_mem: '256MB'  # Memory for sort operations and more
 
   async_pool_settings:
     min_size: 5

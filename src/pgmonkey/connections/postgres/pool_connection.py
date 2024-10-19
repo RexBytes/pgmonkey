@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from psycopg_pool import ConnectionPool
 from psycopg import OperationalError
 # Assuming PostgresBaseConnection is correctly implemented elsewhere
@@ -23,7 +24,6 @@ class PGPoolConnection(PostgresBaseConnection):
 
     def test_connection(self):
         """Tests both a single connection and pooling behavior from the pool."""
-        # First, test a single connection
         try:
             with self.pool.connection() as conn:
                 with conn.cursor() as cur:
@@ -34,30 +34,25 @@ class PGPoolConnection(PostgresBaseConnection):
             print(f"Single connection test failed: {e}")
             return
 
-        # Next, test pooling behavior
+        # Test pooling behavior
         pool_min_size = self.pool_settings.get('min_size', 1)
         pool_max_size = self.pool_settings.get('max_size', 10)
         num_connections_to_test = min(pool_max_size, pool_min_size + 1)
 
         connections = []
-
         try:
-            # Acquire multiple connections from the pool
             for _ in range(num_connections_to_test):
-                # Use `with` to correctly manage the connection context
                 with self.pool.connection() as conn:
                     connections.append(conn)
-                # No need to manually close connections; `with` handles it
 
             print(f"Pooling test successful: Acquired {len(connections)} connections out of a possible {pool_max_size}")
         except OperationalError as e:
             print(f"Pooling test failed: {e}")
 
-        # Pooling result
         if len(connections) == num_connections_to_test:
-            print(f"Pooling tested successfully with {len(connections)} concurrent connections.")
+            print(f"Async pooling tested successfully with {len(connections)} concurrent connections.")
         else:
-            print(f"Pooling test did not pass, only {len(connections)} connections were acquired.")
+            print(f"Async pooling test did not pass, only {len(connections)} connections acquired.")
 
     def disconnect(self):
         """Closes all connections in the pool."""
@@ -66,18 +61,53 @@ class PGPoolConnection(PostgresBaseConnection):
             self.pool = None
 
     def connect(self):
-        # This method is implemented to satisfy the interface of the abstract base class.
         # The connection pool is initialized in the constructor, so no action is needed here.
         pass
 
+    def commit(self):
+        """Commits the current transaction on the pooled connection."""
+        if self._conn:
+            self._conn.commit()
+
+    def rollback(self):
+        """Rolls back the current transaction on the pooled connection."""
+        if self._conn:
+            self._conn.rollback()
+
+    def cursor(self):
+        """Returns a cursor object from the current pooled connection."""
+        if self._conn:
+            return self._conn.cursor()
+        else:
+            raise Exception("No active connection available from the pool")
+
+    @contextmanager
+    def transaction(self):
+        """Creates a transaction context for the pooled connection."""
+        with self.pool.connection() as conn:
+            self._conn = conn
+            try:
+                yield self  # Let the caller use the connection within the transaction
+                self.commit()  # Commit if everything is successful
+            except Exception:
+                self.rollback()  # Rollback if there is any exception
+                raise  # Re-raise the exception to propagate it
+            finally:
+                self._conn = None  # Clear the connection after the transaction is done
+
     def __enter__(self):
         """Acquire a connection from the pool."""
-        # Use `with` to correctly manage the context manager returned by the pool
         self._conn = self.pool.connection().__enter__()  # Get a connection from the pool
-        return self._conn  # Return the connection for use in `with`
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Close the acquired connection and return it to the pool."""
-        if self._conn:
-            self._conn.__exit__(exc_type, exc_val, exc_tb)  # Return the connection to the pool
-            self._conn = None
+        """Handles transaction commit/rollback and closes the acquired connection."""
+        try:
+            if exc_type:
+                self.rollback()
+            else:
+                self.commit()
+        finally:
+            if self._conn:
+                self._conn.__exit__(exc_type, exc_val, exc_tb)  # Properly handle psycopg connection teardown
+                self._conn = None

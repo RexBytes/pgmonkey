@@ -1,48 +1,65 @@
-from psycopg import connect, OperationalError  # This imports psycopg3, assuming you have installed 'psycopg' version 3+
+from psycopg import connect, OperationalError
 from .base_connection import PostgresBaseConnection
-
+from contextlib import contextmanager
 
 class PGNormalConnection(PostgresBaseConnection):
     def __init__(self, config):
-        # The configuration dict should contain connection parameters like dbname, user, password, etc.
         self.config = config
         self.connection = None
 
     def connect(self):
-        # Establishes a synchronous connection to the PostgreSQL server.
-        # The 'connect' function is used both in psycopg2 and psycopg3 for this purpose.
-        self.connection = connect(**self.config)
-
+        if self.connection is None or self.connection.closed:
+            self.connection = connect(**self.config)
 
     def test_connection(self):
-        """Tests a synchronous (normal) database connection."""
         try:
-            with self.connection.cursor() as cur:
-                cur.execute('SELECT 1;')  # Execute a simple query to test the connection.
+            with self.cursor() as cur:
+                cur.execute('SELECT 1;')
                 result = cur.fetchone()
                 print("Connection successful: ", result)
-
         except OperationalError as e:
             print(f"Connection failed: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        finally:
-            # Optionally close the connection if it should only be used for this test
-            if self.connection and not self.connection.closed:
-                self.connection.close()
-                print("Connection closed.")
 
     def disconnect(self):
-        # Closes the connection to the database.
-        if self.connection:
+        """Closes the database connection."""
+        if self.connection and not self.connection.closed:
             self.connection.close()
+            self.connection = None
+
+    def commit(self):
+        if self.connection:
+            self.connection.commit()
+
+    def rollback(self):
+        if self.connection:
+            self.connection.rollback()
+
+    def cursor(self):
+        return self.connection.cursor()
+
+    @contextmanager
+    def transaction(self):
+        """Creates a transaction context for the connection."""
+        try:
+            yield self  # Let the caller use the connection within the transaction
+            self.commit()  # Commit if everything is successful
+        except Exception:
+            self.rollback()  # Rollback if there is any exception
+            raise  # Re-raise the exception to propagate it
+        finally:
+            self.disconnect()
 
     def __enter__(self):
-        # Ensures the connection is established when entering the context.
-        if not self.connection:
-            self.connect()
-        return self.connection
+        self.connect()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # Closes the connection when exiting the context.
+        if exc_type:
+            self.rollback()
+        else:
+            self.commit()
         self.disconnect()
+
+
