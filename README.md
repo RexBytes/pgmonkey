@@ -112,7 +112,10 @@ postgresql:
     dbname: 'your_database'
     sslmode: 'require'
   async_settings:
-    command_timeout: 30  # Maximum time (seconds) to wait for a command to complete
+    idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction
+    statement_timeout: '30000'  # Cancel statements exceeding 30 seconds
+    lock_timeout: '10000'  # Timeout for acquiring locks
+    work_mem: '256MB'  # Memory for sort operations and more
 ```
 
 For asynchronous connections with pooling:

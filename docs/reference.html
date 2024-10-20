@@ -146,7 +146,10 @@
     max_lifetime: 3600  # Time in seconds a connection can be reused
 
   async_settings:
-    command_timeout: 30  # Time in seconds to wait for a command before cancelling
+    # idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction
+    # statement_timeout: '30000'  # Cancel statements exceeding 30 seconds
+    # lock_timeout: '10000'  # Timeout for acquiring locks
+    # work_mem: '256MB'  # Memory for sort operations and more
 
   async_pool_settings:
     min_size: 5
@@ -312,9 +315,24 @@
             <td><code>3600</code></td>
         </tr>
         <tr>
-            <td>postgresql.async_settings.command_timeout</td>
-            <td>Maximum time to wait for an async command before canceling (in seconds).</td>
-            <td><code>30</code></td>
+            <td>postgresql.async_settings.idle_in_transaction_session_timeout</td>
+            <td>Maximum time (in milliseconds) that a session can be idle in a transaction before being terminated.</td>
+            <td><code>'5000'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.async_settings.statement_timeout</td>
+            <td>Maximum time (in milliseconds) to wait for a statement to execute before canceling it.</td>
+            <td><code>'30000'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.async_settings.lock_timeout</td>
+            <td>Maximum time (in milliseconds) to wait for a lock before timing out.</td>
+            <td><code>'10000'</code></td>
+        </tr>
+        <tr>
+            <td>postgresql.async_settings.work_mem</td>
+            <td>Memory to be used for sorts, hash tables, and similar operations (e.g., 256MB).</td>
+            <td><code>'256MB'</code></td>
         </tr>
         <tr>
             <td>postgresql.async_pool_settings.min_size</td>
@@ -338,6 +356,7 @@
         </tr>
     </tbody>
 </table>
+
 
 
         <h2>Working with PGConnectionManager</h2>
@@ -379,6 +398,91 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 </code></pre>
+        <h3>Working with Transactions, Commit, Rollback, and Cursors</h3>
+
+<p>With <code>pgmonkey</code>, managing transactions, handling commits, rollbacks, and using cursors is simplified for both synchronous and asynchronous connections. Here’s a detailed guide on how to work with these features.</p>
+
+<h4>Transactions</h4>
+<p>Transactions allow you to execute a series of SQL statements as a single unit of work, ensuring that all operations complete successfully before the changes are committed. <code>pgmonkey</code> provides built-in transaction management, making it easier to handle transactions for all connection types.</p>
+
+<h5>Example Usage:</h5>
+<pre><code>
+# Asynchronous Transaction
+async with connection.transaction():
+    async with connection.cursor() as cur:
+        await cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('John',))
+        await cur.execute('SELECT * FROM my_table WHERE name = %s', ('John',))
+        print(await cur.fetchall())
+
+# Synchronous Transaction
+with connection.transaction():
+    with connection.cursor() as cur:
+        cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('Jane',))
+        cur.execute('SELECT * FROM my_table WHERE name = %s', ('Jane',))
+        print(cur.fetchall())
+</code></pre>
+
+<p>Using the <code>transaction()</code> method ensures that the operations inside the block are either fully committed or rolled back if an error occurs.</p>
+
+<h4>Commit</h4>
+<p>The <code>commit()</code> method is used to save the changes made during a transaction to the database. In the context of <code>pgmonkey</code>, explicit commits are not needed within a transaction block, as the context manager handles it automatically. However, you can use <code>commit()</code> outside of the transaction context when needed.</p>
+
+<h5>Example Usage:</h5>
+<pre><code>
+# Manual commit (if not using transaction context)
+async with connection.cursor() as cur:
+    await cur.execute('UPDATE my_table SET name = %s WHERE id = %s', ('Doe', 1))
+await connection.commit()
+</code></pre>
+
+<p><strong>Note:</strong> If you are inside a transaction context, do not call <code>commit()</code> manually, as it will be handled automatically when the block exits.</p>
+
+<h4>Rollback</h4>
+<p>The <code>rollback()</code> method discards all changes made during a transaction, reverting the database to its state before the transaction began. This is useful when an error occurs, and you want to undo the changes made during the transaction.</p>
+
+<h5>Example Usage:</h5>
+<pre><code>
+# Manual rollback (if not using transaction context)
+try:
+    async with connection.cursor() as cur:
+        await cur.execute('DELETE FROM my_table WHERE id = %s', (1,))
+        # Simulate an error
+        raise Exception('Simulated error')
+    await connection.commit()  # This will not be reached
+except Exception as e:
+    print(f"Error occurred: {e}. Rolling back...")
+    await connection.rollback()
+</code></pre>
+
+<h4>Cursors</h4>
+<p>Cursors are used to execute SQL queries and retrieve results from the database. <code>pgmonkey</code> provides a simplified way to work with cursors, supporting both async and sync connections.</p>
+
+<h5>Example Usage:</h5>
+<pre><code>
+# Asynchronous Cursor
+async with connection.cursor() as cur:
+    await cur.execute('SELECT * FROM my_table WHERE name = %s', ('John',))
+    rows = await cur.fetchall()
+    for row in rows:
+        print(row)
+
+# Synchronous Cursor
+with connection.cursor() as cur:
+    cur.execute('SELECT * FROM my_table WHERE name = %s', ('Jane',))
+    rows = cur.fetchall()
+    for row in rows:
+        print(row)
+</code></pre>
+
+<p>The cursor context automatically closes the cursor after the block is exited, ensuring that resources are released properly.</p>
+
+<h4>Key Points</h4>
+<ul>
+    <li>Transactions ensure atomicity of operations, making sure that a series of operations either all succeed or fail together.</li>
+    <li>Automatic commit/rollback within a <code>transaction()</code> context eliminates the need for manual commit management in most scenarios.</li>
+    <li>The <code>cursor()</code> method is straightforward for executing queries, and works seamlessly with both synchronous and asynchronous operations.</li>
+</ul>
+
 
         <h3>Example: Testing Pooling Capability</h3>
 <pre><code>import asyncio
@@ -567,7 +671,8 @@ pgmonkey --help
 
 <h4>Notes:</h4>
 <ul>
-    <li>Both import and export operation
+    <li>Both import and export operation will create an export inport config file if it does not exists</li>
+</ul>
 
 
         <h2>Commands and Results for Code Generation</h2>
