@@ -50,6 +50,8 @@ class CSVDataExporter:
         self.has_headers = export_settings.get('has_headers', True)
         self.enforce_lowercase = export_settings.get('enforce_lowercase', True)
         self.delimiter = export_settings.get('delimiter', ',')
+        if self.delimiter == r'\t':  # Check for the string '\t'
+            self.delimiter = '\t'  # Convert it to an actual tab character
         self.quotechar = export_settings.get('quotechar', '"')
         self.encoding = export_settings.get('encoding', 'utf-8')
 
@@ -167,7 +169,7 @@ class CSVDataExporter:
                 # Open the CSV file and write data
                 with open(self.csv_file, 'wb') as file:  # Open in binary mode
                     # Use the COPY TO command to stream the data from PostgreSQL
-                    with cur.copy(f"COPY {self.schema_name}.{self.table_name} TO STDOUT WITH CSV HEADER") as copy:
+                    with cur.copy(f"COPY {self.schema_name}.{self.table_name} TO STDOUT WITH CSV HEADER DELIMITER '{self.delimiter}'") as copy:
                         with tqdm(total=total_rows, desc="Exporting data", unit="rows") as progress:
                             for data in copy:
                                 file.write(data)  # Write the memoryview directly to the file
