@@ -225,6 +225,9 @@ class CSVDataImporter:
                     with cur.copy(
                             f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN") as copy:
                         for row in reader:
+                            #Skip empty rows
+                            if not any(row):  # This checks if all elements in the row are empty (empty row)
+                                continue
                             copy.write_row(row)
                             progress.update(1)  # Update progress bar after each row
 
