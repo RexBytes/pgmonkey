@@ -67,12 +67,21 @@ class CSVDataImporter:
 
         return connection_config  # No change if it's already 'normal' or 'pool'
 
-
     def _prepare_header_mapping(self):
-        """Reads the CSV file and prepares the header mapping."""
+        """Reads the CSV file and prepares the header mapping, skipping leading blank lines."""
         with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
             reader = csv.reader(file, delimiter=self.delimiter, quotechar=self.quotechar)
-            header = next(reader)
+
+            # Skip leading blank lines
+            header = None
+            for row in reader:
+                if any(row):  # This checks if the row is not empty
+                    header = row
+                    break
+
+            if header is None:
+                raise ValueError("The CSV file does not contain any non-empty rows.")
+
             self._format_column_names(header)
 
     def _prepopulate_import_config(self):
@@ -178,22 +187,30 @@ class CSVDataImporter:
             cur.execute(create_table_query)
 
     def _sync_ingest(self, connection):
-        """Handles synchronous CSV ingestion using COPY for bulk insert."""
+        """Handles synchronous CSV ingestion using COPY for bulk insert, properly counting non-empty rows."""
         with connection.cursor() as cur:
             # Open the CSV file to prepare for ingestion
             with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
                 reader = csv.reader(file, delimiter=self.delimiter, quotechar=self.quotechar)
 
+                # Skip leading blank lines to find the header or first row
+                header = None
+                for row in reader:
+                    if any(row):
+                        header = row
+                        break
+
+                if header is None:
+                    raise ValueError("The CSV file does not contain any non-empty rows.")
+
                 if self.has_headers:
-                    header = next(reader)  # Read the header row
                     formatted_headers = self._format_column_names(header)
                     print("\nCSV Headers (Original):")
                     print(header)
                     print("\nFormatted Headers for DB:")
                     print(formatted_headers)
                 else:
-                    first_row = next(reader)
-                    num_columns = len(first_row)
+                    num_columns = len(header)
                     formatted_headers = self._generate_column_names(num_columns)  # Generate column_1, column_2, etc.
                     file.seek(0)  # Reset file to the start
 
@@ -215,21 +232,22 @@ class CSVDataImporter:
                             f"CSV headers: {formatted_headers}"
                         )
 
-                # Count rows for progress bar
-                total_lines = sum(1 for row in reader)
+                # Count non-empty rows for progress bar
+                total_lines = sum(1 for row in reader if any(row))
                 file.seek(0)
-                if self.has_headers:
-                    next(reader)  # Skip the header row
+                # Skip leading blank lines again
+                for row in reader:
+                    if any(row):
+                        break
 
                 with tqdm(total=total_lines, desc="Importing data", unit="rows") as progress:
                     with cur.copy(
                             f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN") as copy:
                         for row in reader:
-                            #Skip empty rows
-                            if not any(row):  # This checks if all elements in the row are empty (empty row)
+                            if not any(row):
                                 continue
                             copy.write_row(row)
-                            progress.update(1)  # Update progress bar after each row
+                            progress.update(1)
 
                 connection.commit()
 
