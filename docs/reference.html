@@ -101,17 +101,27 @@
                 <tr>
                     <td>pgmonkey pgconfig create</td>
                     <td>Create a new PostgreSQL configuration template.</td>
-                    <td><code>pgmonkey pgconfig create --filepath config.yaml</code></td>
+                    <td><code>pgmonkey pgconfig create --connconfig config.yaml</code></td>
                 </tr>
                 <tr>
                     <td>pgmonkey pgconfig test</td>
                     <td>Test a database connection using a configuration file.</td>
-                    <td><code>pgmonkey pgconfig test --filepath config.yaml</code></td>
+                    <td><code>pgmonkey pgconfig test --connconfig config.yaml</code></td>
                 </tr>
                 <tr>
                     <td>pgmonkey pgserverconfig</td>
                     <td>Generate PostgreSQL server configuration recommendations.</td>
-                    <td><code>pgmonkey pgserverconfig --filepath config.yaml</code></td>
+                    <td><code>pgmonkey pgserverconfig --connconfig config.yaml</code></td>
+                </tr>
+                <tr>
+                    <td>pgmonkey pgimport</td>
+                    <td>Import data from a CSV or text file into a specified PostgreSQL table.</td>
+                    <td><code>pgmonkey pgimport --table public.my_table --connconfig config.yaml /path/to/data.csv</code></td>
+                </tr>
+                <tr>
+                    <td>pgmonkey pgexport</td>
+                    <td>Export data from a specified PostgreSQL table into a CSV file.</td>
+                    <td><code>pgmonkey pgexport --table public.my_table --connconfig config.yaml --export_file /path/to/output.csv</code></td>
                 </tr>
             </tbody>
         </table>
