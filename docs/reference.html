@@ -116,7 +116,7 @@
                 <tr>
                     <td>pgmonkey pgimport</td>
                     <td>Import data from a CSV or text file into a specified PostgreSQL table.</td>
-                    <td><code>pgmonkey pgimport --table public.my_table --connconfig config.yaml /path/to/data.csv</code></td>
+                    <td><code>pgmonkey pgimport --table public.my_table --connconfig config.yaml --import_file /path/to/data.csv</code></td>
                 </tr>
                 <tr>
                     <td>pgmonkey pgexport</td>
@@ -646,17 +646,17 @@ pgmonkey --help
 <p>The <code>pgimport</code> command allows you to import CSV or text files into a specified PostgreSQL table. You must specify the table name and a connection configuration file, along with the file to import.</p>
 
 <h4>Usage:</h4>
-<pre><code>pgmonkey pgimport --table &lt;TABLE&gt; --connconfig &lt;CONFIG_FILE&gt; &lt;IMPORT_FILE&gt;</code></pre>
+<pre><code>pgmonkey pgimport --table &lt;TABLE&gt; --connconfig &lt;CONFIG_FILE&gt; --import_file <IMPORT_FILE&gt;</code></pre>
 
 <h4>Options:</h4>
 <ul>
-    <li><strong>import_file</strong>: The path to the CSV file or text file that you want to import into the database.</li>
+    <li><strong>--import_file</strong>: The path to the CSV file or text file that you want to import into the database.</li>
     <li><strong>--table</strong> (required): The target table name in the database. You can specify the table as <code>schema.table</code> or just <code>table</code>.</li>
     <li><strong>--connconfig</strong> (required): The path to the connection configuration file, which defines how to connect to the PostgreSQL database.</li>
 </ul>
 
 <h4>Example Command:</h4>
-<pre><code>pgmonkey pgimport --table public.my_table --connconfig /path/to/connection_config.yaml /path/to/data.csv</code></pre>
+<pre><code>pgmonkey pgimport --table public.my_table --connconfig /path/to/connection_config.yaml --import_file /path/to/data.csv</code></pre>
 
 <h4>Note:</h4>
 <ul>
@@ -681,7 +681,7 @@ pgmonkey --help
 
 <h4>Notes:</h4>
 <ul>
-    <li>Both import and export operation will create an export inport config file if it does not exists</li>
+    <li>Both import and export operation will create an export or import config file in the same directory as your file if it does not exist. You should edit it to suit your import/export needs.</li>
 </ul>
 
 

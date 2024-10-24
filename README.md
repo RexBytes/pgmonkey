@@ -336,18 +336,18 @@ To import data from a CSV or text file into a PostgreSQL table, you can use the 
 **Usage**:
 
 ```bash
-pgmonkey pgimport --table <TABLE> --connconfig <CONFIG_FILE> <IMPORT_FILE>
+pgmonkey pgimport --table <TABLE> --connconfig <CONFIG_FILE> --import_file <IMPORT_FILE>
 ```
 
 **Options**:
-- `<TABLE>`: The name of the table to import the data into. You can specify it as `schema.table` or just `table`.
+- `--table <TABLE>`: The name of the table to import the data into. You can specify it as `schema.table` or just `table`.
 - `--connconfig <CONFIG_FILE>`: The path to the YAML configuration file that contains the connection details.
-- `<IMPORT_FILE>`: The path to the CSV or text file you wish to import.
+- `--import_file <IMPORT_FILE>`: The path to the CSV or text file you wish to import. TSV, PSV etc...
 
 **Example**:
 
 ```bash
-pgmonkey pgimport --table public.my_table --connconfig /path/to/connection_config.yaml /path/to/data.csv
+pgmonkey pgimport --table public.my_table --connconfig /path/to/connection_config.yaml --import_file <CSV_FILE>
 ```
 
 **Note**: If an import configuration (YAML) doesn't exist, pgmonkey will automatically generate a template for you. You can then modify this template to adjust settings like column mapping, delimiter, or encoding before rerunning the import command.
@@ -363,7 +363,7 @@ pgmonkey pgexport --table <TABLE> --connconfig <CONFIG_FILE> [--export_file <CSV
 ```
 
 **Options**:
-- `<TABLE>`: The name of the table you want to export. You can specify it as `schema.table` or just `table`.
+- `--table <TABLE>`: The name of the table you want to export. You can specify it as `schema.table` or just `table`.
 - `--connconfig <CONFIG_FILE>`: The path to the YAML configuration file with the database connection details.
 - `--export_file <CSV_FILE>` (optional): The path to the CSV file where the data will be exported. If not provided, a default file will be generated with the table name.
 

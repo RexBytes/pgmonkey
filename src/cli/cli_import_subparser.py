@@ -8,7 +8,7 @@ def cli_pgimport_subparser(subparsers):
     pgimport_parser = subparsers.add_parser('pgimport', help='Import CSV and text files to the PostgreSQL database')
 
     # Required arguments: CSV file to import, table name, and connection config
-    pgimport_parser.add_argument('import_file', type=str, help='Path to the file to import.')
+    pgimport_parser.add_argument('--import_file', type=str, required=True, help='Path to the file to import.')
     pgimport_parser.add_argument('--table', type=str, required=True, help='Name of the target table in the database (schema.table or table).')
     pgimport_parser.add_argument('--connconfig', type=str, required=True, help='Path to the connection config file.')
 
