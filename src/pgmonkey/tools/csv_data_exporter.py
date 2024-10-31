@@ -47,8 +47,6 @@ class CSVDataExporter:
             export_settings = yaml.safe_load(config_file)
 
         # Extract export settings from the config file
-        self.has_headers = export_settings.get('has_headers', True)
-        self.enforce_lowercase = export_settings.get('enforce_lowercase', True)
         self.delimiter = export_settings.get('delimiter', ',')
         if self.delimiter == r'\t':  # Check for the string '\t'
             self.delimiter = '\t'  # Convert it to an actual tab character
@@ -112,9 +110,6 @@ class CSVDataExporter:
 
         # Prepare the default export settings, defaulting to UTF-8 for the export
         default_config = {
-            'has_headers': True,
-            'auto_create_table': True,
-            'enforce_lowercase': True,
             'delimiter': ',',
             'quotechar': '"',
             'encoding': 'utf-8'  # Default encoding for export
@@ -131,8 +126,6 @@ class CSVDataExporter:
     #
     # Booleans here can be True or False as required. 
     #
-    # has_headers: Boolean - True if you want to include column headers in the CSV.
-    # enforce_lowercase: Boolean - If True, the exporter will enforce lowercase and underscores in column names.
     # delimiter: String - The character used to separate columns in the CSV file.
     #    Common delimiters include:
     #    - ',' (comma): Most common for CSV files.

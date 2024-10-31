@@ -410,7 +410,31 @@ if __name__ == "__main__":
 </code></pre>
         <h3>Working with Transactions, Commit, Rollback, and Cursors</h3>
 
-<p>With <code>pgmonkey</code>, managing transactions, handling commits, rollbacks, and using cursors is simplified for both synchronous and asynchronous connections. Here’s a detailed guide on how to work with these features.</p>
+<p>With <code>pgmonkey</code>, managing connections, transactions, handling commits, rollbacks, and using cursors is simplified for both synchronous and asynchronous connections. Here’s a detailed guide on how to work with these features.</p>
+
+<h4>Connection</h4>
+<p>Managing connections in <code>pgmonkey</code> is simplified with context managers, allowing you to use <code>async with</code> or <code>with</code> to handle both connection opening and closing automatically. This ensures that resources are properly managed, even if an error occurs during the execution of SQL statements.</p>
+
+<h5>Example Usage:</h5>
+<pre><code>
+# Asynchronous Connection
+    async with connection as conn:
+        try:
+            async with conn.cursor() as cur:
+                await cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('Alice',))
+                await cur.execute('SELECT * FROM my_table WHERE name = %s', ('Alice',))
+                print(await cur.fetchall())
+
+# Synchronous Connection
+    with connection as conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('Bob',))
+                cur.execute('SELECT * FROM my_table WHERE name = %s', ('Bob',))
+                print(cur.fetchall())
+</code></pre>
+
+<p>Using <code>async with connection as conn</code> or <code>with connection as conn</code> ensures that the connection is automatically closed after the block, even if an error occurs, preserving resources and simplifying connection management.</p>
 
 <h4>Transactions</h4>
 <p>Transactions allow you to execute a series of SQL statements as a single unit of work, ensuring that all operations complete successfully before the changes are committed. <code>pgmonkey</code> provides built-in transaction management, making it easier to handle transactions for all connection types.</p>
