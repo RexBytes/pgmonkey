@@ -1,23 +1,24 @@
 from psycopg import AsyncConnection, OperationalError
 from .base_connection import PostgresBaseConnection
 from contextlib import asynccontextmanager
+from typing import Optional
 
 class PGAsyncConnection(PostgresBaseConnection):
-    def __init__(self, config, post_connect_async_settings=None):
+    def __init__(self, config, async_settings=None):
         super().__init__()
         self.config = config
-        self.post_connect_async_settings = post_connect_async_settings or {}
-        self.connection: AsyncConnection = None
+        self.async_settings = async_settings or {}
+        self.connection: Optional[AsyncConnection] = None
 
     async def connect(self):
         """Establishes an asynchronous database connection."""
         if self.connection is None or self.connection.closed:
             self.connection = await AsyncConnection.connect(**self.config)
-            await self.apply_post_connect_settings()
+            await self.apply_async_settings()
 
-    async def apply_post_connect_settings(self):
+    async def apply_async_settings(self):
         """Applies settings as attributes to the connection object after it is established."""
-        for setting, value in self.post_connect_async_settings.items():
+        for setting, value in self.async_settings.items():
             if hasattr(self.connection, setting):
                 setattr(self.connection, setting, value)
             else:

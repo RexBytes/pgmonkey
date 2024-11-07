@@ -4,10 +4,10 @@ from .base_connection import PostgresBaseConnection
 from contextlib import asynccontextmanager
 
 class PGAsyncPoolConnection(PostgresBaseConnection):
-    def __init__(self, config, pool_settings=None):
+    def __init__(self, config, async_pool_settings=None):
         super().__init__()  # Call super if the base class has an __init__ method
         self.config = config
-        self.pool_settings = pool_settings or {}
+        self.async_pool_settings = async_pool_settings or {}
         self.pool = None
 
     def construct_dsn(self):
@@ -19,7 +19,7 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
     async def connect(self):
         dsn = self.construct_dsn()
         # Initialize AsyncConnectionPool with DSN and any pool-specific settings
-        self.pool = AsyncConnectionPool(conninfo=dsn, **self.pool_settings)
+        self.pool = AsyncConnectionPool(conninfo=dsn, **self.async_pool_settings)
         await self.pool.open()
 
     @asynccontextmanager
