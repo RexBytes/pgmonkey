@@ -1,6 +1,6 @@
 import sys
 from .cli_toplevel_parser import cli_toplevel_parser
-from .cli_settings_subparser import cli_settings_subparser
+#from .cli_settings_subparser import cli_settings_subparser
 from .cli_pgconfig_subparser import cli_pgconfig_subparser
 from .cli_pg_server_config_subparser import  cli_pg_server_config_subparser
 from .cli_import_subparser import cli_pgimport_subparser
