@@ -14,7 +14,7 @@ class CLI:
         # We attach a 'sub-parser container' to hold all subparsers, e.g. the subparser that handles settings.
         self.subparsers = self.parser.add_subparsers(title="commands", dest="command", help="Available commands")
         # We start populating the 'sub-parser container' with subparsers.
-        cli_settings_subparser(self.subparsers)
+        # cli_settings_subparser(self.subparsers)
         cli_pgconfig_subparser(self.subparsers)
         cli_pg_server_config_subparser(self.subparsers)
         cli_pgimport_subparser(self.subparsers)
