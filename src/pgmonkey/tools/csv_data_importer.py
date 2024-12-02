@@ -1,11 +1,9 @@
-import asyncio
 import csv
 import os
 import yaml
 import re
 import chardet
 import sys
-import aiofiles
 from pgmonkey import PGConnectionManager
 from pathlib import Path
 from tqdm import tqdm
@@ -67,6 +65,22 @@ class CSVDataImporter:
 
         return connection_config  # No change if it's already 'normal' or 'pool'
 
+    def _detect_bom(self):
+        """Detects BOM encoding from the start of the file."""
+        with open(self.csv_file, 'rb') as f:
+            first_bytes = f.read(4)
+            if first_bytes.startswith(b'\xef\xbb\xbf'):
+                return 'utf-8-sig'
+            elif first_bytes.startswith(b'\xff\xfe'):
+                return 'utf-16-le'
+            elif first_bytes.startswith(b'\xfe\xff'):
+                return 'utf-16-be'
+            elif first_bytes.startswith(b'\xff\xfe\x00\x00'):
+                return 'utf-32-le'
+            elif first_bytes.startswith(b'\x00\x00\xfe\xff'):
+                return 'utf-32-be'
+        return None
+
     def _prepare_header_mapping(self):
         """Reads the CSV file and prepares the header mapping, skipping leading blank lines."""
         with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
@@ -85,15 +99,27 @@ class CSVDataImporter:
             self._format_column_names(header)
 
     def _prepopulate_import_config(self):
-        """Automatically creates the import config file by analyzing the CSV file using csv.Sniffer and guessing the encoding."""
-        print(f"Import config file '{self.import_config_file}' not found. Creating it using csv.Sniffer and encoding detection.")
+        """Automatically creates the import config file by analyzing the CSV file using robust encoding detection."""
+        print(
+            f"Import config file '{self.import_config_file}' not found. Creating it using advanced encoding detection.")
 
-        # Guess the file's encoding
-        with open(self.csv_file, 'rb') as raw_file:
-            raw_data = raw_file.read(1024)  # Read a small sample for encoding detection
-            result = chardet.detect(raw_data)
-            encoding = result['encoding'] or 'utf-8'  # Default to utf-8 if detection fails
-            print(f"Guessed encoding: {encoding}")
+        # Detect BOM encoding first
+        encoding = self._detect_bom()
+        if encoding:
+            print(f"Detected BOM encoding: {encoding}")
+        else:
+            # Fallback to chardet with a larger sample
+            with open(self.csv_file, 'rb') as raw_file:
+                raw_data = raw_file.read(65536)  # Read a large sample for better detection
+                result = chardet.detect(raw_data)
+                encoding = result['encoding'] or 'utf-8'
+                confidence = result['confidence']
+                print(f"Detected encoding: {encoding} with confidence: {confidence}")
+
+                # Fallback to UTF-8 if chardet's confidence is low
+                if confidence < 0.5:
+                    print("Low confidence in detected encoding. Falling back to UTF-8.")
+                    encoding = 'utf-8'
 
         # Use csv.Sniffer to detect delimiter and headers
         try:
@@ -124,7 +150,7 @@ class CSVDataImporter:
         with open(self.import_config_file, 'w') as config_file:
             yaml.dump(default_config, config_file)
 
-            # Append comments
+        # Append comments
             config_file.write("""
     # Import configuration options:
     #
@@ -163,7 +189,8 @@ class CSVDataImporter:
         self.header_mapping = {}  # Store the mapping between original and formatted headers
 
         for header in headers:
-            formatted_header = header.lower().replace(" ", "_")
+            # Replace invalid characters with underscores
+            formatted_header = re.sub(r'[^a-zA-Z0-9_]', '_', header.lower())
             if not self._is_valid_column_name(formatted_header):
                 raise ValueError(f"Invalid column name '{formatted_header}'.")
             self.header_mapping[header] = formatted_header
@@ -188,6 +215,17 @@ class CSVDataImporter:
 
     def _sync_ingest(self, connection):
         """Handles synchronous CSV ingestion using COPY for bulk insert, properly counting non-empty rows."""
+        # Increase the CSV field size limit
+        import csv
+        import sys
+        max_int = sys.maxsize
+        while True:
+            try:
+                csv.field_size_limit(max_int)
+                break
+            except OverflowError:
+                max_int = int(max_int / 10)
+
         with connection.cursor() as cur:
             # Open the CSV file to prepare for ingestion
             with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
@@ -256,7 +294,7 @@ class CSVDataImporter:
                 row_count = cur.fetchone()[0]
                 print(f"\nRow count after COPY: {row_count}")
 
-            print(f"\nData from {self.csv_file} copied to {self.schema_name}.{self.table_name}.")
+        print(f"\nData from {self.csv_file} copied to {self.schema_name}.{self.table_name}.")
 
     def _check_table_exists_sync(self, connection):
         """Synchronous check if the table exists in the database."""
