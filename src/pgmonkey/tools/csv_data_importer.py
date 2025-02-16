@@ -228,9 +228,36 @@ class CSVDataImporter:
 
         with connection.cursor() as cur:
             # Open the CSV file to prepare for ingestion
+            # Open file and read first few lines to detect column count
             with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
-                reader = csv.reader(file, delimiter=self.delimiter, quotechar=self.quotechar)
+                sample_rows = [next(file).strip() for _ in range(5)]  # Read first 5 rows
+                sample_splits = [row.split(self.delimiter) for row in sample_rows]
+                column_counts = [len(split) for split in sample_splits if any(split)]  # Ignore empty lines
 
+                # Determine if it's a single-column CSV
+                is_single_column = all(count == 1 for count in column_counts)
+                print(f"Detected column structure: {column_counts}. Single-column file? {is_single_column}")
+
+            # Step 2: Override delimiter if it's a single-column file
+            if is_single_column:
+                print("Single-column CSV detected. Ignoring delimiter.")
+                self.delimiter = None  # Disable delimiter-based parsing
+
+            print(f"Using delimiter: {repr(self.delimiter)}")  # Debugging log
+
+            # Step 3: Open file again with adjusted delimiter setting
+            with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
+                if self.delimiter:
+                    reader = csv.reader(file, delimiter=self.delimiter, quotechar=self.quotechar)
+                else:
+                    reader = csv.reader(file, quotechar=self.quotechar)  # No delimiter for single-column files
+
+                # Debugging output to check first row
+                for row in reader:
+                    print(f"📝 First row: {row}, Length: {len(row)}")
+                    break  # Only print first row
+
+                file.seek(0)  # Reset file position after debug print
                 # Skip leading blank lines to find the header or first row
                 header = None
                 for row in reader:
@@ -278,9 +305,12 @@ class CSVDataImporter:
                     if any(row):
                         break
 
+                # Create Copy Command & Output For Debugging
+                copy_sql = f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN"
+                print(f"Executing COPY command: {copy_sql}")
+
                 with tqdm(total=total_lines, desc="Importing data", unit="rows") as progress:
-                    with cur.copy(
-                            f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN") as copy:
+                    with cur.copy(copy_sql) as copy:
                         for row in reader:
                             if not any(row):
                                 continue
