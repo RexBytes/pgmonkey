@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pgmonkey"
-version = "1.1.7"
+version = "1.1.8"
 authors = [
   { name="Good Boy", email="pythonic@rexbytes.com" },
 ]
@@ -43,7 +43,7 @@ pgmonkey = [ "settings/app_settings.yaml", "common/templates/*"]
 "Bug Tracker" = "https://github.com/RexBytes/pgmonkey"
 
 [project.scripts]
-pgmonkey="cli.cli:main"
+pgmonkey="pgmonkey.cli.cli:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"  # or "strict" for future-proofing
