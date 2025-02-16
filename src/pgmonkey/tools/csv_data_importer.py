@@ -189,6 +189,10 @@ class CSVDataImporter:
         self.header_mapping = {}  # Store the mapping between original and formatted headers
 
         for header in headers:
+            # Skip columns where the header is completely empty
+            if not header.strip():
+                print(f"Skipping empty column at index {headers.index(header)}")
+                continue
             # Replace invalid characters with underscores
             formatted_header = re.sub(r'[^a-zA-Z0-9_]', '_', header.lower())
             if not self._is_valid_column_name(formatted_header):
@@ -268,9 +272,20 @@ class CSVDataImporter:
                 if header is None:
                     raise ValueError("The CSV file does not contain any non-empty rows.")
 
+                # Initialize valid_indexes before using it
+                valid_indexes = []
+
                 if self.has_headers:
-                    formatted_headers = self._format_column_names(header)
-                    print("\nCSV Headers (Original):")
+                    # Identify indexes of non-empty columns
+                    valid_indexes = [i for i, h in enumerate(header) if h.strip()]
+                    filtered_header = [header[i] for i in valid_indexes]
+
+                    if not filtered_header:
+                        raise ValueError("No valid columns detected after filtering empty headers.")
+
+                    formatted_headers = self._format_column_names(filtered_header)
+                    print(f"Final Headers (after removing empty columns): {formatted_headers}")
+                    print("\nCSV Headers after removing any empty columns (Original):")
                     print(header)
                     print("\nFormatted Headers for DB:")
                     print(formatted_headers)
@@ -278,6 +293,8 @@ class CSVDataImporter:
                     num_columns = len(header)
                     formatted_headers = self._generate_column_names(num_columns)  # Generate column_1, column_2, etc.
                     file.seek(0)  # Reset file to the start
+
+                    valid_indexes = list(range(num_columns))
 
                 # Include the schema name in the output
                 print(f"\nStarting import for file: {self.csv_file} into table: {self.schema_name}.{self.table_name}")
@@ -314,7 +331,16 @@ class CSVDataImporter:
                         for row in reader:
                             if not any(row):
                                 continue
-                            copy.write_row(row)
+                            # Ensure empty columns are removed from each row, using valid indexes
+                            filtered_row = [row[i] if i < len(row) else '' for i in valid_indexes]
+
+                            # Check row length before inserting
+                            if len(filtered_row) != len(formatted_headers):
+                                raise ValueError(
+                                    f"Row length mismatch: Expected {len(formatted_headers)} columns, got {len(filtered_row)} - Row: {row}"
+                                )
+                            #print(f" Processed row after removing empty columns: {filtered_row}")
+                            copy.write_row(filtered_row)
                             progress.update(1)
 
                 connection.commit()
