@@ -31,6 +31,12 @@ dependencies = [
     "tqdm>=4.64.0,<5.0.0"
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0,<9.0.0",
+    "pytest-asyncio>=0.21.0,<1.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+]
 
 [tool.setuptools.package-data]
 pgmonkey = [ "settings/app_settings.yaml", "common/templates/*"]
@@ -45,6 +51,7 @@ pgmonkey = [ "settings/app_settings.yaml", "common/templates/*"]
 pgmonkey="pgmonkey.cli.cli:main"
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"  # or "strict" for future-proofing
+asyncio_mode = "auto"
+testpaths = ["src/pgmonkey/tests"]
 
 
