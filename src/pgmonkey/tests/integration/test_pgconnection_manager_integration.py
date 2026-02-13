@@ -1,4 +1,5 @@
 import asyncio
+import os
 import psycopg
 import psycopg_pool
 import yaml
@@ -6,8 +7,15 @@ import sys
 import pytest
 from pgmonkey import PGConnectionManager
 
-# Single config file serves all connection types
-CONFIG_FILE = "/home/ubuntu/myconnectionconfigs/pg_connection.yaml"
+pytest.importorskip("pytest_asyncio")
+
+# Config file path from environment variable — set PGMONKEY_TEST_CONFIG to your YAML config path.
+CONFIG_FILE = os.environ.get("PGMONKEY_TEST_CONFIG")
+if CONFIG_FILE is None:
+    pytest.skip(
+        "PGMONKEY_TEST_CONFIG environment variable not set — skipping integration tests",
+        allow_module_level=True,
+    )
 
 
 def print_version_info():

@@ -1,5 +1,8 @@
 import pytest
 from unittest.mock import patch, AsyncMock
+
+pytest.importorskip("pytest_asyncio")
+
 from pgmonkey.connections.postgres.async_connection import PGAsyncConnection
 
 
