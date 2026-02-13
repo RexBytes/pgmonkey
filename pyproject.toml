@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A tool to assist with postgresql database connections"
 readme = "README.md"
-license = { file="LICENSE" }
+license = {text = "MIT"}
 requires-python = ">=3.10,<3.14"
 classifiers = [
     "Programming Language :: Python :: 3.10",
