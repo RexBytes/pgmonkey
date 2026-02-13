@@ -4,869 +4,751 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>pgmonkey - Reference Guide</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-            background-color: #f4f4f4;
-        }
-        header {
-            background-color: #007BFF;
-            color: #fff;
-            padding: 20px 0;
-            text-align: center;
-        }
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        nav {
-            margin-top: 20px;
-        }
-        nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #fff;
-            font-weight: bold;
-        }
-        .content {
-            width: 80%;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        footer {
-            padding: 20px;
-            text-align: center;
-            background-color: #007BFF;
-            color: #fff;
-            margin-top: 40px;
-        }
-        h2 {
-            margin-top: 40px;
-        }
-        pre {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-        }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background-color: #f8fafc;
+}
+a { color: #2563eb; text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+    font-size: 0.88em;
+}
+p code, li code, td code {
+    background: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+header nav {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+header .logo { font-size: 1.5em; font-weight: 700; letter-spacing: -0.02em; }
+header .logo a { color: #fff; }
+header .logo a:hover { text-decoration: none; }
+header .nav-links { display: flex; gap: 24px; flex-wrap: wrap; }
+header .nav-links a { color: #cbd5e1; font-size: 0.95em; font-weight: 500; }
+header .nav-links a:hover { color: #fff; text-decoration: none; }
+
+/* Page title banner */
+.page-title {
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+    color: #fff;
+    padding: 40px 24px;
+    text-align: center;
+}
+.page-title h1 { font-size: 2em; font-weight: 700; letter-spacing: -0.02em; }
+.page-title p { color: #94a3b8; font-size: 1.1em; margin-top: 8px; }
+
+/* Content */
+.content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+}
+
+/* Section headings */
+h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin-top: 56px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+h3 {
+    font-size: 1.15em;
+    font-weight: 600;
+    color: #1e3a5f;
+    margin-top: 32px;
+    margin-bottom: 10px;
+}
+h4 {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+h5 {
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #475569;
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+p { color: #475569; margin-bottom: 12px; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 0.92em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+th {
+    background: #1e3a5f;
+    color: #fff;
+    font-weight: 600;
+    padding: 12px 14px;
+    text-align: left;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+}
+tr:nth-child(even) td { background: #f1f5f9; }
+tr:hover td { background: #e8f0fe; }
+
+/* Code blocks */
+pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    font-size: 0.9em;
+    line-height: 1.7;
+    margin: 12px 0 24px;
+    border: 1px solid #334155;
+}
+pre code {
+    background: none;
+    padding: 0;
+    font-size: 1em;
+}
+/* Syntax highlighting classes */
+.kw { color: #93c5fd; }   /* keywords: from, import, def, async, await, with, as, if, for, try, except, return */
+.fn { color: #fbbf24; }   /* function names */
+.st { color: #86efac; }   /* strings */
+.cm { color: #64748b; }   /* comments */
+.op { color: #f472b6; }   /* operators, special */
+.nb { color: #c4b5fd; }   /* builtins: print, range, etc */
+
+/* Lists */
+ul, ol { color: #475569; margin: 8px 0 16px 24px; }
+li { margin-bottom: 6px; }
+
+/* Footer */
+footer {
+    background: #1a1a2e;
+    color: #94a3b8;
+    padding: 36px 24px;
+    text-align: center;
+    font-size: 0.9em;
+    margin-top: 48px;
+}
+footer a { color: #60a5fa; }
+footer p { margin-bottom: 8px; }
+
+@media (max-width: 768px) {
+    .content { padding: 20px 16px 48px; }
+    header nav { justify-content: center; text-align: center; }
+    table { font-size: 0.85em; }
+    pre { padding: 14px 16px; font-size: 0.85em; }
+}
     </style>
 </head>
 <body>
-    <header>
-        <h1>pgmonkey - Reference Guide</h1>
-        <nav>
+
+<header>
+    <nav>
+        <div class="logo"><a href="index.html">pgmonkey</a></div>
+        <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="reference.html">Reference</a>
             <a href="https://github.com/RexBytes/pgmonkey/blob/main/README.md">Docs</a>
             <a href="https://github.com/RexBytes/pgmonkey">GitHub</a>
             <a href="https://pypi.org/project/pgmonkey/">PyPI</a>
-        </nav>
-    </header>
+        </div>
+    </nav>
+</header>
 
-    <div class="content">
-        <h2>CLI Commands Overview</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Command</th>
-                    <th>Description</th>
-                    <th>Example Usage</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>pgmonkey settings</td>
-                    <td>Manage application settings.</td>
-                    <td><code>pgmonkey settings --help</code></td>
-                </tr>
-                <tr>
-                    <td>pgmonkey pgconfig create</td>
-                    <td>Create a new PostgreSQL configuration template.</td>
-                    <td><code>pgmonkey pgconfig create --connconfig config.yaml</code></td>
-                </tr>
-                <tr>
-                    <td>pgmonkey pgconfig test</td>
-                    <td>Test a database connection using a configuration file.</td>
-                    <td><code>pgmonkey pgconfig test --connconfig config.yaml --connection-type pool</code></td>
-                </tr>
-                <tr>
-                    <td>pgmonkey pgconfig generate-code</td>
-                    <td>Generate example Python code for a connection type.</td>
-                    <td><code>pgmonkey pgconfig generate-code --connconfig config.yaml --connection-type async</code></td>
-                </tr>
-                <tr>
-                    <td>pgmonkey pgserverconfig</td>
-                    <td>Generate PostgreSQL server configuration recommendations.</td>
-                    <td><code>pgmonkey pgserverconfig --connconfig config.yaml</code></td>
-                </tr>
-                <tr>
-                    <td>pgmonkey pgimport</td>
-                    <td>Import data from a CSV or text file into a specified PostgreSQL table.</td>
-                    <td><code>pgmonkey pgimport --table public.my_table --connconfig config.yaml --import_file /path/to/data.csv</code></td>
-                </tr>
-                <tr>
-                    <td>pgmonkey pgexport</td>
-                    <td>Export data from a specified PostgreSQL table into a CSV file.</td>
-                    <td><code>pgmonkey pgexport --table public.my_table --connconfig config.yaml --export_file /path/to/output.csv</code></td>
-                </tr>
-            </tbody>
-        </table>
+<div class="page-title">
+    <h1>Reference Guide</h1>
+    <p>CLI commands, configuration options, Python API, and code examples</p>
+</div>
 
-<h2>One Config File, All Connection Types</h2>
+<div class="content">
 
-<p>In pgmonkey v2.0.0, a <strong>single YAML configuration file</strong> serves all connection types. You specify the connection type when calling the API, or let it default to the value in the config file.</p>
-
-<pre><code>from pgmonkey import PGConnectionManager
-
-manager = PGConnectionManager()
-
-# Same config file, different connection types
-conn = manager.get_database_connection('config.yaml', 'normal')
-conn = manager.get_database_connection('config.yaml', 'pool')
-conn = await manager.get_database_connection('config.yaml', 'async')
-conn = await manager.get_database_connection('config.yaml', 'async_pool')
-</code></pre>
-
-<h2>YAML Configuration Options</h2>
-
-        <h3>Full YAML Configuration</h3>
-<pre><code>postgresql:
-  # Default connection type when none is specified in the API call.
-  # Options: 'normal', 'pool', 'async', 'async_pool'
-  # You can override this per-call:
-  #   manager.get_database_connection('config.yaml', 'pool')
-  connection_type: 'normal'
-
-  connection_settings:
-    user: 'postgres'
-    password: 'password'
-    host: 'localhost'
-    port: '5432'
-    dbname: 'mydatabase'
-    sslmode: 'prefer'  # Options: disable, allow, prefer, require, verify-ca, verify-full
-    sslcert: ''  # Path to the client SSL certificate, if needed
-    sslkey: ''  # Path to the client SSL key, if needed
-    sslrootcert: ''  # Path to the root SSL certificate, if needed
-    connect_timeout: '10'  # Maximum wait for connection, in seconds
-    application_name: 'myapp'
-    keepalives: '1'  # Enable TCP keepalives (1=on, 0=off)
-    keepalives_idle: '60'  # Seconds before sending a keepalive probe
-    keepalives_interval: '15'  # Seconds between keepalive probes
-    keepalives_count: '5'  # Max keepalive probes before closing the connection
-
-  # Settings for 'pool' connection type
-  pool_settings:
-    min_size: 5
-    max_size: 20
-    max_idle: 300  # Seconds a connection can remain idle before being closed
-    max_lifetime: 3600  # Seconds a connection can be reused
-
-  # Settings for 'async' connection type (applied via SET commands on connection)
-  async_settings:
-    idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction (ms)
-    statement_timeout: '30000'  # Cancel statements exceeding this time (ms)
-    lock_timeout: '10000'  # Timeout for acquiring locks (ms)
-    # work_mem: '256MB'  # Memory for sort operations and more
-
-  # Settings for 'async_pool' connection type
-  async_pool_settings:
-    min_size: 5
-    max_size: 20
-    max_idle: 300
-    max_lifetime: 3600
-</code></pre>
+<!-- ============================================================ -->
+<h2>CLI Commands Overview</h2>
 
 <table>
     <thead>
-        <tr>
-            <th>Parameter</th>
-            <th>Description</th>
-            <th>Example Value</th>
-        </tr>
+        <tr><th>Command</th><th>Description</th><th>Example</th></tr>
     </thead>
     <tbody>
         <tr>
-            <td>postgresql.connection_type</td>
-            <td>Default connection type (normal, pool, async, async_pool). Can be overridden per API call.</td>
-            <td><code>'normal'</code></td>
+            <td>pgmonkey settings</td>
+            <td>Manage application settings.</td>
+            <td><code>pgmonkey settings --help</code></td>
         </tr>
         <tr>
-            <td>postgresql.connection_settings.user</td>
-            <td>Username to connect to the PostgreSQL database.</td>
-            <td><code>'postgres'</code></td>
+            <td>pgmonkey pgconfig create</td>
+            <td>Create a new PostgreSQL configuration template.</td>
+            <td><code>pgmonkey pgconfig create --connconfig config.yaml</code></td>
         </tr>
         <tr>
-            <td>postgresql.connection_settings.password</td>
-            <td>Password for the database user.</td>
-            <td><code>'your password'</code></td>
+            <td>pgmonkey pgconfig test</td>
+            <td>Test a database connection.</td>
+            <td><code>pgmonkey pgconfig test --connconfig config.yaml --connection-type pool</code></td>
         </tr>
         <tr>
-            <td>postgresql.connection_settings.host</td>
-            <td>Database server host address.</td>
-            <td><code>'localhost'</code></td>
+            <td>pgmonkey pgconfig generate-code</td>
+            <td>Generate example Python code.</td>
+            <td><code>pgmonkey pgconfig generate-code --connconfig config.yaml --connection-type async</code></td>
         </tr>
         <tr>
-            <td>postgresql.connection_settings.port</td>
-            <td>Database server port.</td>
-            <td><code>'5432'</code></td>
+            <td>pgmonkey pgserverconfig</td>
+            <td>Generate server configuration recommendations.</td>
+            <td><code>pgmonkey pgserverconfig --connconfig config.yaml</code></td>
         </tr>
         <tr>
-            <td>postgresql.connection_settings.dbname</td>
-            <td>Name of the PostgreSQL database to connect to.</td>
-            <td><code>'mydatabase'</code></td>
+            <td>pgmonkey pgimport</td>
+            <td>Import CSV data into a PostgreSQL table.</td>
+            <td><code>pgmonkey pgimport --table public.my_table --connconfig config.yaml --import_file data.csv</code></td>
         </tr>
         <tr>
-            <td>postgresql.connection_settings.sslmode</td>
-            <td>SSL mode for securing the connection (e.g., disable, allow, prefer, require, verify-ca, verify-full).</td>
-            <td><code>'prefer'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.sslcert</td>
-            <td>Path to the client SSL certificate, if needed for secure connections.</td>
-            <td><code>'/path/to/client.crt'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.sslkey</td>
-            <td>Path to the client SSL key, if needed for secure connections.</td>
-            <td><code>'/path/to/client.key'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.sslrootcert</td>
-            <td>Path to the root SSL certificate, if needed to verify the server's SSL certificate.</td>
-            <td><code>'/path/to/ca.crt'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.connect_timeout</td>
-            <td>Maximum time in seconds to wait for a connection.</td>
-            <td><code>'10'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.application_name</td>
-            <td>Application name to report to the PostgreSQL server.</td>
-            <td><code>'myapp'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.keepalives</td>
-            <td>Enables or disables TCP keepalives (1 to enable, 0 to disable).</td>
-            <td><code>'1'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.keepalives_idle</td>
-            <td>Time in seconds before sending a keepalive probe.</td>
-            <td><code>'60'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.keepalives_interval</td>
-            <td>Time in seconds between sending keepalive probes.</td>
-            <td><code>'15'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.connection_settings.keepalives_count</td>
-            <td>Maximum number of keepalive probes to send before closing the connection.</td>
-            <td><code>'5'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.pool_settings.min_size</td>
-            <td>Minimum number of connections in the pool.</td>
-            <td><code>5</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.pool_settings.max_size</td>
-            <td>Maximum number of connections in the pool.</td>
-            <td><code>20</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.pool_settings.max_idle</td>
-            <td>Maximum idle time (in seconds) for connections before they are closed.</td>
-            <td><code>300</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.pool_settings.max_lifetime</td>
-            <td>Maximum lifetime (in seconds) a connection can be reused before being closed.</td>
-            <td><code>3600</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.async_settings.idle_in_transaction_session_timeout</td>
-            <td>Maximum time (in milliseconds) that a session can be idle in a transaction before being terminated.</td>
-            <td><code>'5000'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.async_settings.statement_timeout</td>
-            <td>Maximum time (in milliseconds) to wait for a statement to execute before canceling it.</td>
-            <td><code>'30000'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.async_settings.lock_timeout</td>
-            <td>Maximum time (in milliseconds) to wait for a lock before timing out.</td>
-            <td><code>'10000'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.async_settings.work_mem</td>
-            <td>Memory to be used for sorts, hash tables, and similar operations (e.g., 256MB).</td>
-            <td><code>'256MB'</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.async_pool_settings.min_size</td>
-            <td>Minimum number of connections in the asynchronous pool.</td>
-            <td><code>5</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.async_pool_settings.max_size</td>
-            <td>Maximum number of connections in the asynchronous pool.</td>
-            <td><code>20</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.async_pool_settings.max_idle</td>
-            <td>Maximum idle time (in seconds) for asynchronous connections before they are closed.</td>
-            <td><code>300</code></td>
-        </tr>
-        <tr>
-            <td>postgresql.async_pool_settings.max_lifetime</td>
-            <td>Maximum lifetime (in seconds) an asynchronous connection can be reused before being closed.</td>
-            <td><code>3600</code></td>
+            <td>pgmonkey pgexport</td>
+            <td>Export a PostgreSQL table to CSV.</td>
+            <td><code>pgmonkey pgexport --table public.my_table --connconfig config.yaml --export_file output.csv</code></td>
         </tr>
     </tbody>
 </table>
 
+<!-- ============================================================ -->
+<h2>One Config File, All Connection Types</h2>
 
+<p>In pgmonkey v2.0.0, a <strong>single YAML configuration file</strong> serves all connection types. Specify the connection type when calling the API, or let it default to the value in the config file.</p>
 
-        <h2>Working with PGConnectionManager</h2>
-        <p>In <code>pgmonkey</code>, users interact with the PostgreSQL connection using the <code>PGConnectionManager</code> class, which simplifies both synchronous and asynchronous database connections. Use a single YAML configuration file and specify the connection type as a parameter.</p>
+<pre><code><span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
 
-        <h3>Basic Usage</h3>
-<pre><code>from pgmonkey import PGConnectionManager
+manager = PGConnectionManager()
 
-# Normal (synchronous) connection
-def main():
+<span class="cm"># Same config file, different connection types</span>
+conn = manager.<span class="fn">get_database_connection</span>(<span class="st">'config.yaml'</span>, <span class="st">'normal'</span>)
+conn = manager.<span class="fn">get_database_connection</span>(<span class="st">'config.yaml'</span>, <span class="st">'pool'</span>)
+conn = <span class="kw">await</span> manager.<span class="fn">get_database_connection</span>(<span class="st">'config.yaml'</span>, <span class="st">'async'</span>)
+conn = <span class="kw">await</span> manager.<span class="fn">get_database_connection</span>(<span class="st">'config.yaml'</span>, <span class="st">'async_pool'</span>)</code></pre>
+
+<!-- ============================================================ -->
+<h2>YAML Configuration Options</h2>
+
+<h3>Full YAML Configuration</h3>
+
+<pre><code><span class="cm">postgresql:</span>
+  <span class="cm"># Default connection type when none is specified in the API call.</span>
+  <span class="cm"># Options: 'normal', 'pool', 'async', 'async_pool'</span>
+  <span class="cm"># You can override this per-call:</span>
+  <span class="cm">#   manager.get_database_connection('config.yaml', 'pool')</span>
+  connection_type: <span class="st">'normal'</span>
+
+  connection_settings:
+    user: <span class="st">'postgres'</span>
+    password: <span class="st">'password'</span>
+    host: <span class="st">'localhost'</span>
+    port: <span class="st">'5432'</span>
+    dbname: <span class="st">'mydatabase'</span>
+    sslmode: <span class="st">'prefer'</span>       <span class="cm"># Options: disable, allow, prefer, require, verify-ca, verify-full</span>
+    sslcert: <span class="st">''</span>             <span class="cm"># Path to the client SSL certificate</span>
+    sslkey: <span class="st">''</span>              <span class="cm"># Path to the client SSL key</span>
+    sslrootcert: <span class="st">''</span>         <span class="cm"># Path to the root SSL certificate</span>
+    connect_timeout: <span class="st">'10'</span>   <span class="cm"># Maximum wait for connection, in seconds</span>
+    application_name: <span class="st">'myapp'</span>
+    keepalives: <span class="st">'1'</span>         <span class="cm"># Enable TCP keepalives (1=on, 0=off)</span>
+    keepalives_idle: <span class="st">'60'</span>   <span class="cm"># Seconds before sending a keepalive probe</span>
+    keepalives_interval: <span class="st">'15'</span>
+    keepalives_count: <span class="st">'5'</span>
+
+  <span class="cm"># Settings for 'pool' connection type</span>
+  pool_settings:
+    min_size: <span class="op">5</span>
+    max_size: <span class="op">20</span>
+    max_idle: <span class="op">300</span>          <span class="cm"># Seconds idle before closed</span>
+    max_lifetime: <span class="op">3600</span>     <span class="cm"># Seconds before reuse expires</span>
+
+  <span class="cm"># Settings for 'async' connection type (applied via SET commands)</span>
+  async_settings:
+    idle_in_transaction_session_timeout: <span class="st">'5000'</span>   <span class="cm"># ms</span>
+    statement_timeout: <span class="st">'30000'</span>                     <span class="cm"># ms</span>
+    lock_timeout: <span class="st">'10000'</span>                          <span class="cm"># ms</span>
+    <span class="cm"># work_mem: '256MB'</span>
+
+  <span class="cm"># Settings for 'async_pool' connection type</span>
+  async_pool_settings:
+    min_size: <span class="op">5</span>
+    max_size: <span class="op">20</span>
+    max_idle: <span class="op">300</span>
+    max_lifetime: <span class="op">3600</span></code></pre>
+
+<h3>Configuration Parameter Reference</h3>
+
+<table>
+    <thead>
+        <tr><th>Parameter</th><th>Description</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>postgresql.connection_type</td><td>Default connection type. Can be overridden per API call.</td><td><code>'normal'</code></td></tr>
+        <tr><td>connection_settings.user</td><td>Username for the PostgreSQL database.</td><td><code>'postgres'</code></td></tr>
+        <tr><td>connection_settings.password</td><td>Password for the database user.</td><td><code>'your password'</code></td></tr>
+        <tr><td>connection_settings.host</td><td>Database server host address.</td><td><code>'localhost'</code></td></tr>
+        <tr><td>connection_settings.port</td><td>Database server port.</td><td><code>'5432'</code></td></tr>
+        <tr><td>connection_settings.dbname</td><td>Name of the database to connect to.</td><td><code>'mydatabase'</code></td></tr>
+        <tr><td>connection_settings.sslmode</td><td>SSL mode (disable, allow, prefer, require, verify-ca, verify-full).</td><td><code>'prefer'</code></td></tr>
+        <tr><td>connection_settings.sslcert</td><td>Path to the client SSL certificate.</td><td><code>'/path/to/client.crt'</code></td></tr>
+        <tr><td>connection_settings.sslkey</td><td>Path to the client SSL key.</td><td><code>'/path/to/client.key'</code></td></tr>
+        <tr><td>connection_settings.sslrootcert</td><td>Path to the root SSL certificate.</td><td><code>'/path/to/ca.crt'</code></td></tr>
+        <tr><td>connection_settings.connect_timeout</td><td>Max seconds to wait for a connection.</td><td><code>'10'</code></td></tr>
+        <tr><td>connection_settings.application_name</td><td>App name reported to PostgreSQL.</td><td><code>'myapp'</code></td></tr>
+        <tr><td>connection_settings.keepalives</td><td>Enable TCP keepalives (1=on, 0=off).</td><td><code>'1'</code></td></tr>
+        <tr><td>connection_settings.keepalives_idle</td><td>Seconds before sending a keepalive probe.</td><td><code>'60'</code></td></tr>
+        <tr><td>connection_settings.keepalives_interval</td><td>Seconds between keepalive probes.</td><td><code>'15'</code></td></tr>
+        <tr><td>connection_settings.keepalives_count</td><td>Max probes before closing.</td><td><code>'5'</code></td></tr>
+        <tr><td>pool_settings.min_size</td><td>Min connections in the pool.</td><td><code>5</code></td></tr>
+        <tr><td>pool_settings.max_size</td><td>Max connections in the pool.</td><td><code>20</code></td></tr>
+        <tr><td>pool_settings.max_idle</td><td>Seconds idle before connection is closed.</td><td><code>300</code></td></tr>
+        <tr><td>pool_settings.max_lifetime</td><td>Seconds before a connection is recycled.</td><td><code>3600</code></td></tr>
+        <tr><td>async_settings.idle_in_transaction_session_timeout</td><td>Idle in transaction timeout (ms).</td><td><code>'5000'</code></td></tr>
+        <tr><td>async_settings.statement_timeout</td><td>Statement execution timeout (ms).</td><td><code>'30000'</code></td></tr>
+        <tr><td>async_settings.lock_timeout</td><td>Lock acquisition timeout (ms).</td><td><code>'10000'</code></td></tr>
+        <tr><td>async_settings.work_mem</td><td>Memory for sort operations.</td><td><code>'256MB'</code></td></tr>
+        <tr><td>async_pool_settings.min_size</td><td>Min connections in the async pool.</td><td><code>5</code></td></tr>
+        <tr><td>async_pool_settings.max_size</td><td>Max connections in the async pool.</td><td><code>20</code></td></tr>
+        <tr><td>async_pool_settings.max_idle</td><td>Seconds idle before async connection is closed.</td><td><code>300</code></td></tr>
+        <tr><td>async_pool_settings.max_lifetime</td><td>Seconds before an async connection is recycled.</td><td><code>3600</code></td></tr>
+    </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2>Working with PGConnectionManager</h2>
+
+<p>The <code>PGConnectionManager</code> class is the main entry point. Use a single YAML config file and specify the connection type as a parameter.</p>
+
+<h3>Basic Usage</h3>
+
+<pre><code><span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
+
+<span class="cm"># Normal (synchronous) connection</span>
+<span class="kw">def</span> <span class="fn">main</span>():
     manager = PGConnectionManager()
-    connection = manager.get_database_connection('config.yaml', 'normal')
+    connection = manager.<span class="fn">get_database_connection</span>(<span class="st">'config.yaml'</span>, <span class="st">'normal'</span>)
 
-    with connection as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT version();')
-            print(cur.fetchone())
+    <span class="kw">with</span> connection <span class="kw">as</span> conn:
+        <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            cur.<span class="fn">execute</span>(<span class="st">'SELECT version();'</span>)
+            <span class="nb">print</span>(cur.<span class="fn">fetchone</span>())
 
-if __name__ == "__main__":
-    main()
-</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">main</span>()</code></pre>
 
-<pre><code>import asyncio
-from pgmonkey import PGConnectionManager
+<pre><code><span class="kw">import</span> asyncio
+<span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
 
-# Async connection
-async def main():
+<span class="cm"># Async connection</span>
+<span class="kw">async def</span> <span class="fn">main</span>():
     manager = PGConnectionManager()
-    connection = await manager.get_database_connection('config.yaml', 'async')
+    connection = <span class="kw">await</span> manager.<span class="fn">get_database_connection</span>(<span class="st">'config.yaml'</span>, <span class="st">'async'</span>)
 
-    async with connection as conn:
-        async with conn.cursor() as cur:
-            await cur.execute('SELECT version();')
-            print(await cur.fetchone())
+    <span class="kw">async with</span> connection <span class="kw">as</span> conn:
+        <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT version();'</span>)
+            <span class="nb">print</span>(<span class="kw">await</span> cur.<span class="fn">fetchone</span>())
 
-if __name__ == "__main__":
-    asyncio.run(main())
-</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
 
-        <h3>Working with Transactions, Commit, Rollback, and Cursors</h3>
+<!-- ============================================================ -->
+<h3>Transactions, Commit, Rollback, and Cursors</h3>
 
-<p>With <code>pgmonkey</code>, managing connections, transactions, handling commits, rollbacks, and using cursors is simplified for both synchronous and asynchronous connections.</p>
+<p>pgmonkey simplifies connection management for both synchronous and asynchronous code with context managers.</p>
 
 <h4>Connection</h4>
-<p>Managing connections in <code>pgmonkey</code> is simplified with context managers, allowing you to use <code>async with</code> or <code>with</code> to handle both connection opening and closing automatically.</p>
+<p>Use <code>with</code> or <code>async with</code> to manage connection lifecycle automatically.</p>
 
-<h5>Example Usage:</h5>
-<pre><code>
-# Asynchronous Connection
-    async with connection as conn:
-        try:
-            async with conn.cursor() as cur:
-                await cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('Alice',))
-                await cur.execute('SELECT * FROM my_table WHERE name = %s', ('Alice',))
-                print(await cur.fetchall())
+<pre><code><span class="cm"># Asynchronous</span>
+<span class="kw">async with</span> connection <span class="kw">as</span> conn:
+    <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+        <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'INSERT INTO my_table (name) VALUES (%s)'</span>, (<span class="st">'Alice'</span>,))
+        <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT * FROM my_table WHERE name = %s'</span>, (<span class="st">'Alice'</span>,))
+        <span class="nb">print</span>(<span class="kw">await</span> cur.<span class="fn">fetchall</span>())
 
-# Synchronous Connection
-    with connection as conn:
-        try:
-            with conn.cursor() as cur:
-                cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('Bob',))
-                cur.execute('SELECT * FROM my_table WHERE name = %s', ('Bob',))
-                print(cur.fetchall())
-</code></pre>
+<span class="cm"># Synchronous</span>
+<span class="kw">with</span> connection <span class="kw">as</span> conn:
+    <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+        cur.<span class="fn">execute</span>(<span class="st">'INSERT INTO my_table (name) VALUES (%s)'</span>, (<span class="st">'Bob'</span>,))
+        cur.<span class="fn">execute</span>(<span class="st">'SELECT * FROM my_table WHERE name = %s'</span>, (<span class="st">'Bob'</span>,))
+        <span class="nb">print</span>(cur.<span class="fn">fetchall</span>())</code></pre>
 
 <h4>Transactions</h4>
-<p>Transactions allow you to execute a series of SQL statements as a single unit of work.</p>
+<p>Transactions execute a series of SQL statements as a single atomic unit of work.</p>
 
-<h5>Example Usage:</h5>
-<pre><code>
-# Asynchronous Transaction
-async with connection as conn:
-    async with conn.transaction():
-        async with conn.cursor() as cur:
-            await cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('John',))
-            await cur.execute('SELECT * FROM my_table WHERE name = %s', ('John',))
-            print(await cur.fetchall())
+<pre><code><span class="cm"># Asynchronous Transaction</span>
+<span class="kw">async with</span> connection <span class="kw">as</span> conn:
+    <span class="kw">async with</span> conn.<span class="fn">transaction</span>():
+        <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'INSERT INTO my_table (name) VALUES (%s)'</span>, (<span class="st">'John'</span>,))
+            <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT * FROM my_table WHERE name = %s'</span>, (<span class="st">'John'</span>,))
+            <span class="nb">print</span>(<span class="kw">await</span> cur.<span class="fn">fetchall</span>())
 
-# Synchronous Transaction
-with connection as conn:
-    with conn.transaction():
-        with conn.cursor() as cur:
-            cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('Jane',))
-            cur.execute('SELECT * FROM my_table WHERE name = %s', ('Jane',))
-            print(cur.fetchall())
-</code></pre>
+<span class="cm"># Synchronous Transaction</span>
+<span class="kw">with</span> connection <span class="kw">as</span> conn:
+    <span class="kw">with</span> conn.<span class="fn">transaction</span>():
+        <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            cur.<span class="fn">execute</span>(<span class="st">'INSERT INTO my_table (name) VALUES (%s)'</span>, (<span class="st">'Jane'</span>,))
+            cur.<span class="fn">execute</span>(<span class="st">'SELECT * FROM my_table WHERE name = %s'</span>, (<span class="st">'Jane'</span>,))
+            <span class="nb">print</span>(cur.<span class="fn">fetchall</span>())</code></pre>
 
 <h4>Commit</h4>
-<p>The <code>commit()</code> method saves changes made during a transaction. Within a <code>transaction()</code> context, commits are automatic. Use <code>commit()</code> manually outside of the transaction context when needed.</p>
+<p>Within a <code>transaction()</code> context, commits are automatic. Use <code>commit()</code> manually when needed outside of a transaction block.</p>
 
-<h5>Example Usage:</h5>
-<pre><code>
-# Manual commit (if not using transaction context)
-async with connection as conn:
-    async with conn.cursor() as cur:
-        await cur.execute('UPDATE my_table SET name = %s WHERE id = %s', ('Doe', 1))
-    await conn.commit()
-</code></pre>
+<pre><code><span class="cm"># Manual commit (outside transaction context)</span>
+<span class="kw">async with</span> connection <span class="kw">as</span> conn:
+    <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+        <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'UPDATE my_table SET name = %s WHERE id = %s'</span>, (<span class="st">'Doe'</span>, <span class="op">1</span>))
+    <span class="kw">await</span> conn.<span class="fn">commit</span>()</code></pre>
 
 <h4>Rollback</h4>
 <p>The <code>rollback()</code> method discards all changes made during a transaction.</p>
 
-<h5>Example Usage:</h5>
-<pre><code>
-# Manual rollback (if not using transaction context)
-try:
-    async with connection as conn:
-        async with conn.cursor() as cur:
-            await cur.execute('DELETE FROM my_table WHERE id = %s', (1,))
-            raise Exception('Simulated error')
-        await conn.commit()
-except Exception as e:
-    print(f"Error occurred: {e}. Rolling back...")
-    await conn.rollback()
-</code></pre>
+<pre><code><span class="cm"># Manual rollback on error</span>
+<span class="kw">try</span>:
+    <span class="kw">async with</span> connection <span class="kw">as</span> conn:
+        <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'DELETE FROM my_table WHERE id = %s'</span>, (<span class="op">1</span>,))
+            <span class="kw">raise</span> <span class="nb">Exception</span>(<span class="st">'Simulated error'</span>)
+        <span class="kw">await</span> conn.<span class="fn">commit</span>()
+<span class="kw">except</span> <span class="nb">Exception</span> <span class="kw">as</span> e:
+    <span class="nb">print</span>(<span class="st">f"Error: </span>{e}<span class="st">. Rolling back..."</span>)
+    <span class="kw">await</span> conn.<span class="fn">rollback</span>()</code></pre>
 
 <h4>Cursors</h4>
-<p>Cursors execute SQL queries and retrieve results. The cursor context automatically closes the cursor after the block is exited.</p>
+<p>Cursors execute SQL queries and retrieve results. The cursor context closes automatically.</p>
 
-<h5>Example Usage:</h5>
-<pre><code>
-# Asynchronous Cursor
-async with connection as conn:
-    async with conn.cursor() as cur:
-        await cur.execute('SELECT * FROM my_table WHERE name = %s', ('John',))
-        rows = await cur.fetchall()
-        for row in rows:
-            print(row)
+<pre><code><span class="cm"># Asynchronous Cursor</span>
+<span class="kw">async with</span> connection <span class="kw">as</span> conn:
+    <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+        <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT * FROM my_table WHERE name = %s'</span>, (<span class="st">'John'</span>,))
+        rows = <span class="kw">await</span> cur.<span class="fn">fetchall</span>()
+        <span class="kw">for</span> row <span class="kw">in</span> rows:
+            <span class="nb">print</span>(row)
 
-# Synchronous Cursor
-with connection as conn:
-    with conn.cursor() as cur:
-        cur.execute('SELECT * FROM my_table WHERE name = %s', ('Jane',))
-        rows = cur.fetchall()
-        for row in rows:
-            print(row)
-</code></pre>
+<span class="cm"># Synchronous Cursor</span>
+<span class="kw">with</span> connection <span class="kw">as</span> conn:
+    <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+        cur.<span class="fn">execute</span>(<span class="st">'SELECT * FROM my_table WHERE name = %s'</span>, (<span class="st">'Jane'</span>,))
+        rows = cur.<span class="fn">fetchall</span>()
+        <span class="kw">for</span> row <span class="kw">in</span> rows:
+            <span class="nb">print</span>(row)</code></pre>
 
 <h4>Key Points</h4>
 <ul>
-    <li>Transactions ensure atomicity of operations, making sure that a series of operations either all succeed or fail together.</li>
-    <li>Automatic commit/rollback within a <code>transaction()</code> context eliminates the need for manual commit management in most scenarios.</li>
-    <li>The <code>cursor()</code> method is straightforward for executing queries, and works seamlessly with both synchronous and asynchronous operations.</li>
+    <li>Transactions ensure atomicity &mdash; a series of operations either all succeed or all fail together.</li>
+    <li>Automatic commit/rollback within a <code>transaction()</code> context eliminates manual commit management.</li>
+    <li><code>cursor()</code> works seamlessly with both synchronous and asynchronous operations.</li>
 </ul>
 
+<!-- ============================================================ -->
+<h3>Testing Pooling Capability</h3>
 
-        <h3>Example: Testing Pooling Capability</h3>
-<pre><code>import asyncio
-from pgmonkey import PGConnectionManager
+<pre><code><span class="kw">import</span> asyncio
+<span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
 
-# Function to test multiple async pool connections
-async def test_multiple_async_pool_connections(config_file, num_connections):
+<span class="kw">async def</span> <span class="fn">test_async_pool</span>(config_file, num_connections):
     manager = PGConnectionManager()
     connections = []
 
-    for _ in range(num_connections):
-        connection = await manager.get_database_connection(config_file, 'async_pool')
-        connections.append(connection)
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="nb">range</span>(num_connections):
+        connection = <span class="kw">await</span> manager.<span class="fn">get_database_connection</span>(config_file, <span class="st">'async_pool'</span>)
+        connections.<span class="fn">append</span>(connection)
 
-    for idx, connection in enumerate(connections):
-        async with connection as conn:
-            async with conn.cursor() as cur:
-                await cur.execute('SELECT version();')
-                version = await cur.fetchone()
-                print(f"Async Connection {idx + 1}: {version}")
+    <span class="kw">for</span> idx, connection <span class="kw">in</span> <span class="nb">enumerate</span>(connections):
+        <span class="kw">async with</span> connection <span class="kw">as</span> conn:
+            <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+                <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT version();'</span>)
+                version = <span class="kw">await</span> cur.<span class="fn">fetchone</span>()
+                <span class="nb">print</span>(<span class="st">f"Async Connection </span>{idx + <span class="op">1</span>}<span class="st">: </span>{version}<span class="st">"</span>)
 
-    for connection in connections:
-        await connection.disconnect()
+    <span class="kw">for</span> connection <span class="kw">in</span> connections:
+        <span class="kw">await</span> connection.<span class="fn">disconnect</span>()
 
-# Function to test multiple sync pool connections
-def test_multiple_sync_pool_connections(config_file, num_connections):
+<span class="kw">def</span> <span class="fn">test_sync_pool</span>(config_file, num_connections):
     manager = PGConnectionManager()
     connections = []
 
-    for _ in range(num_connections):
-        connection = manager.get_database_connection(config_file, 'pool')
-        connections.append(connection)
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="nb">range</span>(num_connections):
+        connection = manager.<span class="fn">get_database_connection</span>(config_file, <span class="st">'pool'</span>)
+        connections.<span class="fn">append</span>(connection)
 
-    for idx, connection in enumerate(connections):
-        with connection as conn:
-            with conn.cursor() as cur:
-                cur.execute('SELECT version();')
-                version = cur.fetchone()
-                print(f"Sync Connection {idx + 1}: {version}")
+    <span class="kw">for</span> idx, connection <span class="kw">in</span> <span class="nb">enumerate</span>(connections):
+        <span class="kw">with</span> connection <span class="kw">as</span> conn:
+            <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+                cur.<span class="fn">execute</span>(<span class="st">'SELECT version();'</span>)
+                version = cur.<span class="fn">fetchone</span>()
+                <span class="nb">print</span>(<span class="st">f"Sync Connection </span>{idx + <span class="op">1</span>}<span class="st">: </span>{version}<span class="st">"</span>)
 
-    for connection in connections:
-        connection.disconnect()
+    <span class="kw">for</span> connection <span class="kw">in</span> connections:
+        connection.<span class="fn">disconnect</span>()
 
-async def main():
-    config_file = '/path/to/config.yaml'
-    num_connections = 5
+<span class="kw">async def</span> <span class="fn">main</span>():
+    config_file = <span class="st">'/path/to/config.yaml'</span>
 
-    print("Testing async pool connections:")
-    await test_multiple_async_pool_connections(config_file, num_connections)
+    <span class="nb">print</span>(<span class="st">"Testing async pool connections:"</span>)
+    <span class="kw">await</span> <span class="fn">test_async_pool</span>(config_file, <span class="op">5</span>)
 
-    print("\nTesting sync pool connections:")
-    test_multiple_sync_pool_connections(config_file, num_connections)
+    <span class="nb">print</span>(<span class="st">"\nTesting sync pool connections:"</span>)
+    <span class="fn">test_sync_pool</span>(config_file, <span class="op">5</span>)
 
-if __name__ == "__main__":
-    asyncio.run(main())
-</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
 
-<h2>Testing Your Connection Configurations with pgmonkey CLI</h2>
+<!-- ============================================================ -->
+<h2>Testing Connections with the CLI</h2>
 
-<p>pgmonkey provides a <strong>command-line interface (CLI)</strong> that allows users to quickly test their PostgreSQL connection configurations without needing to write any code.</p>
+<p>Test your PostgreSQL connection configurations directly from the command line.</p>
 
-<h3>How to Use the CLI to Test a Connection</h3>
-
-<pre><code>
-# Test using the default connection_type from the config file
+<pre><code><span class="cm"># Test using the default connection_type from the config file</span>
 pgmonkey pgconfig test --connconfig /path/to/config.yaml
 
-# Test a specific connection type (overrides config file)
+<span class="cm"># Test a specific connection type (overrides config file)</span>
 pgmonkey pgconfig test --connconfig /path/to/config.yaml --connection-type pool
-pgmonkey pgconfig test --connconfig /path/to/config.yaml --connection-type async
-</code></pre>
+pgmonkey pgconfig test --connconfig /path/to/config.yaml --connection-type async</code></pre>
 
 <p>The <code>--connection-type</code> flag accepts: <code>normal</code>, <code>pool</code>, <code>async</code>, <code>async_pool</code>.</p>
 
-<h3>Example Commands with Test Results</h3>
+<h3>Example Test Results</h3>
 
-<pre><code>
-# Test a normal connection
-pgmonkey pgconfig test --connconfig ~/config.yaml --connection-type normal
-
-Output:
+<pre><code><span class="cm"># Normal connection</span>
+$ pgmonkey pgconfig test --connconfig ~/config.yaml --connection-type normal
 Connection successful:  (1,)
 Connection closed.
 Connection test completed successfully.
 
-# Test an asynchronous connection
-pgmonkey pgconfig test --connconfig ~/config.yaml --connection-type async
-
-Output:
+<span class="cm"># Async connection</span>
+$ pgmonkey pgconfig test --connconfig ~/config.yaml --connection-type async
 Async connection successful:  (1,)
 Connection closed.
 Connection test completed successfully.
 
-# Test a pooled connection
-pgmonkey pgconfig test --connconfig ~/config.yaml --connection-type pool
-
-Output:
+<span class="cm"># Pooled connection</span>
+$ pgmonkey pgconfig test --connconfig ~/config.yaml --connection-type pool
 Pool connection successful:  (1,)
 Pooling test successful: Acquired 6 connections out of a possible 20
 Pooling tested successfully with 6 concurrent connections.
 Connection test completed successfully.
 
-# Test an asynchronous pooled connection
-pgmonkey pgconfig test --connconfig ~/config.yaml --connection-type async_pool
-
-Output:
+<span class="cm"># Async pooled connection</span>
+$ pgmonkey pgconfig test --connconfig ~/config.yaml --connection-type async_pool
 Async pool connection successful:  (1,)
 Pooling test successful: Acquired 6 connections out of a possible 20
 Async pooling tested successfully with 6 concurrent connections.
-Connection test completed successfully.
-</code></pre>
+Connection test completed successfully.</code></pre>
 
-<h3>Other CLI Commands</h3>
-
-<ul>
-    <li><code>pgmonkey pgconfig create</code>: Create a new configuration template.</li>
-    <li><code>pgmonkey pgconfig generate-code</code>: Generate example Python code to connect using your configuration file. Supports <code>--connection-type</code> flag.</li>
-    <li><code>pgmonkey pgserverconfig</code>: Generate server configuration recommendations based on your YAML file.</li>
-    <li><code>pgmonkey pgimport</code>: Import data from a CSV or text file into a PostgreSQL table.</li>
-    <li><code>pgmonkey pgexport</code>: Export data from a PostgreSQL table to a CSV file.</li>
-</ul>
-
-
-<p>For more information on how to use the CLI, run the <code>--help</code> command:</p>
-
-<pre><code>
-pgmonkey --help
-</code></pre>
-
+<!-- ============================================================ -->
 <h2>Importing and Exporting Data</h2>
 
-<p>This section covers the usage of the <code>pgmonkey</code> command-line tool for importing and exporting data with PostgreSQL.</p>
-
 <h3>Importing Data</h3>
-<p>The <code>pgimport</code> command allows you to import CSV or text files into a specified PostgreSQL table.</p>
+<p>Import CSV or text files into a PostgreSQL table.</p>
 
-<h4>Usage:</h4>
 <pre><code>pgmonkey pgimport --table &lt;TABLE&gt; --connconfig &lt;CONFIG_FILE&gt; --import_file &lt;IMPORT_FILE&gt;</code></pre>
 
-<h4>Options:</h4>
 <ul>
-    <li><strong>--import_file</strong>: The path to the CSV file or text file that you want to import into the database.</li>
-    <li><strong>--table</strong> (required): The target table name in the database. You can specify it as <code>schema.table</code> or just <code>table</code>.</li>
-    <li><strong>--connconfig</strong> (required): The path to the connection configuration file.</li>
+    <li><strong>--table</strong> (required): Target table, e.g. <code>schema.table</code> or <code>table</code>.</li>
+    <li><strong>--connconfig</strong> (required): Path to the connection configuration file.</li>
+    <li><strong>--import_file</strong>: Path to the CSV or text file to import.</li>
 </ul>
 
-<h4>Example Command:</h4>
-<pre><code>pgmonkey pgimport --table public.my_table --connconfig /path/to/config.yaml --import_file /path/to/data.csv</code></pre>
-
-<h4>Note:</h4>
-<ul>
-    <li>If an import configuration file (YAML) doesn't exist, a template will automatically be generated for you. You can edit this template to adjust settings such as column mapping, delimiter, or encoding before running the import again.</li>
-</ul>
+<p>If an import configuration file doesn't exist, pgmonkey generates a template you can edit for column mapping, delimiter, and encoding.</p>
 
 <h3>Exporting Data</h3>
-<p>The <code>pgexport</code> command allows you to export data from a PostgreSQL table into a CSV file.</p>
+<p>Export a PostgreSQL table to a CSV file.</p>
 
-<h4>Usage:</h4>
 <pre><code>pgmonkey pgexport --table &lt;TABLE&gt; --connconfig &lt;CONFIG_FILE&gt; [--export_file &lt;CSV_FILE&gt;]</code></pre>
 
-<h4>Options:</h4>
 <ul>
-    <li><strong>--table</strong> (required): The name of the table you want to export from the database. Specify as <code>schema.table</code> or just <code>table</code>.</li>
-    <li><strong>--connconfig</strong> (required): The path to the connection configuration file.</li>
-    <li><strong>--export_file</strong> (optional): The path to the CSV file where the data will be exported. If not provided, a default file will be generated using the table name.</li>
+    <li><strong>--table</strong> (required): Source table to export.</li>
+    <li><strong>--connconfig</strong> (required): Path to the connection configuration file.</li>
+    <li><strong>--export_file</strong> (optional): Output CSV path. Defaults to a file based on the table name.</li>
 </ul>
 
-<h4>Example Command:</h4>
-<pre><code>pgmonkey pgexport --table public.my_table --connconfig /path/to/config.yaml --export_file /path/to/output.csv</code></pre>
+<!-- ============================================================ -->
+<h2>Code Generation</h2>
 
-<h4>Notes:</h4>
-<ul>
-    <li>Both import and export operations will create a config file in the same directory as your file if one does not exist. You should edit it to suit your import/export needs.</li>
-</ul>
-
-
-        <h2>Commands and Results for Code Generation</h2>
-
-<p>Below are examples of how to generate Python code using pgmonkey for different connection types, direct from your config file. Use the <code>--connection-type</code> flag to specify which type of code to generate.</p>
+<p>Generate example Python code for any connection type directly from your config file. Use the <code>--connection-type</code> flag to choose.</p>
 
 <h3>1. Normal Synchronous Connection</h3>
 
-<pre><code>
-$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type normal
-</code></pre>
+<pre><code>$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type normal</code></pre>
 
 <p><strong>Generated Code:</strong></p>
 
-<pre><code>
-# Example: Normal synchronous connection using pgmonkey
-# One config file serves all connection types - just pass the type you need.
+<pre><code><span class="cm"># Example: Normal synchronous connection using pgmonkey</span>
+<span class="cm"># One config file serves all connection types - just pass the type you need.</span>
 
-from pgmonkey import PGConnectionManager
+<span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
 
-def main():
+<span class="kw">def</span> <span class="fn">main</span>():
     connection_manager = PGConnectionManager()
-    config_file_path = 'config.yaml'
+    config_file_path = <span class="st">'config.yaml'</span>
 
-    # Get a normal (synchronous) PostgreSQL connection
-    connection = connection_manager.get_database_connection(config_file_path, 'normal')
+    <span class="cm"># Get a normal (synchronous) PostgreSQL connection</span>
+    connection = connection_manager.<span class="fn">get_database_connection</span>(config_file_path, <span class="st">'normal'</span>)
 
-    # Use the connection
-    with connection as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT 1;')
-            print(cur.fetchone())
+    <span class="cm"># Use the connection</span>
+    <span class="kw">with</span> connection <span class="kw">as</span> conn:
+        <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            cur.<span class="fn">execute</span>(<span class="st">'SELECT 1;'</span>)
+            <span class="nb">print</span>(cur.<span class="fn">fetchone</span>())
 
-if __name__ == "__main__":
-    main()
-</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">main</span>()</code></pre>
 
 <h3>2. Pooled Synchronous Connection</h3>
 
-<pre><code>
-$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type pool
-</code></pre>
+<pre><code>$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type pool</code></pre>
 
 <p><strong>Generated Code:</strong></p>
 
-<pre><code>
-# Example: Pooled synchronous connection using pgmonkey
-# One config file serves all connection types - just pass the type you need.
+<pre><code><span class="cm"># Example: Pooled synchronous connection using pgmonkey</span>
+<span class="cm"># One config file serves all connection types - just pass the type you need.</span>
 
-from pgmonkey import PGConnectionManager
+<span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
 
-def main():
+<span class="kw">def</span> <span class="fn">main</span>():
     connection_manager = PGConnectionManager()
-    config_file_path = 'config.yaml'
+    config_file_path = <span class="st">'config.yaml'</span>
 
-    # Get a pooled PostgreSQL connection
-    pool_connection = connection_manager.get_database_connection(config_file_path, 'pool')
+    <span class="cm"># Get a pooled PostgreSQL connection</span>
+    pool_connection = connection_manager.<span class="fn">get_database_connection</span>(config_file_path, <span class="st">'pool'</span>)
 
-    # Use the pool - each 'with' block acquires and releases a connection
-    with pool_connection as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT 1;')
-            print(cur.fetchone())
+    <span class="cm"># Use the pool - each 'with' block acquires and releases a connection</span>
+    <span class="kw">with</span> pool_connection <span class="kw">as</span> conn:
+        <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            cur.<span class="fn">execute</span>(<span class="st">'SELECT 1;'</span>)
+            <span class="nb">print</span>(cur.<span class="fn">fetchone</span>())
 
-if __name__ == "__main__":
-    main()
-</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">main</span>()</code></pre>
 
 <h3>3. Asynchronous Connection</h3>
 
-<pre><code>
-$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type async
-</code></pre>
+<pre><code>$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type async</code></pre>
 
 <p><strong>Generated Code:</strong></p>
 
-<pre><code>
-# Example: Asynchronous connection using pgmonkey
-# One config file serves all connection types - just pass the type you need.
+<pre><code><span class="cm"># Example: Asynchronous connection using pgmonkey</span>
+<span class="cm"># One config file serves all connection types - just pass the type you need.</span>
 
-import asyncio
-from pgmonkey import PGConnectionManager
+<span class="kw">import</span> asyncio
+<span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
 
-async def main():
+<span class="kw">async def</span> <span class="fn">main</span>():
     connection_manager = PGConnectionManager()
-    config_file_path = 'config.yaml'
+    config_file_path = <span class="st">'config.yaml'</span>
 
-    # Get an async PostgreSQL connection
-    connection = await connection_manager.get_database_connection(config_file_path, 'async')
+    <span class="cm"># Get an async PostgreSQL connection</span>
+    connection = <span class="kw">await</span> connection_manager.<span class="fn">get_database_connection</span>(config_file_path, <span class="st">'async'</span>)
 
-    # Use the connection asynchronously
-    async with connection as conn:
-        async with conn.cursor() as cur:
-            await cur.execute('SELECT 1;')
-            result = await cur.fetchone()
-            print(result)
+    <span class="cm"># Use the connection asynchronously</span>
+    <span class="kw">async with</span> connection <span class="kw">as</span> conn:
+        <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT 1;'</span>)
+            result = <span class="kw">await</span> cur.<span class="fn">fetchone</span>()
+            <span class="nb">print</span>(result)
 
-if __name__ == "__main__":
-    asyncio.run(main())
-</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
 
 <h3>4. Asynchronous Pooled Connection</h3>
 
-<pre><code>
-$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type async_pool
-</code></pre>
+<pre><code>$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type async_pool</code></pre>
 
 <p><strong>Generated Code:</strong></p>
 
-<pre><code>
-# Example: Asynchronous pooled connection using pgmonkey
-# One config file serves all connection types - just pass the type you need.
+<pre><code><span class="cm"># Example: Asynchronous pooled connection using pgmonkey</span>
+<span class="cm"># One config file serves all connection types - just pass the type you need.</span>
 
-import asyncio
-from pgmonkey import PGConnectionManager
+<span class="kw">import</span> asyncio
+<span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
 
-async def main():
+<span class="kw">async def</span> <span class="fn">main</span>():
     connection_manager = PGConnectionManager()
-    config_file_path = 'config.yaml'
+    config_file_path = <span class="st">'config.yaml'</span>
 
-    # Get an async pooled PostgreSQL connection
-    pool_connection = await connection_manager.get_database_connection(config_file_path, 'async_pool')
+    <span class="cm"># Get an async pooled PostgreSQL connection</span>
+    pool_connection = <span class="kw">await</span> connection_manager.<span class="fn">get_database_connection</span>(config_file_path, <span class="st">'async_pool'</span>)
 
-    # Use the pool - each 'async with' cursor block acquires and releases a connection
-    async with pool_connection as conn:
-        async with conn.cursor() as cur:
-            await cur.execute('SELECT 1;')
-            result = await cur.fetchone()
-            print(result)
+    <span class="cm"># Use the pool - each 'async with' cursor block acquires and releases a connection</span>
+    <span class="kw">async with</span> pool_connection <span class="kw">as</span> conn:
+        <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT 1;'</span>)
+            result = <span class="kw">await</span> cur.<span class="fn">fetchone</span>()
+            <span class="nb">print</span>(result)
 
-if __name__ == "__main__":
-    asyncio.run(main())
-</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
 
-
-        <p>Example Python connection code direct from your config file is a game changer. This should quickly kickstart your python project by providing the appropriate connection code for sync, async etc...</p>
-
-
-
-        <h2>Compatibility</h2>
+<!-- ============================================================ -->
+<h2>Compatibility</h2>
 
 <p>pgmonkey v2.0.0 is tested and supported on the following:</p>
 
 <table>
     <thead>
-        <tr>
-            <th>Dependency</th>
-            <th>Supported Versions</th>
-            <th>Notes</th>
-        </tr>
+        <tr><th>Dependency</th><th>Supported Versions</th><th>Notes</th></tr>
     </thead>
     <tbody>
-        <tr>
-            <td>Python</td>
-            <td>3.10, 3.11, 3.12, 3.13</td>
-            <td>Python 3.9 reached end-of-life in October 2025</td>
-        </tr>
-        <tr>
-            <td>psycopg[binary]</td>
-            <td>&ge; 3.1.20, &lt; 4.0.0</td>
-            <td>psycopg3 with binary driver for best performance</td>
-        </tr>
-        <tr>
-            <td>psycopg_pool</td>
-            <td>&ge; 3.1.9, &lt; 4.0.0</td>
-            <td>Provides ConnectionPool and AsyncConnectionPool</td>
-        </tr>
-        <tr>
-            <td>PyYAML</td>
-            <td>&ge; 6.0.2, &lt; 7.0.0</td>
-            <td>6.0.2+ required for Python 3.12/3.13 compatibility</td>
-        </tr>
-        <tr>
-            <td>chardet</td>
-            <td>&ge; 5.2.0, &lt; 6.0.0</td>
-            <td>Character encoding detection for CSV import</td>
-        </tr>
-        <tr>
-            <td>tqdm</td>
-            <td>&ge; 4.64.0, &lt; 5.0.0</td>
-            <td>Progress bars for CSV import/export</td>
-        </tr>
+        <tr><td>Python</td><td>3.10, 3.11, 3.12, 3.13</td><td>Python 3.9 reached end-of-life in October 2025</td></tr>
+        <tr><td>psycopg[binary]</td><td>&ge; 3.1.20, &lt; 4.0.0</td><td>psycopg3 with binary driver for best performance</td></tr>
+        <tr><td>psycopg_pool</td><td>&ge; 3.1.9, &lt; 4.0.0</td><td>Provides ConnectionPool and AsyncConnectionPool</td></tr>
+        <tr><td>PyYAML</td><td>&ge; 6.0.2, &lt; 7.0.0</td><td>6.0.2+ required for Python 3.12/3.13 compatibility</td></tr>
+        <tr><td>chardet</td><td>&ge; 5.2.0, &lt; 6.0.0</td><td>Character encoding detection for CSV import</td></tr>
+        <tr><td>tqdm</td><td>&ge; 4.64.0, &lt; 5.0.0</td><td>Progress bars for CSV import/export</td></tr>
     </tbody>
 </table>
 
 <p>Install with test dependencies for development:</p>
+
 <pre><code>pip install pgmonkey[test]</code></pre>
 
 <p>This adds <strong>pytest</strong>, <strong>pytest-asyncio</strong>, and <strong>pytest-mock</strong> for running the unit test suite (113 tests, no database required).</p>
 
+<!-- ============================================================ -->
+<h2>Raspberry Pi Users: Installation via PiWheels</h2>
 
-        <h2>Raspberry Pi Users: Installation via PiWheels</h2>
-
-<p>If you're using a Raspberry Pi and need to manage PostgreSQL connections in Python, <code>pgmonkey</code> is available on <a href="https://www.piwheels.org/project/pgmonkey/">PiWheels</a>, which provides pre-built Python packages optimized for Raspberry Pi.</p>
-
-<h3>Installation</h3>
-<p>Installing <code>pgmonkey</code> on Raspberry Pi is straightforward:</p>
+<p>pgmonkey is available on <a href="https://www.piwheels.org/project/pgmonkey/">PiWheels</a>, providing pre-built packages optimized for Raspberry Pi.</p>
 
 <pre><code>pip3 install pgmonkey</code></pre>
 
 <h3>Supported Raspberry Pi OS Versions</h3>
-<p><code>pgmonkey</code> v2.0.0 requires Python 3.10+. Recommended Raspberry Pi OS:</p>
+<p>pgmonkey v2.0.0 requires Python 3.10+. Recommended Raspberry Pi OS:</p>
 <ul>
     <li><strong>Bookworm</strong> (Python 3.11)</li>
 </ul>
@@ -874,15 +756,16 @@ if __name__ == "__main__":
 
 <h3>Why Use pgmonkey on Raspberry Pi?</h3>
 <ul>
-    <li>Easily manage PostgreSQL connections using a single YAML configuration.</li>
-    <li>Take advantage of async and connection pooling features for performance-critical tasks.</li>
-    <li>Run projects efficiently on lower-powered hardware like Raspberry Pi.</li>
+    <li>Manage PostgreSQL connections using a single YAML configuration.</li>
+    <li>Use async and connection pooling for performance-critical tasks.</li>
+    <li>Run projects efficiently on lower-powered hardware.</li>
 </ul>
 
-    </div>
+</div>
 
-    <footer>
-        <p>&copy; 2025 pgmonkey by <a href="https://github.com/RexBytes">RexBytes</a>. <a href="https://github.com/RexBytes/pgmonkey">GitHub</a> | <a href="https://pypi.org/project/pgmonkey/">PyPI</a></p>
-    </footer>
+<footer>
+    <p>&copy; 2025 pgmonkey by <a href="https://github.com/RexBytes">RexBytes</a> &nbsp;|&nbsp; <a href="https://github.com/RexBytes/pgmonkey">GitHub</a> &nbsp;|&nbsp; <a href="https://pypi.org/project/pgmonkey/">PyPI</a></p>
+</footer>
+
 </body>
 </html>
