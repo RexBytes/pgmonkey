@@ -1,44 +1,46 @@
-# Getting Started with pgmonkey: A Comprehensive Guide
+# Getting Started with pgmonkey
 
-**pgmonkey** is a powerful Python library designed to simplify and manage PostgreSQL database connections. It supports various connection types, authentication methods (including SSL and certificate-based authentication), and provides a flexible, configuration-driven approach to managing database connections. In addition to its robust Python API, **pgmonkey** includes a command-line interface (CLI) for easy management of database configurations and connections.
-
-This tutorial will walk you through the process of installing **pgmonkey**, creating YAML configuration files, understanding the available authentication methods, using the CLI, and using the library to manage different types of database connections.
+**pgmonkey** is a Python library for managing PostgreSQL database connections. It supports normal, pooled, async, and async-pooled connections using a single YAML configuration file. Authentication methods include password, SSL/TLS, and certificate-based authentication. A CLI is included for managing configurations and testing connections.
 
 ## Table of Contents
 
 1. [Installation](#installation)
-2. [Setting Up YAML Configuration Files](#setting-up-yaml-configuration-files)
-   - [Basic Connection Options](#basic-connection-options)
-   - [Connection Pooling Options](#connection-pooling-options)
-   - [Asynchronous Connection Options](#asynchronous-connection-options)
-3. [Supported Authentication Methods](#supported-authentication-methods)
+2. [One Config File, All Connection Types](#one-config-file-all-connection-types)
+3. [YAML Configuration Reference](#yaml-configuration-reference)
+   - [Connection Settings](#connection-settings)
+   - [Pool Settings](#pool-settings)
+   - [Async Settings](#async-settings)
+   - [Async Pool Settings](#async-pool-settings)
+4. [Authentication Methods](#authentication-methods)
    - [Password-Based Authentication](#password-based-authentication)
    - [SSL/TLS Encryption](#ssltls-encryption)
    - [Certificate-Based Authentication](#certificate-based-authentication)
-4. [Using the pgmonkey CLI](#using-the-pgmonkey-cli)
-   - [Available CLI Commands](#available-cli-commands)
-   - [Creating a PostgreSQL Configuration Template](#creating-a-postgresql-configuration-template)
-   - [Testing a Database Connection](#testing-a-database-connection)
-5. [Using pgmonkey in Python](#using-pgmonkey-in-python)
-   - [Establishing a Connection](#establishing-a-connection)
-   - [Running Database Queries](#running-database-queries)
-   - [Handling Different Connection Types](#handling-different-connection-types)
-6. [Importing and Exporting Data](#importing-and-exporting-data)
-   - [Importing Data](#importing-data)
-   - [Exporting Data](#exporting-data)
-7. [Example Use Case: Testing Multiple Connections](#example-use-case-testing-multiple-connections)
-8. [Example Use Case:  Test Pooling Capability](#example-use-case-test-pooling-capability)
-9. [Conclusion](#conclusion)
+5. [Using the CLI](#using-the-cli)
+   - [Creating a Configuration Template](#creating-a-configuration-template)
+   - [Testing a Connection](#testing-a-connection)
+   - [Generating Python Code](#generating-python-code)
+   - [Server Configuration Recommendations](#server-configuration-recommendations)
+   - [Importing and Exporting Data](#importing-and-exporting-data)
+6. [Using pgmonkey in Python](#using-pgmonkey-in-python)
+   - [Normal (Synchronous) Connection](#normal-synchronous-connection)
+   - [Pooled Connection](#pooled-connection)
+   - [Async Connection](#async-connection)
+   - [Async Pooled Connection](#async-pooled-connection)
+   - [Using the Config File Default](#using-the-config-file-default)
+   - [Transactions, Commit, and Rollback](#transactions-commit-and-rollback)
+7. [Testing All Connection Types](#testing-all-connection-types)
+8. [Testing Pool Capacity](#testing-pool-capacity)
+9. [Running the Test Suite](#running-the-test-suite)
 
 ## Installation
 
-To get started with **pgmonkey**, you can install it via PyPI by running the following command:
+Install from PyPI:
 
 ```bash
 pip install pgmonkey
 ```
 
-Alternatively, you can clone the repository from GitHub:
+Or install from source:
 
 ```bash
 git clone https://github.com/RexBytes/pgmonkey.git
@@ -46,91 +48,74 @@ cd pgmonkey
 pip install .
 ```
 
-## Setting Up YAML Configuration Files
+To install with test dependencies:
 
-**pgmonkey** uses YAML files to manage and configure database connections. These configuration files allow you to define various settings, including the type of connection, SSL options, and authentication methods.
+```bash
+pip install pgmonkey[test]
+```
 
-### Basic Connection Options
+## One Config File, All Connection Types
 
-Here’s a basic YAML configuration for a normal (synchronous) PostgreSQL connection:
+In v2.0.0, pgmonkey uses a **single YAML configuration file** for all connection types. Instead of maintaining separate config files for normal, pool, async, and async_pool connections, you define everything in one file and specify the connection type when you call the API:
+
+```python
+from pgmonkey import PGConnectionManager
+
+manager = PGConnectionManager()
+
+# Same config file, different connection types
+conn = manager.get_database_connection('config.yaml', 'normal')
+conn = manager.get_database_connection('config.yaml', 'pool')
+conn = await manager.get_database_connection('config.yaml', 'async')
+conn = await manager.get_database_connection('config.yaml', 'async_pool')
+```
+
+The `connection_type` parameter is optional. If omitted, pgmonkey uses the `connection_type` value from the YAML file (which defaults to `'normal'`).
+
+## YAML Configuration Reference
+
+Here is the full configuration template. You only need to fill in the sections relevant to the connection types you plan to use.
 
 ```yaml
 postgresql:
-  connection_type: 'normal'  # Options: 'normal', 'pool', 'async', 'async_pool'
+  # Default connection type when none is specified in the API call.
+  # Options: 'normal', 'pool', 'async', 'async_pool'
+  # You can override this per-call:
+  #   manager.get_database_connection('config.yaml', 'pool')
+  connection_type: 'normal'
+
   connection_settings:
-    connectionName: 'normal_connection'
-    description: 'Default PostgreSQL connection setup'
-    user: 'your_user'
-    password: 'your_password'
+    user: 'postgres'
+    password: 'password'
     host: 'localhost'
-    port: 5432
-    dbname: 'your_database'
+    port: '5432'
+    dbname: 'mydatabase'
     sslmode: 'prefer'  # Options: disable, allow, prefer, require, verify-ca, verify-full
-    connect_timeout: 10  # Maximum wait for connection, in seconds
-    application_name: 'pgmonkey_app'
-    keepalives: 1  # Enable TCP keepalives
-    keepalives_idle: 60  # Seconds before sending a keepalive probe
-    keepalives_interval: 15  # Seconds between keepalive probes
-    keepalives_count: 5  # Maximum keepalive probes before closing connection
-```
+    sslcert: ''  # Path to the client SSL certificate, if needed
+    sslkey: ''  # Path to the client SSL key, if needed
+    sslrootcert: ''  # Path to the root SSL certificate, if needed
+    connect_timeout: '10'  # Maximum wait for connection, in seconds
+    application_name: 'myapp'
+    keepalives: '1'  # Enable TCP keepalives (1=on, 0=off)
+    keepalives_idle: '60'  # Seconds before sending a keepalive probe
+    keepalives_interval: '15'  # Seconds between keepalive probes
+    keepalives_count: '5'  # Max keepalive probes before closing the connection
 
-### Connection Pooling Options
-
-If you want to utilize connection pooling, you can extend the configuration like this:
-
-```yaml
-postgresql:
-  connection_type: 'pool'
-  connection_settings:
-    connectionName: 'pool_connection'
-    user: 'your_user'
-    password: 'your_password'
-    host: 'localhost'
-    port: 5432
-    dbname: 'your_database'
-    sslmode: 'prefer'
+  # Settings for 'pool' connection type
   pool_settings:
-    min_size: 5  # Minimum number of connections in the pool
-    max_size: 20  # Maximum number of connections in the pool
-    max_idle: 300  # Time (seconds) a connection can remain idle before being closed
-    max_lifetime: 3600  # Maximum time (seconds) a connection can be reused
-```
+    min_size: 5
+    max_size: 20
+    max_idle: 300  # Seconds a connection can remain idle before being closed
+    max_lifetime: 3600  # Seconds a connection can be reused
 
-### Asynchronous Connection Options
-
-For applications requiring asynchronous database operations, **pgmonkey** supports async connections:
-
-```yaml
-postgresql:
-  connection_type: 'async'
-  connection_settings:
-    connectionName: 'async_connection'
-    user: 'your_user'
-    password: 'your_password'
-    host: 'localhost'
-    port: 5432
-    dbname: 'your_database'
-    sslmode: 'require'
+  # Settings for 'async' connection type (applied via SET commands on connection)
   async_settings:
-    idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction
-    statement_timeout: '30000'  # Cancel statements exceeding 30 seconds
-    lock_timeout: '10000'  # Timeout for acquiring locks
-    work_mem: '256MB'  # Memory for sort operations and more
-```
+    idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction (ms)
+    statement_timeout: '30000'  # Cancel statements exceeding this time (ms)
+    lock_timeout: '10000'  # Timeout for acquiring locks (ms)
+    # work_mem: '256MB'  # Memory for sort operations and more
 
-For asynchronous connections with pooling:
-
-```yaml
-postgresql:
-  connection_type: 'async_pool'
-  connection_settings:
-    connectionName: 'async_pool_connection'
-    user: 'your_user'
-    password: 'your_password'
-    host: 'localhost'
-    port: 5432
-    dbname: 'your_database'
-    sslmode: 'require'
+  # Settings for 'async_pool' connection type
   async_pool_settings:
     min_size: 5
     max_size: 20
@@ -138,15 +123,64 @@ postgresql:
     max_lifetime: 3600
 ```
 
-## Supported Authentication Methods
+### Connection Settings
 
-**pgmonkey** supports various PostgreSQL authentication methods, including password-based authentication, SSL/TLS encryption, and certificate-based authentication. Here’s a breakdown of each:
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `user` | Username for the PostgreSQL database | `'postgres'` |
+| `password` | Password for the database user | `'password'` |
+| `host` | Database server host address | `'localhost'` |
+| `port` | Database server port | `'5432'` |
+| `dbname` | Name of the database to connect to | `'mydatabase'` |
+| `sslmode` | SSL mode (disable, allow, prefer, require, verify-ca, verify-full) | `'prefer'` |
+| `sslcert` | Path to the client SSL certificate | `'/path/to/client.crt'` |
+| `sslkey` | Path to the client SSL key | `'/path/to/client.key'` |
+| `sslrootcert` | Path to the root SSL certificate | `'/path/to/ca.crt'` |
+| `connect_timeout` | Maximum wait for connection in seconds | `'10'` |
+| `application_name` | Application name reported to PostgreSQL | `'myapp'` |
+| `keepalives` | Enable TCP keepalives (1=on, 0=off) | `'1'` |
+| `keepalives_idle` | Seconds before sending a keepalive probe | `'60'` |
+| `keepalives_interval` | Seconds between keepalive probes | `'15'` |
+| `keepalives_count` | Max keepalive probes before closing | `'5'` |
+
+### Pool Settings
+
+Used by `pool` connection type.
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `min_size` | Minimum number of connections in the pool | `5` |
+| `max_size` | Maximum number of connections in the pool | `20` |
+| `max_idle` | Seconds a connection can remain idle before being closed | `300` |
+| `max_lifetime` | Seconds a connection can be reused | `3600` |
+
+### Async Settings
+
+Used by `async` connection type. These are applied via SQL `SET` commands when the connection is established.
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `idle_in_transaction_session_timeout` | Timeout for idle in transaction (ms) | `'5000'` |
+| `statement_timeout` | Cancel statements exceeding this time (ms) | `'30000'` |
+| `lock_timeout` | Timeout for acquiring locks (ms) | `'10000'` |
+| `work_mem` | Memory for sort operations | `'256MB'` |
+
+### Async Pool Settings
+
+Used by `async_pool` connection type. Same parameters as pool settings.
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `min_size` | Minimum connections in the async pool | `5` |
+| `max_size` | Maximum connections in the async pool | `20` |
+| `max_idle` | Seconds a connection can remain idle | `300` |
+| `max_lifetime` | Seconds a connection can be reused | `3600` |
+
+## Authentication Methods
 
 ### Password-Based Authentication
 
-This is the most common authentication method. The user’s credentials (username and password) are sent to the PostgreSQL server, where they are validated.
-
-Example configuration:
+The most common method. Credentials are sent to the PostgreSQL server for validation.
 
 ```yaml
 postgresql:
@@ -160,16 +194,14 @@ postgresql:
 
 ### SSL/TLS Encryption
 
-SSL/TLS is used to encrypt the connection between your application and the PostgreSQL server, providing security over the network. **pgmonkey** supports various SSL modes:
+SSL/TLS encrypts the connection between your application and the PostgreSQL server. pgmonkey supports these SSL modes:
 
 - `disable`: No SSL.
-- `allow`: Attempt SSL connection, fall back to non-SSL if unavailable.
-- `prefer`: Attempt SSL connection, fall back to non-SSL if not supported by the server.
+- `allow`: Attempt SSL, fall back to non-SSL if unavailable.
+- `prefer`: Attempt SSL, fall back to non-SSL if not supported.
 - `require`: Require SSL connection.
-- `verify-ca`: Require SSL connection and verify the server’s certificate is signed by a trusted CA.
-- `verify-full`: Require SSL connection, verify server’s certificate, and ensure the hostname matches.
-
-Example configuration:
+- `verify-ca`: Require SSL and verify the server's certificate is signed by a trusted CA.
+- `verify-full`: Require SSL, verify certificate, and ensure the hostname matches.
 
 ```yaml
 postgresql:
@@ -180,386 +212,83 @@ postgresql:
     host: 'localhost'
     dbname: 'your_database'
     sslmode: 'require'
-    sslrootcert: '/path/to/ca.crt'  # Path to the CA certificate
+    sslrootcert: '/path/to/ca.crt'
 ```
 
 ### Certificate-Based Authentication
 
-Certificate-based authentication uses SSL client certificates for authentication instead of or in addition to passwords. This method is highly secure and often used in enterprise environments.
-
-Example configuration:
+Uses SSL client certificates for authentication. Highly secure and often used in enterprise environments.
 
 ```yaml
 postgresql:
   connection_type: 'normal'
   connection_settings:
     user: 'your_user'
-    password: 'your_password'  # Can be optional if using cert authentication only
+    password: 'your_password'
     host: 'localhost'
     dbname: 'your_database'
     sslmode: 'verify-full'
-    sslcert: '/path/to/client.crt'  # Path to the client certificate
-    sslkey: '/path/to/client.key'  # Path to the client key
-    sslrootcert: '/path/to/ca.crt'  # Path to the root CA certificate
+    sslcert: '/path/to/client.crt'
+    sslkey: '/path/to/client.key'
+    sslrootcert: '/path/to/ca.crt'
 ```
 
-This configuration ensures that:
-- The connection is encrypted using SSL/TLS.
-- The server’s certificate is verified against the specified CA.
-- The client authenticates using its own certificate.
+## Using the CLI
 
-## Using the pgmonkey CLI
-
-In addition to the Python API, **pgmonkey** provides a command-line interface (CLI) that allows you to manage your PostgreSQL configurations and connections directly from the terminal. This section will cover the available CLI commands and how to use them.
-
-### Available CLI Commands
-
-Here are the main CLI commands that **pgmonkey** offers:
-
-- `pgmonkey settings`: Manage application settings.
-- `pgmonkey pgconfig`: Manage PostgreSQL configurations.
-  - `create`: Create a new database configuration file.
-  - `test`: Test the database connection using a configuration file.
-- `pgmonkey pgserverconfig`: Generate suggested server configuration entries for PostgreSQL.
-
-You can access the help for any command by running:
+pgmonkey provides a command-line interface for managing configurations and connections.
 
 ```bash
 pgmonkey --help
 ```
 
-### Creating a PostgreSQL Configuration Template
+### Creating a Configuration Template
 
-To create a new PostgreSQL configuration template using the CLI, you can use the `pgconfig create` command. This command generates a YAML configuration file with a basic template that you can customize.
-
-Example:
+Generate a YAML configuration template:
 
 ```bash
-pgmonkey pgconfig create --type pg --filepath /path/to/your/config.yaml
+pgmonkey pgconfig create --type pg --filepath /path/to/config.yaml
 ```
 
-In this command:
-- `--type pg`: Specifies that the configuration is for PostgreSQL.
-- `--filepath /path/to/your/config.yaml`: Specifies the path where the new configuration file will be created.
+This creates a configuration file with all available settings and sensible defaults. Edit the file to customize your connection settings.
 
-After running this command, you will have a basic YAML configuration file at the specified location. You can then edit this file to customize the connection settings as needed.
+### Testing a Connection
 
-### Testing a Database Connection
-
-
-
-Once you have a configuration file, you can test the connection directly from the command line using the `pgconfig test` command. This is useful for verifying that your connection settings are correct before integrating them into your application.
-
-Example:
+Test a connection using your configuration file:
 
 ```bash
-pgmonkey pgconfig test --connconfig /path/to/your/config.yaml
+# Test using the connection_type from the config file
+pgmonkey pgconfig test --connconfig /path/to/config.yaml
+
+# Test a specific connection type (overrides config file)
+pgmonkey pgconfig test --connconfig /path/to/config.yaml --connection-type pool
+pgmonkey pgconfig test --connconfig /path/to/config.yaml --connection-type async
 ```
 
-This command will attempt to connect to the PostgreSQL database using the settings in the specified YAML file. If the connection is successful, it will print the PostgreSQL version and other relevant information.
+The `--connection-type` flag accepts: `normal`, `pool`, `async`, `async_pool`.
 
-## Using pgmonkey in Python
+### Generating Python Code
 
-After setting up your configuration files and testing them with the CLI, you can use **pgmonkey** in your Python applications.
-
-### Establishing a Connection
-
-Here’s a basic example of how to load a connection configuration and establish a connection using **pgmonkey**:
-
-```python
-import asyncio
-from pgmonkey import PGConnectionManager
-
-async def main():
-    config_file = '/path/to/your/configs/pg_async.yaml'
-    connection_manager = PGConnectionManager()
-
-    # Check if connection should be asynchronous or synchronous
-    if 'async' in config_file:
-        connection = await connection_manager.get_database_connection(config_file)
-    else:
-        connection = connection_manager.get_database_connection(config_file)  # Sync connection
-
-    try:
-        # Handle async connection types
-        if connection.connection_type in ['async', 'async_pool']:
-            async with connection as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute('SELECT version();')
-                    print(await cur.fetchone())
-
-        # Handle sync connection types
-        else:
-            with connection as conn:
-                with conn.cursor() as cur:
-                    cur.execute('SELECT version();')
-                    print(cur.fetchone())
-
-    finally:
-        await connection.disconnect()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-### Running Database Queries
-
-The example above demonstrates how to run a basic query (`SELECT version();`) to check the PostgreSQL server version. You can replace this query with any SQL command relevant to your use case.
-
-### Handling Different Connection Types
-
-**pgmonkey** dynamically detects the connection type based on the YAML configuration and manages it accordingly.
-
-For example, for a synchronous connection:
-
-```python
-if connection.connection_type == 'normal':
-    # Handle synchronous connection
-```
-
-For an asynchronous pooled connection:
-
-```python
-if connection.connection_type == 'async_pool':
-    # Handle asynchronous pooled connection
-```
-
-## Importing and Exporting Data
-
-pgmonkey provides an easy way to import and export data to and from PostgreSQL using CSV or text files. This functionality is available via the `pgimport` and `pgexport` commands in the CLI.
-
-### Importing Data
-
-To import data from a CSV or text file into a PostgreSQL table, you can use the `pgimport` command. You need to specify the table name, the path to the YAML configuration file, and the file to import.
-
-**Usage**:
+Generate example Python code for a connection type:
 
 ```bash
-pgmonkey pgimport --table <TABLE> --connconfig <CONFIG_FILE> --import_file <IMPORT_FILE>
+# Generate code using the config file's default connection type
+pgmonkey pgconfig generate-code --filepath /path/to/config.yaml
+
+# Generate code for a specific connection type
+pgmonkey pgconfig generate-code --filepath /path/to/config.yaml --connection-type async_pool
 ```
 
-**Options**:
-- `--table <TABLE>`: The name of the table to import the data into. You can specify it as `schema.table` or just `table`.
-- `--connconfig <CONFIG_FILE>`: The path to the YAML configuration file that contains the connection details.
-- `--import_file <IMPORT_FILE>`: The path to the CSV or text file you wish to import. TSV, PSV etc...
+### Server Configuration Recommendations
 
-**Example**:
+Generate recommended PostgreSQL server configuration entries based on your config file:
 
 ```bash
-pgmonkey pgimport --table public.my_table --connconfig /path/to/connection_config.yaml --import_file <CSV_FILE>
+pgmonkey pgserverconfig --filepath /path/to/config.yaml
 ```
 
-**Note**: If an import configuration (YAML) doesn't exist, pgmonkey will automatically generate a template for you. You can then modify this template to adjust settings like column mapping, delimiter, or encoding before rerunning the import command.
+This analyzes your configuration and outputs recommended entries for `postgresql.conf` and `pg_hba.conf`:
 
-### Exporting Data
-
-You can also export data from a PostgreSQL table into a CSV file using the `pgexport` command.
-
-**Usage**:
-
-```bash
-pgmonkey pgexport --table <TABLE> --connconfig <CONFIG_FILE> [--export_file <CSV_FILE>]
 ```
-
-**Options**:
-- `--table <TABLE>`: The name of the table you want to export. You can specify it as `schema.table` or just `table`.
-- `--connconfig <CONFIG_FILE>`: The path to the YAML configuration file with the database connection details.
-- `--export_file <CSV_FILE>` (optional): The path to the CSV file where the data will be exported. If not provided, a default file will be generated with the table name.
-
-**Example**:
-
-```bash
-pgmonkey pgexport --table public.my_table --connconfig /path/to/connection_config.yaml --export_file /path/to/output.csv
-```
-
-This will export the contents of the specified table into the CSV file. If no output file is specified, pgmonkey will create one with a default name based on the table.
-
-### Notes:
-- Ensure that your YAML configuration file specifies the correct database connection settings for both import and export operations.
-- You can modify the generated YAML template to fine-tune import/export options such as delimiters or encodings.
-
-
-
-## Example Use Case: Testing Multiple Connections
-
-Let’s create a script that tests multiple database connections using different configurations:
-
-```python
-import asyncio
-from pgmonkey import PGConnectionManager
-
-# Function to test asynchronous connections
-async def test_async_connection(connection, config_name):
-    """Test an asynchronous database connection."""
-    async with connection as conn:
-        async with conn.cursor() as cur:
-            await cur.execute('SELECT version();')
-            print(f"{config_name}: {await cur.fetchone()}")
-
-# Function to test synchronous connections
-def test_sync_connection(connection, config_name):
-    """Test a synchronous database connection."""
-    with connection as conn:
-        with conn.cursor() as cur:
-            cur.execute('SELECT version();')
-            print(f"{config_name}: {cur.fetchone()}")
-
-async def test_database_connection(config_file, config_name):
-    """Determine connection type and test accordingly."""
-    connection_manager = PGConnectionManager()
-
-    # Check if the connection is async or sync
-    if 'async' in config_file:
-        connection = await connection_manager.get_database_connection(config_file)
-    else:
-        connection = connection_manager.get_database_connection(config_file)  # Sync connection
-
-    try:
-        # Handle async connection
-        if connection.connection_type in ['async', 'async_pool']:
-            await test_async_connection(connection, config_name)
-        # Handle sync connection
-        else:
-            test_sync_connection(connection, config_name)
-    finally:
-        # Disconnect appropriately based on async/sync
-        if asyncio.iscoroutinefunction(connection.disconnect):
-            await connection.disconnect()
-        else:
-            connection.disconnect()
-
-def main():
-    base_dir = '/path/to/your/configs/'
-    config_files = {
-        'pg_async_pool.yaml': base_dir + 'pg_async_pool.yaml',
-        'pg_async.yaml': base_dir + 'pg_async.yaml',
-        'pg_normal.yaml': base_dir + 'pg_normal.yaml',
-        'pg_pool.yaml': base_dir + 'pg_pool.yaml'
-    }
-
-    # Run each connection test
-    for config_name, config_file in config_files.items():
-        print(f"Testing connection with config: {config_name}")
-        asyncio.run(test_database_connection(config_file, config_name))
-
-if __name__ == "__main__":
-    main()
-```
-
-This script loops through multiple configurations and tests each connection, printing the PostgreSQL version to confirm that the connection works as expected.
-
-## Example Use Case:  Test Pooling Capability
-
-In the following script we test the pooling capability by creating
-5 connections taken from the pool.  Make sure your config file specifies enough pool connections.
-
-```python
-import asyncio
-from pgmonkey import PGConnectionManager
-
-# Function to test multiple async pool connections
-async def test_multiple_async_pool_connections(config_file, num_connections):
-    connection_manager = PGConnectionManager()
-    connections = []
-
-    # Acquire multiple async connections from the pool
-    for _ in range(num_connections):
-        connection = await connection_manager.get_database_connection(config_file)
-        connections.append(connection)
-
-    try:
-        # Use each async connection
-        for idx, connection in enumerate(connections):
-            async with connection as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute('SELECT version();')
-                    version = await cur.fetchone()
-                    print(f"Async Connection {idx + 1}: {version}")
-    finally:
-        # Disconnect all async connections
-        for connection in connections:
-            await connection.disconnect()
-
-# Function to test multiple sync pool connections
-def test_multiple_sync_pool_connections(config_file, num_connections):
-    connection_manager = PGConnectionManager()
-    connections = []
-
-    # Acquire multiple sync connections from the pool
-    for _ in range(num_connections):
-        connection = connection_manager.get_database_connection(config_file)  # Sync call
-        connections.append(connection)
-
-    try:
-        # Use each sync connection
-        for idx, connection in enumerate(connections):
-            with connection as conn:
-                with conn.cursor() as cur:
-                    cur.execute('SELECT version();')
-                    version = cur.fetchone()
-                    print(f"Sync Connection {idx + 1}: {version}")
-    finally:
-        # Disconnect all sync connections
-        for connection in connections:
-            connection.disconnect()
-
-async def main():
-    base_dir = '/path/to/your/connection/configs/'
-    config_files = {
-        'async_pool': base_dir + 'pg_async_pool.yaml',
-        'pool': base_dir + 'pg_pool.yaml'
-    }
-
-    num_connections = 5  # Number of connections to checkout from the pool
-
-    print("Testing async pool connections:")
-    await test_multiple_async_pool_connections(config_files['async_pool'], num_connections)
-
-    print("\nTesting sync pool connections:")
-    test_multiple_sync_pool_connections(config_files['pool'], num_connections)
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-## Conclusion
-
-**pgmonkey** is a versatile and powerful tool for managing PostgreSQL connections in Python. With support for various authentication methods, including SSL/TLS and certificate-based authentication, as well as both synchronous and asynchronous connections, it’s designed to fit a wide range of use cases. The built-in CLI makes it easy to manage configurations and test connections directly from the command line, further enhancing its usability.
-
-By following this tutorial, you should now be able to set up and manage your database connections with ease, both through the CLI and within your Python applications.
-
-For more detailed documentation and to contribute, visit the **pgmonkey** [GitHub repository](https://github.com/RexBytes/pgmonkey).
-
-Happy coding!
-
-
-## Generating Recommended Server Configuration Entries
-
-In addition to managing client-side database connections, **pgmonkey** can also assist with server-side configurations. While it doesn’t generate the entire PostgreSQL server configuration file (`postgresql.conf`), it provides you with the specific entries that are required or recommended based on your connection settings. This is particularly useful for ensuring that your PostgreSQL server is properly configured to work with the settings specified in your **pgmonkey** configuration file.
-
-### How It Works
-
-The `pgserverconfig` command analyzes your existing **pgmonkey** configuration file and generates the recommended entries for your `postgresql.conf` and `pg_hba.conf` files. These recommendations ensure compatibility with the connection settings you’ve specified, such as SSL requirements, connection pooling, and other critical parameters.
-
-### Using the CLI to Generate Server Config Recommendations
-
-To generate server configuration recommendations, you can use the `pgserverconfig` command from the **pgmonkey** CLI. This command reads your configuration file and outputs the necessary settings for your PostgreSQL server configuration files.
-
-#### Example Command
-
-```bash
-pgmonkey pgserverconfig --filepath /path/to/your/config.yaml
-```
-
-In this command:
-- `--filepath /path/to/your/config.yaml`: Specifies the path to the **pgmonkey** configuration file you want to analyze.
-
-#### Output Example
-
-When you run the command, **pgmonkey** will analyze the configuration file and provide you with entries like the following:
-
-```plaintext
 1) Database type detected: PostgreSQL
 
 2) Minimal database server settings needed for this config file:
@@ -576,23 +305,268 @@ ssl = on
 ssl_cert_file = 'server.crt'
 ssl_key_file = 'server.key'
 ssl_ca_file = 'ca.crt'
-
-Please check the following files on your system and ensure that the appropriate settings are applied: pg_hba.conf, postgresql.conf. Ensure that the network ADDRESS matches your network subnet and review all configurations.
 ```
 
-### What the Output Means
+### Importing and Exporting Data
 
-- **`pg_hba.conf` Entries**: These entries configure client authentication, ensuring that the server only allows connections that match the specified criteria, such as SSL client certificates and network addresses.
+**Import data** from a CSV or text file into a PostgreSQL table:
 
-- **`postgresql.conf` Entries**: These entries configure server settings like `max_connections`, SSL settings, and other parameters that are crucial for the server to handle the types of connections you’ve configured in **pgmonkey**.
+```bash
+pgmonkey pgimport --table public.my_table --connconfig /path/to/config.yaml --import_file /path/to/data.csv
+```
 
-### Applying the Recommendations
+If an import configuration file doesn't exist, pgmonkey generates a template you can edit to adjust column mapping, delimiter, and encoding.
 
-Once you have the recommended entries:
-1. Open your PostgreSQL server configuration files (`pg_hba.conf` and `postgresql.conf`).
-2. Add or modify the settings as per the recommendations provided by **pgmonkey**.
-3. Restart your PostgreSQL server to apply the changes.
+**Export data** from a PostgreSQL table to a CSV file:
 
-### Why This Is Important
+```bash
+pgmonkey pgexport --table public.my_table --connconfig /path/to/config.yaml --export_file /path/to/output.csv
+```
 
-Ensuring that your server is configured correctly is crucial for the smooth operation of your database connections. Misconfigurations can lead to connection failures, security vulnerabilities, or performance issues. By using **pgmonkey** to generate these recommendations, you can be confident that your server is set up to work optimally with the connection settings you’ve defined.
+If `--export_file` is omitted, a default file is generated using the table name.
+
+## Using pgmonkey in Python
+
+### Normal (Synchronous) Connection
+
+```python
+from pgmonkey import PGConnectionManager
+
+def main():
+    manager = PGConnectionManager()
+    connection = manager.get_database_connection('config.yaml', 'normal')
+
+    with connection as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT version();')
+            print(cur.fetchone())
+
+if __name__ == "__main__":
+    main()
+```
+
+### Pooled Connection
+
+```python
+from pgmonkey import PGConnectionManager
+
+def main():
+    manager = PGConnectionManager()
+    pool_connection = manager.get_database_connection('config.yaml', 'pool')
+
+    # Each 'with' block acquires and releases a connection from the pool
+    with pool_connection as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT version();')
+            print(cur.fetchone())
+
+if __name__ == "__main__":
+    main()
+```
+
+### Async Connection
+
+```python
+import asyncio
+from pgmonkey import PGConnectionManager
+
+async def main():
+    manager = PGConnectionManager()
+    connection = await manager.get_database_connection('config.yaml', 'async')
+
+    async with connection as conn:
+        async with conn.cursor() as cur:
+            await cur.execute('SELECT version();')
+            print(await cur.fetchone())
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Async Pooled Connection
+
+```python
+import asyncio
+from pgmonkey import PGConnectionManager
+
+async def main():
+    manager = PGConnectionManager()
+    pool_connection = await manager.get_database_connection('config.yaml', 'async_pool')
+
+    # Each 'async with' cursor block acquires and releases a connection from the pool
+    async with pool_connection as conn:
+        async with conn.cursor() as cur:
+            await cur.execute('SELECT version();')
+            print(await cur.fetchone())
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Using the Config File Default
+
+If you omit the `connection_type` parameter, pgmonkey uses the value from your YAML file:
+
+```python
+# Uses whatever connection_type is set in config.yaml (defaults to 'normal')
+connection = manager.get_database_connection('config.yaml')
+```
+
+### Transactions, Commit, and Rollback
+
+pgmonkey connections support transactions via context managers:
+
+```python
+# Synchronous transaction
+with connection as conn:
+    with conn.transaction():
+        with conn.cursor() as cur:
+            cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('Alice',))
+            cur.execute('SELECT * FROM my_table WHERE name = %s', ('Alice',))
+            print(cur.fetchall())
+
+# Asynchronous transaction
+async with connection as conn:
+    async with conn.transaction():
+        async with conn.cursor() as cur:
+            await cur.execute('INSERT INTO my_table (name) VALUES (%s)', ('Alice',))
+            await cur.execute('SELECT * FROM my_table WHERE name = %s', ('Alice',))
+            print(await cur.fetchall())
+```
+
+Manual commit and rollback are available when not using the transaction context:
+
+```python
+# Manual commit
+async with connection as conn:
+    async with conn.cursor() as cur:
+        await cur.execute('UPDATE my_table SET name = %s WHERE id = %s', ('Doe', 1))
+    await conn.commit()
+
+# Manual rollback on error
+try:
+    async with connection as conn:
+        async with conn.cursor() as cur:
+            await cur.execute('DELETE FROM my_table WHERE id = %s', (1,))
+        await conn.commit()
+except Exception as e:
+    await conn.rollback()
+```
+
+## Testing All Connection Types
+
+Test all four connection types using a single config file:
+
+```python
+import asyncio
+from pgmonkey import PGConnectionManager
+
+def test_sync(manager, config_file, connection_type):
+    connection = manager.get_database_connection(config_file, connection_type)
+    with connection as conn:
+        with conn.cursor() as cur:
+            cur.execute('SELECT version();')
+            print(f"{connection_type}: {cur.fetchone()}")
+
+async def test_async(manager, config_file, connection_type):
+    connection = await manager.get_database_connection(config_file, connection_type)
+    async with connection as conn:
+        async with conn.cursor() as cur:
+            await cur.execute('SELECT version();')
+            print(f"{connection_type}: {await cur.fetchone()}")
+
+async def main():
+    manager = PGConnectionManager()
+    config_file = '/path/to/config.yaml'
+
+    # Test synchronous connections
+    test_sync(manager, config_file, 'normal')
+    test_sync(manager, config_file, 'pool')
+
+    # Test asynchronous connections
+    await test_async(manager, config_file, 'async')
+    await test_async(manager, config_file, 'async_pool')
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Testing Pool Capacity
+
+Test pooling by acquiring multiple connections from the same pool:
+
+```python
+import asyncio
+from pgmonkey import PGConnectionManager
+
+async def test_async_pool(config_file, num_connections):
+    manager = PGConnectionManager()
+    connections = []
+
+    for _ in range(num_connections):
+        connection = await manager.get_database_connection(config_file, 'async_pool')
+        connections.append(connection)
+
+    for idx, connection in enumerate(connections):
+        async with connection as conn:
+            async with conn.cursor() as cur:
+                await cur.execute('SELECT version();')
+                version = await cur.fetchone()
+                print(f"Async pool connection {idx + 1}: {version}")
+
+    for connection in connections:
+        await connection.disconnect()
+
+def test_sync_pool(config_file, num_connections):
+    manager = PGConnectionManager()
+    connections = []
+
+    for _ in range(num_connections):
+        connection = manager.get_database_connection(config_file, 'pool')
+        connections.append(connection)
+
+    for idx, connection in enumerate(connections):
+        with connection as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT version();')
+                version = cur.fetchone()
+                print(f"Sync pool connection {idx + 1}: {version}")
+
+    for connection in connections:
+        connection.disconnect()
+
+async def main():
+    config_file = '/path/to/config.yaml'
+    num_connections = 5
+
+    print("Testing async pool:")
+    await test_async_pool(config_file, num_connections)
+
+    print("\nTesting sync pool:")
+    test_sync_pool(config_file, num_connections)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Running the Test Suite
+
+pgmonkey includes a comprehensive unit test suite that runs without a database connection.
+
+Install test dependencies:
+
+```bash
+pip install pgmonkey[test]
+```
+
+Run the tests:
+
+```bash
+pytest
+```
+
+The test suite uses mocks and covers all connection types, the connection factory, configuration management, code generation, and server config generation.
+
+---
+
+For more information, visit the [GitHub repository](https://github.com/RexBytes/pgmonkey).
