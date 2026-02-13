@@ -9,11 +9,11 @@ from pgmonkey import PGConnectionManager
 
 pytest.importorskip("pytest_asyncio")
 
-# Config file path from environment variable — set PGMONKEY_TEST_CONFIG to your YAML config path.
+# Config file path from environment variable - set PGMONKEY_TEST_CONFIG to your YAML config path.
 CONFIG_FILE = os.environ.get("PGMONKEY_TEST_CONFIG")
 if CONFIG_FILE is None:
     pytest.skip(
-        "PGMONKEY_TEST_CONFIG environment variable not set — skipping integration tests",
+        "PGMONKEY_TEST_CONFIG environment variable not set - skipping integration tests",
         allow_module_level=True,
     )
 
