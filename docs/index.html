@@ -4,174 +4,377 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>pgmonkey - Simplify PostgreSQL Connections</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-body { 
-    font-family: 'Roboto', sans-serif; 
-    margin: 0; 
-    padding: 0; 
-    line-height: 1.6; 
-    background-color: #f4f4f4;
-}
-#get-started {
-    text-align: center;
-    width: 80%;
-    margin: 0 auto;
-    padding: 20px;
-}
-#get-started ol {
-    display: inline-block; /* This centers the list items */
-    text-align: left; /* This keeps the numbering aligned with the text */
-    padding-left: 20px; /* Adjust padding to align numbers with text */
-}
-
-#get-started ol li {
-    margin-bottom: 10px; /* Adds some space between list items */
-}
-header { 
-    background-color: #007BFF; 
-    color: #fff; 
-    padding: 20px 0; 
-    text-align: center; 
-}
-h1 { 
-    font-size: 2.5em; 
-    margin-bottom: 10px; 
-}
-p { 
-    font-size: 1.2em; 
-    margin-top: 0; 
-    color: #333; 
-}
-nav { 
-    margin-top: 20px; 
-}
-nav a { 
-    margin: 0 15px; 
-    text-decoration: none; 
-    color: #fff; 
-    font-weight: bold;
-}
-.hero { 
-    padding: 60px; 
-    text-align: center; 
-    background-color: #e9ecef; 
-}
-.features { 
-    padding: 40px; 
-    display: flex; 
-    justify-content: space-around; 
-    flex-wrap: wrap; 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: #1a1a2e;
     background-color: #fff;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
-.feature { 
-    width: 28%; 
-    background-color: #f8f9fa; 
-    padding: 20px; 
-    margin-bottom: 20px; 
-    text-align: center; 
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-}
-footer { 
-    padding: 20px; 
-    text-align: center; 
-    background-color: #007BFF; 
-    color: #fff;
-    margin-top: 40px;
-}
-button { 
-    font-size: 1.2em; 
-    padding: 15px 30px; 
-    border-radius: 5px; 
-    border: none; 
-    background-color: #007BFF; 
-    color: white; 
-    cursor: pointer; 
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
-}
-button:hover {
-    background-color: #0056b3;
-}
-@media (max-width: 768px) {
-    .feature { 
-        width: 100%; 
-        margin-bottom: 20px; 
-    }
-    .hero, .features {
-        padding: 20px;
-    }
+a { color: #2563eb; text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+    font-size: 0.9em;
 }
 
+/* Header */
+header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+header nav {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+header .logo {
+    font-size: 1.5em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+header .nav-links { display: flex; gap: 24px; flex-wrap: wrap; }
+header .nav-links a { color: #cbd5e1; font-size: 0.95em; font-weight: 500; }
+header .nav-links a:hover { color: #fff; text-decoration: none; }
+
+/* Hero */
+.hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    color: #fff;
+    padding: 80px 24px 90px;
+    text-align: center;
+}
+.hero h1 {
+    font-size: 3em;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+}
+.hero .subtitle {
+    font-size: 1.3em;
+    color: #94a3b8;
+    max-width: 600px;
+    margin: 0 auto 32px;
+    font-weight: 400;
+}
+.hero .install-box {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 1.1em;
+    color: #e2e8f0;
+    margin-bottom: 28px;
+}
+.hero .install-box span { color: #60a5fa; }
+.hero .cta-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.btn {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1em;
+    transition: all 0.2s;
+}
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-primary:hover { background: #1d4ed8; text-decoration: none; }
+.btn-outline { background: transparent; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.25); }
+.btn-outline:hover { background: rgba(255,255,255,0.08); color: #fff; text-decoration: none; }
+
+/* Key idea */
+.key-idea {
+    background: #f0f9ff;
+    border-top: 3px solid #2563eb;
+    padding: 48px 24px;
+    text-align: center;
+}
+.key-idea .inner { max-width: 800px; margin: 0 auto; }
+.key-idea h2 { font-size: 1.6em; margin-bottom: 16px; color: #1e3a5f; }
+.key-idea p { font-size: 1.1em; color: #475569; margin-bottom: 20px; }
+.key-idea pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    text-align: left;
+    overflow-x: auto;
+    font-size: 0.95em;
+    line-height: 1.7;
+}
+.key-idea pre .comment { color: #64748b; }
+.key-idea pre .string { color: #86efac; }
+.key-idea pre .keyword { color: #93c5fd; }
+.key-idea pre .fn { color: #fbbf24; }
+
+/* Features */
+.features {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 64px 24px;
+}
+.features h2 {
+    text-align: center;
+    font-size: 1.8em;
+    margin-bottom: 48px;
+    color: #1a1a2e;
+}
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 28px;
+}
+.feature-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px;
+    transition: box-shadow 0.2s;
+}
+.feature-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.feature-card h3 {
+    font-size: 1.15em;
+    margin-bottom: 8px;
+    color: #1e3a5f;
+}
+.feature-card p { color: #64748b; font-size: 0.95em; }
+
+/* Quick start */
+.quickstart {
+    background: #f8fafc;
+    padding: 64px 24px;
+}
+.quickstart .inner { max-width: 800px; margin: 0 auto; }
+.quickstart h2 { font-size: 1.8em; margin-bottom: 12px; text-align: center; }
+.quickstart .sub { text-align: center; color: #64748b; margin-bottom: 36px; font-size: 1.05em; }
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+.step-num {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95em;
+}
+.step-content h3 { font-size: 1.05em; margin-bottom: 4px; }
+.step-content p { color: #64748b; font-size: 0.95em; }
+.step-content code {
+    background: #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Compatibility */
+.compat {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 64px 24px;
+}
+.compat h2 { text-align: center; font-size: 1.8em; margin-bottom: 16px; }
+.compat .sub { text-align: center; color: #64748b; margin-bottom: 36px; font-size: 1.05em; }
+.compat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+.compat-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+}
+.compat-card h3 { font-size: 1em; color: #1e3a5f; margin-bottom: 8px; }
+.compat-card .version { font-size: 1.3em; font-weight: 700; color: #2563eb; }
+.compat-card p { color: #64748b; font-size: 0.85em; margin-top: 6px; }
+
+/* Footer */
+footer {
+    background: #1a1a2e;
+    color: #94a3b8;
+    padding: 36px 24px;
+    text-align: center;
+    font-size: 0.9em;
+}
+footer a { color: #60a5fa; }
+footer p { margin-bottom: 8px; }
+footer .legal { font-size: 0.8em; color: #64748b; max-width: 700px; margin: 12px auto 0; }
+
+@media (max-width: 768px) {
+    .hero h1 { font-size: 2em; }
+    .hero .subtitle { font-size: 1.1em; }
+    .hero { padding: 48px 24px 56px; }
+    header nav { justify-content: center; text-align: center; }
+    .features-grid { grid-template-columns: 1fr; }
+}
     </style>
-    <meta name="description" content="pgmonkey - Simplify and manage PostgreSQL database connections in Python.">
-    <meta name="keywords" content="PostgreSQL, Python, database, connection management, pgmonkey">
+    <meta name="description" content="pgmonkey - One config file, every PostgreSQL connection type. Sync, async, pooled, and async-pooled connections in Python.">
+    <meta name="keywords" content="PostgreSQL, Python, database, connection management, pgmonkey, psycopg, connection pool, async">
     <meta name="author" content="RexBytes">
     <meta property="og:title" content="pgmonkey - Simplify PostgreSQL Connections">
-    <meta property="og:description" content="Your go-to Python library for managing PostgreSQL database connections efficiently.">
-    <meta property="og:url" content="https://github.com/RexBytes/pgmonkey">
+    <meta property="og:description" content="One config file, every PostgreSQL connection type. Sync, async, pooled, and async-pooled connections in Python.">
+    <meta property="og:url" content="https://pgmonkey.net">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="https://your-image-url.com/image.jpg">
 </head>
 <body>
-    <header>
-        <h1>pgmonkey</h1>
-        <p>A postgres database assistant</p>
-        <p>Simplify and manage your PostgreSQL database connections in Python</p>
-        <nav>
-            <a href="#get-started">Get Started</a>
+
+<header>
+    <nav>
+        <div class="logo">pgmonkey</div>
+        <div class="nav-links">
             <a href="index.html">Home</a>
+            <a href="reference.html">Reference</a>
+            <a href="https://github.com/RexBytes/pgmonkey/blob/main/README.md">Docs</a>
             <a href="https://github.com/RexBytes/pgmonkey">GitHub</a>
             <a href="https://pypi.org/project/pgmonkey/">PyPI</a>
-            <a href="https://github.com/RexBytes/pgmonkey/blob/main/README.md">Documentation</a>
-            <a href="reference.html">Quick Reference</a>
-            <a href="compatibility_tests.html">Dependency Compatibility Tests</a>
-        </nav>
-    </header>
-    
-    <section class="hero">
-        <h2>Your Go-To Python Library for PostgreSQL</h2>
-        <p>Install now: <code>pip install pgmonkey</code></p>
-        <a href="#get-started" style="font-size: 1.5em; text-decoration: none; color: white; background-color: #007BFF; padding: 10px 20px; border-radius: 5px;">Get Started</a>
-    </section>
+        </div>
+    </nav>
+</header>
 
-    <section id="get-started">
-        <h2>Get Started</h2>
-        <p>To get started with pgmonkey, follow these steps:</p>
-        <ol>
-            <li>Install pgmonkey via pip: <code>pip install pgmonkey</code></li>
-            <li>Read the full documentation on <a href="https://github.com/RexBytes/pgmonkey#documentation">GitHub</a>.</li>
-            <li>Explore the CLI tools and features provided by pgmonkey.</li>
-        </ol>
-    </section>
+<section class="hero">
+    <h1>pgmonkey</h1>
+    <p class="subtitle">One config file, every PostgreSQL connection type. Sync, async, pooled, and async-pooled &mdash; all from a single YAML.</p>
+    <div class="install-box"><span>$</span> pip install pgmonkey</div>
+    <div class="cta-row">
+        <a href="https://github.com/RexBytes/pgmonkey/blob/main/README.md" class="btn btn-primary">Read the Docs</a>
+        <a href="reference.html" class="btn btn-outline">Quick Reference</a>
+    </div>
+</section>
 
-    
-    <section class="features">
-        <div class="feature">
+<section class="key-idea">
+    <div class="inner">
+        <h2>One Config, Four Connection Types</h2>
+        <p>Write your connection settings once. Choose the connection type at call time &mdash; or let the config default handle it.</p>
+<pre><code><span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+manager = PGConnectionManager()
+
+<span class="comment"># Same config file, different connection types</span>
+conn = manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'normal'</span>)
+conn = manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'pool'</span>)
+conn = <span class="keyword">await</span> manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'async'</span>)
+conn = <span class="keyword">await</span> manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'async_pool'</span>)</code></pre>
+    </div>
+</section>
+
+<section class="features">
+    <h2>What pgmonkey Does</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <h3>Unified Configuration</h3>
+            <p>Define connection settings, pool sizes, async timeouts, and SSL in a single YAML file. No more juggling separate configs per connection type.</p>
+        </div>
+        <div class="feature-card">
             <h3>Connection Pooling</h3>
-            <p>Efficient management of database connections with built-in pooling support.</p>
+            <p>Built-in sync and async connection pooling via psycopg_pool. Configure pool sizes, idle timeouts, and max lifetimes.</p>
         </div>
-        <div class="feature">
-            <h3>SSL Support</h3>
-            <p>Ensure secure connections with easy-to-configure SSL settings.</p>
+        <div class="feature-card">
+            <h3>Async Support</h3>
+            <p>First-class async connections and async pooling powered by psycopg3. Async settings are applied via SQL SET commands automatically.</p>
         </div>
-        <div class="feature">
+        <div class="feature-card">
+            <h3>SSL &amp; Certificate Auth</h3>
+            <p>Full support for SSL modes from <code>disable</code> to <code>verify-full</code>, plus client certificate authentication for enterprise environments.</p>
+        </div>
+        <div class="feature-card">
             <h3>CLI Tools</h3>
-            <p>Manage your database configurations directly from the command line.</p>
+            <p>Create config templates, test connections, generate Python code, and get server config recommendations &mdash; all from the command line.</p>
         </div>
-    </section>
-    
-    <section id="documentation">
-        <h2>Documentation</h2>
-        <p>Full documentation is available on <a href="https://github.com/RexBytes/pgmonkey#documentation">GitHub</a>.</p>
-    </section>
+        <div class="feature-card">
+            <h3>Import &amp; Export</h3>
+            <p>Bulk import CSV data into PostgreSQL tables and export query results to CSV, with auto-generated config templates for column mapping.</p>
+        </div>
+    </div>
+</section>
+
+<section class="quickstart">
+    <div class="inner">
+        <h2>Quick Start</h2>
+        <p class="sub">Up and running in three steps.</p>
+
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+                <h3>Install</h3>
+                <p><code>pip install pgmonkey</code></p>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+                <h3>Create a config file</h3>
+                <p><code>pgmonkey pgconfig create --type pg --filepath config.yaml</code></p>
+                <p>Edit the generated YAML with your database credentials.</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+                <h3>Test your connection</h3>
+                <p><code>pgmonkey pgconfig test --connconfig config.yaml --connection-type normal</code></p>
+                <p>Try <code>pool</code>, <code>async</code>, or <code>async_pool</code> to test other types.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="compat">
+    <h2>Compatibility</h2>
+    <p class="sub">pgmonkey works with a wide range of Python and dependency versions.</p>
+    <div class="compat-grid">
+        <div class="compat-card">
+            <h3>Python</h3>
+            <div class="version">3.10 &ndash; 3.13</div>
+        </div>
+        <div class="compat-card">
+            <h3>psycopg</h3>
+            <div class="version">&ge; 3.1.20</div>
+            <p>psycopg3 with binary support</p>
+        </div>
+        <div class="compat-card">
+            <h3>psycopg_pool</h3>
+            <div class="version">&ge; 3.1.9</div>
+            <p>Sync &amp; async pooling</p>
+        </div>
+        <div class="compat-card">
+            <h3>PyYAML</h3>
+            <div class="version">&ge; 6.0.2</div>
+            <p>YAML configuration parsing</p>
+        </div>
+    </div>
+</section>
 
 <footer>
-    <p>© 2024 pgmonkey by <a href="https://github.com/RexBytes">RexBytes</a>. <a href="https://github.com/RexBytes/pgmonkey">GitHub</a> | <a href="https://pypi.org/project/pgmonkey/">PyPI</a></p>
-    <p>pgmonkey is an independent open-source project and is not affiliated with, endorsed by, or sponsored by the PostgreSQL Global Development Group, or any other entity. PostgreSQL and the PostgreSQL logo are trademarks of the PostgreSQL Global Development Group. pgmonkey is licensed under the <a href="https://github.com/RexBytes/pgmonkey/blob/main/LICENSE">MIT License</a>.</p>
+    <p>&copy; 2025 pgmonkey by <a href="https://github.com/RexBytes">RexBytes</a> &nbsp;|&nbsp; <a href="https://github.com/RexBytes/pgmonkey">GitHub</a> &nbsp;|&nbsp; <a href="https://pypi.org/project/pgmonkey/">PyPI</a></p>
     <p>Contact: <a href="mailto:pgmonkey@rexbytes.com">pgmonkey@rexbytes.com</a></p>
+    <p class="legal">pgmonkey is an independent open-source project and is not affiliated with, endorsed by, or sponsored by the PostgreSQL Global Development Group, or any other entity. PostgreSQL and the PostgreSQL logo are trademarks of the PostgreSQL Global Development Group. pgmonkey is licensed under the <a href="https://github.com/RexBytes/pgmonkey/blob/main/LICENSE">MIT License</a>.</p>
 </footer>
 
 </body>
 </html>
-

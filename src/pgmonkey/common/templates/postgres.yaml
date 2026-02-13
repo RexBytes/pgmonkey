@@ -1,8 +1,11 @@
 postgresql:
-  connection_type: 'normal'  # Options: 'normal', 'pool', 'async', 'async_pool'
+  # Default connection type used when none is specified in the API call.
+  # Options: 'normal', 'pool', 'async', 'async_pool'
+  # You can override this per-call:
+  #   manager.get_database_connection('config.yaml', 'pool')
+  connection_type: 'normal'
+
   connection_settings:
-    connectionName: 'default_connection'
-    description: 'Default PostgreSQL connection setup'
     user: 'postgres'
     password: 'password'
     host: 'localhost'
@@ -14,28 +17,28 @@ postgresql:
     sslrootcert: ''  # Path to the root SSL certificate, if needed
     connect_timeout: '10'  # Maximum wait for connection, in seconds
     application_name: 'myapp'
-    keepalives: '1'  # If set to 1, TCP keepalives are used; if set to 0, they are not used
-    keepalives_idle: '60'  # The time in seconds before sending a keepalive probe
-    keepalives_interval: '15'  # The time in seconds between sending keepalive probes
-    keepalives_count: '5'  # The maximum number of keepalive probes to send before giving up and closing the connection
+    keepalives: '1'  # Enable TCP keepalives (1=on, 0=off)
+    keepalives_idle: '60'  # Seconds before sending a keepalive probe
+    keepalives_interval: '15'  # Seconds between keepalive probes
+    keepalives_count: '5'  # Max keepalive probes before closing the connection
 
+  # Settings for 'pool' connection type
   pool_settings:
     min_size: 5
     max_size: 20
-    max_idle: 300  # Time in seconds a connection can remain idle before being closed
-    max_lifetime: 3600  # Time in seconds a connection can be reused
+    max_idle: 300  # Seconds a connection can remain idle before being closed
+    max_lifetime: 3600  # Seconds a connection can be reused
 
-
+  # Settings for 'async' connection type (applied via SET commands on connection)
   async_settings:
-    # Uncomment to set specific timeouts or memory settings for async operations
-    # idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction
-    # statement_timeout: '30000'  # Cancel statements exceeding 30 seconds
-    # lock_timeout: '10000'  # Timeout for acquiring locks
+    idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction (ms)
+    statement_timeout: '30000'  # Cancel statements exceeding this time (ms)
+    lock_timeout: '10000'  # Timeout for acquiring locks (ms)
     # work_mem: '256MB'  # Memory for sort operations and more
 
+  # Settings for 'async_pool' connection type
   async_pool_settings:
     min_size: 5
     max_size: 20
     max_idle: 300
     max_lifetime: 3600
-    # Add any additional async pool-specific settings as needed

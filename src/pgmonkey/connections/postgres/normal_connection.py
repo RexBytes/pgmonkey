@@ -2,6 +2,7 @@ from psycopg import connect, OperationalError
 from .base_connection import PostgresBaseConnection
 from contextlib import contextmanager
 
+
 class PGNormalConnection(PostgresBaseConnection):
     def __init__(self, config):
         self.config = config
@@ -23,7 +24,6 @@ class PGNormalConnection(PostgresBaseConnection):
             print(f"An unexpected error occurred: {e}")
 
     def disconnect(self):
-        """Closes the database connection."""
         if self.connection and not self.connection.closed:
             self.connection.close()
             self.connection = None
@@ -43,11 +43,11 @@ class PGNormalConnection(PostgresBaseConnection):
     def transaction(self):
         """Creates a transaction context for the connection."""
         try:
-            yield self  # Let the caller use the connection within the transaction
-            self.commit()  # Commit if everything is successful
+            yield self
+            self.commit()
         except Exception:
-            self.rollback()  # Rollback if there is any exception
-            raise  # Re-raise the exception to propagate it
+            self.rollback()
+            raise
         finally:
             self.disconnect()
 
@@ -61,5 +61,3 @@ class PGNormalConnection(PostgresBaseConnection):
         else:
             self.commit()
         self.disconnect()
-
-

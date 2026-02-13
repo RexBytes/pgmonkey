@@ -1,8 +1,7 @@
-from pathlib import Path
 import yaml
+import asyncio
 from importlib import resources
 from pgmonkey.tools.database_connection_tester import DatabaseConnectionTester
-import asyncio
 from .settings_manager import SettingsManager
 from pgmonkey.common.utils.pathutils import PathUtils
 
@@ -15,11 +14,10 @@ class PGConfigManager:
 
     def load_template(self, template_filename):
         """Load a YAML configuration template from a file within the package."""
-        with resources.files(f"{self.settings_manager.settings['appPackageName']}.common.templates").joinpath(
-                template_filename) as path, \
-                resources.as_file(path) as config_file, \
-                open(config_file, 'r') as file:
-            return yaml.safe_load(file)
+        template_ref = resources.files(
+            f"{self.settings_manager.settings['appPackageName']}.common.templates"
+        ).joinpath(template_filename)
+        return yaml.safe_load(template_ref.read_text())
 
     def get_config_template(self, database_type):
         """Retrieve the configuration template based on the database type."""
@@ -33,10 +31,8 @@ class PGConfigManager:
         if database_type in self.templates:
             template_filename = self.templates[database_type]
             package_path = f"{self.settings_manager.settings['appPackageName']}.common.templates"
-            with resources.files(package_path).joinpath(template_filename) as path, \
-                    resources.as_file(path) as config_file:
-                with open(config_file, 'r') as file:
-                    return file.read()
+            template_ref = resources.files(package_path).joinpath(template_filename)
+            return template_ref.read_text()
         else:
             raise ValueError(f'Unsupported database type. Supported types are: {", ".join(self.templates.keys())}')
 
@@ -54,19 +50,21 @@ class PGConfigManager:
             f.write(config_text)
         print(f'New configuration template created: {file_path}')
 
-    def test_connection(self, config_file_path):
-        """Test database connection using a configuration file."""
+    def test_connection(self, config_file_path, connection_type=None):
+        """Test database connection using a configuration file.
 
-        # Step 1: Determine the database type.
+        Args:
+            config_file_path: Path to the YAML configuration file.
+            connection_type: Optional connection type override.
+        """
         with open(config_file_path, 'r') as config_file:
             config_data = yaml.safe_load(config_file)
         database_type = next(iter(config_data))
         print(f"{database_type} database config file has been detected...")
 
-        # Step 2:
         integration_tester = DatabaseConnectionTester()
 
         if database_type == 'postgresql':
-            asyncio.run(integration_tester.test_postgresql_connection(config_file_path))
+            asyncio.run(integration_tester.test_postgresql_connection(config_file_path, connection_type))
         else:
             print(f"Unsupported database type: {database_type}")

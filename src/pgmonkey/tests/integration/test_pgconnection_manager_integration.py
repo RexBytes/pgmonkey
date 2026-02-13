@@ -6,47 +6,52 @@ import sys
 import pytest
 from pgmonkey import PGConnectionManager
 
+# Single config file serves all connection types
+CONFIG_FILE = "/home/ubuntu/myconnectionconfigs/pg_connection.yaml"
 
 
-# Print version information at the start of the test
 def print_version_info():
     print(f"Python version: {sys.version}")
     print(f"psycopg version: {psycopg.__version__}")
     print(f"psycopg_pool version: {psycopg_pool.__version__}")
     print(f"PyYAML version: {yaml.__version__}")
 
+
 @pytest.mark.asyncio
-@pytest.mark.parametrize("config_file, config_name", [
-    ("/home/ubuntu/myconnectionconfigs/pg_async_pool.yaml", "pg_async_pool.yaml"),
-    ("/home/ubuntu/myconnectionconfigs/pg_async.yaml", "pg_async.yaml"),
-    ("/home/ubuntu/myconnectionconfigs/pg_normal.yaml", "pg_normal.yaml"),
-    ("/home/ubuntu/myconnectionconfigs/pg_pool.yaml", "pg_pool.yaml"),
+@pytest.mark.parametrize("connection_type", [
+    "normal",
+    "pool",
+    "async",
+    "async_pool",
 ])
-async def test_database_connection(config_file, config_name):
-    """Test real database connection with the provided config."""
-    print_version_info()  # Print version information at the start
+async def test_database_connection(connection_type):
+    """Test all connection types from a single config file."""
+    print_version_info()
 
     connection_manager = PGConnectionManager()
-    connection = await connection_manager.get_database_connection(config_file)
+
+    if connection_type in ('async', 'async_pool'):
+        connection = await connection_manager.get_database_connection(CONFIG_FILE, connection_type)
+    else:
+        connection = connection_manager.get_database_connection(CONFIG_FILE, connection_type)
 
     try:
-        if connection.connection_type in ['async', 'async_pool']:
+        if connection_type in ('async', 'async_pool'):
             async with connection as conn:
                 async with conn.cursor() as cur:
                     await cur.execute('SELECT version();')
                     version = await cur.fetchone()
-                    assert version is not None, f"{config_name}: No version returned"
-                    print(f"{config_name}: {version}")
+                    assert version is not None, f"{connection_type}: No version returned"
+                    print(f"{connection_type}: {version}")
         else:
             with connection as conn:
                 with conn.cursor() as cur:
                     cur.execute('SELECT version();')
                     version = cur.fetchone()
-                    assert version is not None, f"{config_name}: No version returned"
-                    print(f"{config_name}: {version}")
+                    assert version is not None, f"{connection_type}: No version returned"
+                    print(f"{connection_type}: {version}")
     finally:
-        await connection.disconnect() if asyncio.iscoroutinefunction(connection.disconnect) else connection.disconnect()
-
-
-
-
+        if asyncio.iscoroutinefunction(connection.disconnect):
+            await connection.disconnect()
+        else:
+            connection.disconnect()

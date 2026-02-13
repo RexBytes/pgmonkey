@@ -4,19 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pgmonkey"
-version = "1.1.8"
+version = "2.0.0"
 authors = [
   { name="Good Boy", email="pythonic@rexbytes.com" },
 ]
 description = "A tool to assist with postgresql database connections"
 readme = "README.md"
 license = { file="LICENSE" }
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.14"
 classifiers = [
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Database",
@@ -28,10 +28,15 @@ dependencies = [
     "psycopg_pool>=3.1.9,<4.0.0",
     "PyYAML>=6.0.2,<7.0.0",
     "chardet>=5.2.0,<6.0.0",
-    "aiofiles>=22.1.0,<23.0.0",
     "tqdm>=4.64.0,<5.0.0"
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0,<9.0.0",
+    "pytest-asyncio>=0.21.0,<1.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+]
 
 [tool.setuptools.package-data]
 pgmonkey = [ "settings/app_settings.yaml", "common/templates/*"]
@@ -46,6 +51,7 @@ pgmonkey = [ "settings/app_settings.yaml", "common/templates/*"]
 pgmonkey="pgmonkey.cli.cli:main"
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"  # or "strict" for future-proofing
+asyncio_mode = "auto"
+testpaths = ["src/pgmonkey/tests"]
 
 
