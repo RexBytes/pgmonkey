@@ -74,11 +74,10 @@
         <h1>pgmonkey - Reference Guide</h1>
         <nav>
             <a href="index.html">Home</a>
+            <a href="reference.html">Reference</a>
+            <a href="https://github.com/RexBytes/pgmonkey/blob/main/README.md">Docs</a>
             <a href="https://github.com/RexBytes/pgmonkey">GitHub</a>
             <a href="https://pypi.org/project/pgmonkey/">PyPI</a>
-            <a href="https://github.com/RexBytes/pgmonkey/blob/main/README.md">Documentation</a>
-            <a href="reference.html">Quick Reference</a>
-            <a href="compatibility_tests.html">Dependency Compatibility Tests</a>
         </nav>
     </header>
 
@@ -805,6 +804,58 @@ if __name__ == "__main__":
 
 
 
+        <h2>Compatibility</h2>
+
+<p>pgmonkey v2.0.0 is tested and supported on the following:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Dependency</th>
+            <th>Supported Versions</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Python</td>
+            <td>3.10, 3.11, 3.12, 3.13</td>
+            <td>Python 3.9 reached end-of-life in October 2025</td>
+        </tr>
+        <tr>
+            <td>psycopg[binary]</td>
+            <td>&ge; 3.1.20, &lt; 4.0.0</td>
+            <td>psycopg3 with binary driver for best performance</td>
+        </tr>
+        <tr>
+            <td>psycopg_pool</td>
+            <td>&ge; 3.1.9, &lt; 4.0.0</td>
+            <td>Provides ConnectionPool and AsyncConnectionPool</td>
+        </tr>
+        <tr>
+            <td>PyYAML</td>
+            <td>&ge; 6.0.2, &lt; 7.0.0</td>
+            <td>6.0.2+ required for Python 3.12/3.13 compatibility</td>
+        </tr>
+        <tr>
+            <td>chardet</td>
+            <td>&ge; 5.2.0, &lt; 6.0.0</td>
+            <td>Character encoding detection for CSV import</td>
+        </tr>
+        <tr>
+            <td>tqdm</td>
+            <td>&ge; 4.64.0, &lt; 5.0.0</td>
+            <td>Progress bars for CSV import/export</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>Install with test dependencies for development:</p>
+<pre><code>pip install pgmonkey[test]</code></pre>
+
+<p>This adds <strong>pytest</strong>, <strong>pytest-asyncio</strong>, and <strong>pytest-mock</strong> for running the unit test suite (113 tests, no database required).</p>
+
+
         <h2>Raspberry Pi Users: Installation via PiWheels</h2>
 
 <p>If you're using a Raspberry Pi and need to manage PostgreSQL connections in Python, <code>pgmonkey</code> is available on <a href="https://www.piwheels.org/project/pgmonkey/">PiWheels</a>, which provides pre-built Python packages optimized for Raspberry Pi.</p>
@@ -815,11 +866,11 @@ if __name__ == "__main__":
 <pre><code>pip3 install pgmonkey</code></pre>
 
 <h3>Supported Raspberry Pi OS Versions</h3>
-<p><code>pgmonkey</code> has been successfully built for the following Raspberry Pi OS versions:</p>
+<p><code>pgmonkey</code> v2.0.0 requires Python 3.10+. Recommended Raspberry Pi OS:</p>
 <ul>
-    <li><strong>Bullseye</strong> (Python 3.9)</li>
     <li><strong>Bookworm</strong> (Python 3.11)</li>
 </ul>
+<p>Note: Bullseye ships with Python 3.9 which is no longer supported. Upgrade to Bookworm or install Python 3.10+ manually.</p>
 
 <h3>Why Use pgmonkey on Raspberry Pi?</h3>
 <ul>
