@@ -4,6 +4,17 @@ import tempfile
 import os
 
 
+def pytest_collection_modifyitems(config, items):
+    """Skip async tests gracefully when pytest-asyncio is not installed."""
+    try:
+        import pytest_asyncio  # noqa: F401
+    except ImportError:
+        skip_async = pytest.mark.skip(reason="pytest-asyncio is not installed")
+        for item in items:
+            if "asyncio" in item.keywords:
+                item.add_marker(skip_async)
+
+
 @pytest.fixture
 def sample_config():
     """Returns a full pgmonkey configuration dictionary for testing."""
