@@ -14,11 +14,10 @@ class PGConfigManager:
 
     def load_template(self, template_filename):
         """Load a YAML configuration template from a file within the package."""
-        with resources.files(f"{self.settings_manager.settings['appPackageName']}.common.templates").joinpath(
-                template_filename) as path, \
-                resources.as_file(path) as config_file, \
-                open(config_file, 'r') as file:
-            return yaml.safe_load(file)
+        template_ref = resources.files(
+            f"{self.settings_manager.settings['appPackageName']}.common.templates"
+        ).joinpath(template_filename)
+        return yaml.safe_load(template_ref.read_text())
 
     def get_config_template(self, database_type):
         """Retrieve the configuration template based on the database type."""
@@ -32,10 +31,8 @@ class PGConfigManager:
         if database_type in self.templates:
             template_filename = self.templates[database_type]
             package_path = f"{self.settings_manager.settings['appPackageName']}.common.templates"
-            with resources.files(package_path).joinpath(template_filename) as path, \
-                    resources.as_file(path) as config_file:
-                with open(config_file, 'r') as file:
-                    return file.read()
+            template_ref = resources.files(package_path).joinpath(template_filename)
+            return template_ref.read_text()
         else:
             raise ValueError(f'Unsupported database type. Supported types are: {", ".join(self.templates.keys())}')
 
