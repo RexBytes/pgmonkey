@@ -3,9 +3,9 @@ from .base_connection import PostgresBaseConnection
 from contextlib import asynccontextmanager
 from typing import Optional
 
+
 class PGAsyncConnection(PostgresBaseConnection):
     def __init__(self, config, async_settings=None):
-        super().__init__()
         self.config = config
         self.async_settings = async_settings or {}
         self.connection: Optional[AsyncConnection] = None
@@ -14,15 +14,15 @@ class PGAsyncConnection(PostgresBaseConnection):
         """Establishes an asynchronous database connection."""
         if self.connection is None or self.connection.closed:
             self.connection = await AsyncConnection.connect(**self.config)
-            await self.apply_async_settings()
+            await self._apply_async_settings()
 
-    async def apply_async_settings(self):
-        """Applies settings as attributes to the connection object after it is established."""
+    async def _apply_async_settings(self):
+        """Applies PostgreSQL GUC settings via SET commands after connection is established."""
         for setting, value in self.async_settings.items():
-            if hasattr(self.connection, setting):
-                setattr(self.connection, setting, value)
-            else:
-                print(f"Warning: The setting '{setting}' is not applicable for this connection")
+            try:
+                await self.connection.execute(f"SET {setting} = %s", (str(value),))
+            except Exception as e:
+                print(f"Warning: Could not apply setting '{setting}': {e}")
 
     async def test_connection(self):
         """Tests the asynchronous database connection."""
@@ -43,12 +43,10 @@ class PGAsyncConnection(PostgresBaseConnection):
             self.connection = None
 
     async def commit(self):
-        """Commits the current transaction."""
         if self.connection and not self.connection.closed:
             await self.connection.commit()
 
     async def rollback(self):
-        """Rolls back the current transaction."""
         if self.connection and not self.connection.closed:
             await self.connection.rollback()
 
@@ -57,7 +55,7 @@ class PGAsyncConnection(PostgresBaseConnection):
         """Creates a transaction context on the async connection."""
         if self.connection:
             async with self.connection.transaction():
-                yield  # Let the context handle commit/rollback automatically.
+                yield
         else:
             raise Exception("No active connection available for transaction")
 
@@ -80,5 +78,3 @@ class PGAsyncConnection(PostgresBaseConnection):
         else:
             await self.commit()
         await self.disconnect()
-
-

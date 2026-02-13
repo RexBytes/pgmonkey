@@ -6,47 +6,35 @@ from pgmonkey.connections.postgres.async_pool_connection import PGAsyncPoolConne
 
 class PostgresConnectionFactory:
 
-    VALID_CONNECTION_KEYS = ['user', 'password', 'host', 'port', 'dbname', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert',
-                      'connect_timeout', 'application_name', 'keepalives', 'keepalives_idle', 'keepalives_interval',
-                      'keepalives_count']
+    VALID_CONNECTION_KEYS = [
+        'user', 'password', 'host', 'port', 'dbname', 'sslmode',
+        'sslcert', 'sslkey', 'sslrootcert', 'connect_timeout',
+        'application_name', 'keepalives', 'keepalives_idle',
+        'keepalives_interval', 'keepalives_count',
+    ]
 
-    def __init__(self, config):
-        self.connection_type = config['postgresql']['connection_type']
-        self.config = self.filter_config(config['postgresql']['connection_settings'])
+    def __init__(self, config, connection_type):
+        self.connection_type = connection_type
+        self.config = self._filter_config(config['postgresql']['connection_settings'])
         self.pool_settings = config['postgresql'].get('pool_settings', {})
         self.async_settings = config['postgresql'].get('async_settings', {})
         self.async_pool_settings = config['postgresql'].get('async_pool_settings', {})
 
-    @staticmethod
-    def filter_config(config):
-        # List of valid psycopg connection parameters
-        #valid_keys = ['user', 'password', 'host', 'port', 'dbname', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert',
-        #              'connect_timeout', 'application_name', 'keepalives', 'keepalives_idle', 'keepalives_interval',
-        #              'keepalives_count']
-        # Filter the config dictionary to include only the valid keys
-        return {key: config[key] for key in PostgresConnectionFactory.VALID_CONNECTION_KEYS if key in config}
+    def _filter_config(self, config):
+        """Filter the config dictionary to include only valid psycopg connection parameters."""
+        return {key: config[key] for key in self.VALID_CONNECTION_KEYS if key in config and config[key]}
 
     def get_connection(self):
-        # print(self.config)
-        connection_type = self.connection_type
-
-        if connection_type == 'normal':
-            # Only connection_settings are needed for a normal connection
+        if self.connection_type == 'normal':
             connection = PGNormalConnection(self.config)
-        elif connection_type == 'pool':
-            # Merge connection_settings with pool_settings
+        elif self.connection_type == 'pool':
             connection = PGPoolConnection(self.config, self.pool_settings)
-        elif connection_type == 'async':
-            # Merge connection_settings with async_settings
+        elif self.connection_type == 'async':
             connection = PGAsyncConnection(self.config, self.async_settings)
-        elif connection_type == 'async_pool':
-            # Merge connection_settings with async_pool_settings
+        elif self.connection_type == 'async_pool':
             connection = PGAsyncPoolConnection(self.config, self.async_pool_settings)
         else:
-            raise ValueError(f"Unsupported connection type: {connection_type}")
+            raise ValueError(f"Unsupported connection type: {self.connection_type}")
 
-        # Set connection_type as an attribute of the connection object
         connection.connection_type = self.connection_type
-
         return connection
-

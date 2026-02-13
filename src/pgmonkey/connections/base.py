@@ -1,24 +1,5 @@
-from abc import ABC, abstractmethod
+# This module is intentionally left as a re-export for backward compatibility.
+# All connection types should inherit from postgres.base_connection.PostgresBaseConnection.
+from pgmonkey.connections.postgres.base_connection import PostgresBaseConnection
 
-class BaseConnection(ABC):
-    @abstractmethod
-    def connect(self):
-        """Establish a database connection."""
-        pass
-
-    @abstractmethod
-    def test_connection(self):
-        """Test the database connection."""
-        pass
-
-    @abstractmethod
-    def disconnect(self):
-        """Close the database connection."""
-        pass
-
-    def __enter__(self):
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.disconnect()
+__all__ = ['PostgresBaseConnection']

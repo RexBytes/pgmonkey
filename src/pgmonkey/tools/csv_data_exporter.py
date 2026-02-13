@@ -1,14 +1,10 @@
-import asyncio
 import csv
 import os
-import aiofiles
 import yaml
-import re
 import sys
 from pathlib import Path
 from tqdm import tqdm
 from pgmonkey import PGConnectionManager
-from copy import deepcopy  # To make a copy of the YAML configuration
 
 
 class CSVDataExporter:
@@ -48,35 +44,22 @@ class CSVDataExporter:
 
         # Extract export settings from the config file
         self.delimiter = export_settings.get('delimiter', ',')
-        if self.delimiter == r'\t':  # Check for the string '\t'
-            self.delimiter = '\t'  # Convert it to an actual tab character
+        if self.delimiter == r'\t':
+            self.delimiter = '\t'
         self.quotechar = export_settings.get('quotechar', '"')
         self.encoding = export_settings.get('encoding', 'utf-8')
 
-        # Extract the connection type directly from the connection config
-        with open(self.config_file, 'r') as config_file:
-            connection_config = yaml.safe_load(config_file)
-            self.connection_type = connection_config['postgresql'].get('connection_type', 'normal')
+    @staticmethod
+    def _resolve_export_connection_type(connection_config):
+        """Determine the best connection type for export operations.
 
-        # Modify the connection type for export/import if needed
-        self.connection_config = self.modify_connection_type_for_export(connection_config)
-
-    def modify_connection_type_for_export(self, connection_config):
-        """Modify the connection type to 'normal' if it's 'async' or 'async_pool'."""
-        current_type = connection_config['postgresql'].get('connection_type')
-
-        # Check if the connection type needs to be modified
-        if current_type in ['async', 'async_pool']:
+        Export uses 'normal' sync connections for best performance with COPY TO.
+        """
+        current_type = connection_config['postgresql'].get('connection_type', 'normal')
+        if current_type in ('async', 'async_pool'):
             print(f"Detected connection type: {current_type}.")
-            print("For export/import operations, async connections can be slower.")
-            print("Switching to 'normal' connection for better performance.")
-
-            # Deep copy the configuration so the original YAML file isn't modified
-            modified_config = deepcopy(connection_config)
-            modified_config['postgresql']['connection_type'] = 'normal'
-            return modified_config
-
-        return connection_config  # No change if it's already 'normal' or 'pool'
+            print("For export operations, switching to 'normal' connection for better performance.")
+        return 'normal'
 
     def _set_client_encoding(self, cur):
         """Set the client encoding only if it is different from the database's default."""
@@ -101,8 +84,8 @@ class CSVDataExporter:
         """Automatically creates the export config file and detects the database encoding."""
         print(f"Export config file '{self.export_config_file}' not found. Creating it with auto-detected settings.")
 
-        # Connect to the database and retrieve the encoding
-        with self.connection_manager.get_database_connection(self.config_file) as connection:
+        # Connect to the database using a normal connection to retrieve the encoding
+        with self.connection_manager.get_database_connection(self.config_file, 'normal') as connection:
             with connection.cursor() as cur:
                 # Query to detect the current database encoding
                 cur.execute("SHOW client_encoding")
@@ -175,22 +158,15 @@ class CSVDataExporter:
                 self._restore_client_encoding(cur, original_encoding)
 
     async def run(self):
-        """Main method to handle connection type and start the export process."""
-        # No need to load or modify the connection config again, since it's done in __init__
-        connection_config = self.connection_config  # Use the already modified connection config
+        """Main method to start the export using a normal sync connection for best COPY TO performance."""
+        with open(self.config_file, 'r') as f:
+            connection_config = yaml.safe_load(f)
 
-        # Extract the modified connection type
-        connection_type = connection_config['postgresql'].get('connection_type', 'normal')
+        conn_type = self._resolve_export_connection_type(connection_config)
+        connection = self.connection_manager.get_database_connection_from_dict(connection_config, conn_type)
 
-        # Check if the connection is async or sync
-        if connection_type in ['async', 'async_pool']:
-            # Async connection: await the async operations
-            async with self.connection_manager.get_database_connection_from_dict(connection_config) as connection:
-                await self._async_export(connection)
-        else:
-            # Sync connection: run the sync export with a normal context manager (no async)
-            with self.connection_manager.get_database_connection_from_dict(connection_config) as connection:
-                self._sync_export(connection)  # Blocking sync export
+        with connection as conn:
+            self._sync_export(conn)
 
 
 
