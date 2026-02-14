@@ -1,6 +1,9 @@
+import logging
 from psycopg import connect, OperationalError
 from .base_connection import PostgresBaseConnection
 from contextlib import contextmanager
+
+logger = logging.getLogger(__name__)
 
 
 class PGNormalConnection(PostgresBaseConnection):
@@ -17,11 +20,11 @@ class PGNormalConnection(PostgresBaseConnection):
             with self.cursor() as cur:
                 cur.execute('SELECT 1;')
                 result = cur.fetchone()
-                print("Connection successful: ", result)
+                logger.info("Connection successful: %s", result)
         except OperationalError as e:
-            print(f"Connection failed: {e}")
+            logger.error("Connection failed: %s", e)
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            logger.error("An unexpected error occurred: %s", e)
 
     def disconnect(self):
         if self.connection and not self.connection.closed:
@@ -48,8 +51,6 @@ class PGNormalConnection(PostgresBaseConnection):
         except Exception:
             self.rollback()
             raise
-        finally:
-            self.disconnect()
 
     def __enter__(self):
         self.connect()

@@ -1,16 +1,20 @@
+import logging
 import warnings
 from psycopg_pool import AsyncConnectionPool
 from psycopg import conninfo as psycopg_conninfo
 from .base_connection import PostgresBaseConnection
 from contextlib import asynccontextmanager
 
+logger = logging.getLogger(__name__)
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, module='psycopg_pool')
 
 
 class PGAsyncPoolConnection(PostgresBaseConnection):
-    def __init__(self, config, async_pool_settings=None):
+    def __init__(self, config, async_pool_settings=None, async_settings=None):
         self.config = config
         self.async_pool_settings = async_pool_settings or {}
+        self.async_settings = async_settings or {}
         self.pool = None
         self._conn = None
         self._pool_conn_ctx = None
@@ -24,7 +28,25 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
         """Initialize the async connection pool."""
         if self.pool is None:
             conninfo = self.construct_conninfo(self.config)
-            self.pool = AsyncConnectionPool(conninfo=conninfo, **self.async_pool_settings)
+            kwargs = dict(self.async_pool_settings)
+
+            check_on_checkout = kwargs.pop('check_on_checkout', False)
+            if check_on_checkout:
+                async def _check(conn):
+                    await conn.execute("SELECT 1")
+                kwargs['check'] = _check
+
+            if self.async_settings:
+                async_settings = self.async_settings
+                async def _configure(conn):
+                    for setting, value in async_settings.items():
+                        try:
+                            await conn.execute(f"SET {setting} = %s", (str(value),))
+                        except Exception as e:
+                            logger.warning("Could not apply setting '%s': %s", setting, e)
+                kwargs['configure'] = _configure
+
+            self.pool = AsyncConnectionPool(conninfo=conninfo, **kwargs)
             await self.pool.open()
 
     async def test_connection(self):
@@ -37,9 +59,9 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
                 async with conn.cursor() as cur:
                     await cur.execute('SELECT 1;')
                     result = await cur.fetchone()
-                    print("Async pool connection successful: ", result)
+                    logger.info("Async pool connection successful: %s", result)
         except Exception as e:
-            print(f"Test connection failed: {e}")
+            logger.error("Test connection failed: %s", e)
 
     async def disconnect(self):
         if self.pool:
