@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pgmonkey - Best Practice Recipes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background-color: #f8fafc;
+}
+a { color: #2563eb; text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+    font-size: 0.88em;
+}
+p code, li code, td code {
+    background: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+header nav {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+header .logo { font-size: 1.5em; font-weight: 700; letter-spacing: -0.02em; }
+header .logo a { color: #fff; }
+header .logo a:hover { text-decoration: none; }
+header .nav-links { display: flex; gap: 24px; flex-wrap: wrap; }
+header .nav-links a { color: #cbd5e1; font-size: 0.95em; font-weight: 500; }
+header .nav-links a:hover { color: #fff; text-decoration: none; }
+
+/* Page title banner */
+.page-title {
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+    color: #fff;
+    padding: 40px 24px;
+    text-align: center;
+}
+.page-title h1 { font-size: 2em; font-weight: 700; letter-spacing: -0.02em; }
+.page-title p { color: #94a3b8; font-size: 1.1em; margin-top: 8px; }
+
+/* Content */
+.content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+}
+
+/* Section headings */
+h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin-top: 56px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+h3 {
+    font-size: 1.15em;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 28px;
+    margin-bottom: 10px;
+}
+p, ul, ol { margin-bottom: 14px; }
+ul, ol { padding-left: 24px; }
+li { margin-bottom: 6px; }
+
+/* Code blocks */
+pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    line-height: 1.7;
+}
+pre code { font-size: 0.95em; }
+pre .comment { color: #64748b; }
+pre .string { color: #86efac; }
+pre .keyword { color: #93c5fd; }
+
+/* Recipe card */
+.recipe {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.recipe h3 {
+    margin-top: 0;
+    color: #1e3a5f;
+    font-size: 1.2em;
+}
+.recipe .tag {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 0.8em;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+}
+.recipe .tag.async { background: #dcfce7; color: #166534; }
+.recipe .tag.pool { background: #fef3c7; color: #92400e; }
+.recipe .tag.async-pool { background: #ede9fe; color: #5b21b6; }
+
+/* Summary table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 0.95em;
+}
+th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+th {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #1e3a5f;
+}
+tr:hover { background: #f8fafc; }
+
+/* Footer */
+footer {
+    background: #1a1a2e;
+    color: #94a3b8;
+    padding: 36px 24px;
+    text-align: center;
+    font-size: 0.9em;
+}
+footer a { color: #60a5fa; }
+footer p { margin-bottom: 8px; }
+footer .legal { font-size: 0.8em; color: #64748b; max-width: 700px; margin: 12px auto 0; }
+
+@media (max-width: 768px) {
+    .page-title h1 { font-size: 1.6em; }
+    pre { padding: 14px 16px; font-size: 0.85em; }
+    .recipe { padding: 20px; }
+}
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <div class="logo"><a href="index.html">pgmonkey</a></div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="reference.html">Reference</a>
+            <a href="best_practices.html">Best Practices</a>
+            <a href="https://github.com/RexBytes/pgmonkey/blob/main/README.md">Docs</a>
+            <a href="https://github.com/RexBytes/pgmonkey">GitHub</a>
+            <a href="https://pypi.org/project/pgmonkey/">PyPI</a>
+        </div>
+    </nav>
+</header>
+
+<section class="page-title">
+    <h1>Best Practice Recipes</h1>
+    <p>Production-ready code patterns for every connection type, plus app-level design patterns.</p>
+</section>
+
+<div class="content">
+
+    <h2>What pgmonkey Does Behind the Scenes</h2>
+    <p>Before diving into recipes, here is what pgmonkey handles automatically so you do not have to:</p>
+    <ul>
+        <li><strong>Connection caching</strong> &mdash; Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance instead of creating a new one. This prevents "pool storms" where each call opens a brand-new pool.</li>
+        <li><strong>Async pool lifecycle</strong> &mdash; When you use <code>async with pool_conn:</code>, pgmonkey borrows a connection from the pool and returns it when the block exits. The pool itself stays open for reuse. Commits on clean exit, rolls back on exception.</li>
+        <li><strong>atexit cleanup</strong> &mdash; All cached connections and pools are automatically closed when the process exits, via an <code>atexit</code> handler.</li>
+        <li><strong>Thread-safe caching</strong> &mdash; The connection cache is protected by a threading lock, safe for multi-threaded sync applications.</li>
+    </ul>
+
+    <!-- Recipe 1: Normal -->
+    <h2>Connection Recipes</h2>
+
+    <div class="recipe">
+        <span class="tag">normal</span>
+        <h3>Normal (Synchronous) Connection</h3>
+        <p>Best for: scripts, CLI tools, simple sync apps. One connection, auto-managed.</p>
+<pre><code><span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+manager = PGConnectionManager()
+connection = manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'normal'</span>)
+
+<span class="comment"># Context manager commits on success, rolls back on exception</span>
+<span class="keyword">with</span> connection <span class="keyword">as</span> conn:
+    <span class="keyword">with</span> conn.cursor() <span class="keyword">as</span> cur:
+        cur.execute(<span class="string">'SELECT version();'</span>)
+        print(cur.fetchone())
+
+<span class="comment"># Connection is cached — calling again returns the same instance</span>
+same_conn = manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'normal'</span>)
+<span class="keyword">assert</span> same_conn <span class="keyword">is</span> connection</code></pre>
+        <p><strong>pgmonkey handles:</strong> Caching (same config = same connection), atexit cleanup.</p>
+    </div>
+
+    <!-- Recipe 2: Pool -->
+    <div class="recipe">
+        <span class="tag pool">pool</span>
+        <h3>Pooled (Synchronous) Connection</h3>
+        <p>Best for: Flask, Django, multi-threaded web apps. Borrows/returns connections from a shared pool.</p>
+<pre><code><span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+manager = PGConnectionManager()
+pool = manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'pool'</span>)
+
+<span class="comment"># Each 'with' block borrows a connection, returns it when done</span>
+<span class="keyword">with</span> pool <span class="keyword">as</span> conn:
+    <span class="keyword">with</span> conn.cursor() <span class="keyword">as</span> cur:
+        cur.execute(<span class="string">'SELECT count(*) FROM users;'</span>)
+        print(cur.fetchone())
+
+<span class="comment"># Pool stays open — next 'with' block borrows another connection</span>
+<span class="keyword">with</span> pool <span class="keyword">as</span> conn:
+    <span class="keyword">with</span> conn.cursor() <span class="keyword">as</span> cur:
+        cur.execute(<span class="string">'SELECT now();'</span>)
+        print(cur.fetchone())
+
+<span class="comment"># Calling get_database_connection again returns the SAME pool (cached)</span>
+same_pool = manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'pool'</span>)
+<span class="keyword">assert</span> same_pool <span class="keyword">is</span> pool</code></pre>
+        <p><strong>pgmonkey handles:</strong> Pool creation, caching (prevents pool storms), atexit cleanup.</p>
+    </div>
+
+    <!-- Recipe 3: Async -->
+    <div class="recipe">
+        <span class="tag async">async</span>
+        <h3>Async Connection</h3>
+        <p>Best for: single async tasks, lightweight async scripts. One async connection.</p>
+<pre><code><span class="keyword">import</span> asyncio
+<span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+<span class="keyword">async def</span> main():
+    manager = PGConnectionManager()
+    connection = <span class="keyword">await</span> manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'async'</span>)
+
+    <span class="keyword">async with</span> connection <span class="keyword">as</span> conn:
+        <span class="keyword">async with</span> conn.cursor() <span class="keyword">as</span> cur:
+            <span class="keyword">await</span> cur.execute(<span class="string">'SELECT version();'</span>)
+            print(<span class="keyword">await</span> cur.fetchone())
+
+    <span class="comment"># Connection is cached — awaiting again returns the same instance</span>
+    same_conn = <span class="keyword">await</span> manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'async'</span>)
+    <span class="keyword">assert</span> same_conn <span class="keyword">is</span> connection
+
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    asyncio.run(main())</code></pre>
+        <p><strong>pgmonkey handles:</strong> Caching, atexit cleanup (async connections closed via temporary event loop).</p>
+    </div>
+
+    <!-- Recipe 4: Async Pool -->
+    <div class="recipe">
+        <span class="tag async-pool">async_pool</span>
+        <h3>Async Pooled Connection</h3>
+        <p>Best for: FastAPI, aiohttp, high-concurrency async web apps. Borrows/returns connections from an async pool.</p>
+<pre><code><span class="keyword">import</span> asyncio
+<span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+<span class="keyword">async def</span> main():
+    manager = PGConnectionManager()
+    pool = <span class="keyword">await</span> manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'async_pool'</span>)
+
+    <span class="comment"># Each 'async with' borrows a connection, returns it on exit</span>
+    <span class="keyword">async with</span> pool <span class="keyword">as</span> conn:
+        <span class="keyword">async with</span> conn.cursor() <span class="keyword">as</span> cur:
+            <span class="keyword">await</span> cur.execute(<span class="string">'SELECT count(*) FROM orders;'</span>)
+            print(<span class="keyword">await</span> cur.fetchone())
+
+    <span class="comment"># Pool stays open — reuse it</span>
+    <span class="keyword">async with</span> pool <span class="keyword">as</span> conn:
+        <span class="keyword">async with</span> conn.cursor() <span class="keyword">as</span> cur:
+            <span class="keyword">await</span> cur.execute(<span class="string">'SELECT now();'</span>)
+            print(<span class="keyword">await</span> cur.fetchone())
+
+    <span class="comment"># Pool is cached — awaiting again returns the SAME pool</span>
+    same_pool = <span class="keyword">await</span> manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'async_pool'</span>)
+    <span class="keyword">assert</span> same_pool <span class="keyword">is</span> pool
+
+    <span class="comment"># Clean up when done (or let atexit handle it)</span>
+    <span class="keyword">await</span> manager.clear_cache_async()
+
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    asyncio.run(main())</code></pre>
+        <p><strong>pgmonkey handles:</strong> Pool creation, connection borrow/return, auto commit/rollback, caching (prevents pool storms), atexit cleanup.</p>
+    </div>
+
+    <!-- App patterns -->
+    <h2>App-Level Design Patterns</h2>
+    <p>These minimal examples show how to integrate pgmonkey into real applications.</p>
+
+    <!-- Flask pattern -->
+    <div class="recipe">
+        <span class="tag pool">Flask / Sync Web App</span>
+        <h3>Database Class for Flask</h3>
+        <p>A reusable database class for synchronous web frameworks. The pool is created once and shared across all requests.</p>
+<pre><code><span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+<span class="keyword">class</span> Database:
+    <span class="keyword">def</span> __init__(self, config_path):
+        self.manager = PGConnectionManager()
+        self.config_path = config_path
+        <span class="comment"># Pool is created on first call, cached thereafter</span>
+        self.pool = self.manager.get_database_connection(config_path, <span class="string">'pool'</span>)
+
+    <span class="keyword">def</span> fetch_one(self, query, params=<span class="keyword">None</span>):
+        <span class="keyword">with</span> self.pool <span class="keyword">as</span> conn:
+            <span class="keyword">with</span> conn.cursor() <span class="keyword">as</span> cur:
+                cur.execute(query, params)
+                <span class="keyword">return</span> cur.fetchone()
+
+    <span class="keyword">def</span> fetch_all(self, query, params=<span class="keyword">None</span>):
+        <span class="keyword">with</span> self.pool <span class="keyword">as</span> conn:
+            <span class="keyword">with</span> conn.cursor() <span class="keyword">as</span> cur:
+                cur.execute(query, params)
+                <span class="keyword">return</span> cur.fetchall()
+
+    <span class="keyword">def</span> execute(self, query, params=<span class="keyword">None</span>):
+        <span class="keyword">with</span> self.pool <span class="keyword">as</span> conn:
+            <span class="keyword">with</span> conn.cursor() <span class="keyword">as</span> cur:
+                cur.execute(query, params)
+
+<span class="comment"># Usage in Flask</span>
+<span class="keyword">from</span> flask <span class="keyword">import</span> Flask
+
+app = Flask(__name__)
+db = Database(<span class="string">'/path/to/config.yaml'</span>)
+
+@app.route(<span class="string">'/users'</span>)
+<span class="keyword">def</span> list_users():
+    rows = db.fetch_all(<span class="string">'SELECT id, name FROM users ORDER BY id;'</span>)
+    <span class="keyword">return</span> {<span class="string">'users'</span>: [{<span class="string">'id'</span>: r[0], <span class="string">'name'</span>: r[1]} <span class="keyword">for</span> r <span class="keyword">in</span> rows]}</code></pre>
+    </div>
+
+    <!-- FastAPI pattern -->
+    <div class="recipe">
+        <span class="tag async-pool">FastAPI / Async Web App</span>
+        <h3>AsyncDatabase Class for FastAPI</h3>
+        <p>A reusable async database class for async web frameworks. The pool is created once at startup and shared across all requests.</p>
+<pre><code><span class="keyword">import</span> asyncio
+<span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+<span class="keyword">class</span> AsyncDatabase:
+    <span class="keyword">def</span> __init__(self, config_path):
+        self.manager = PGConnectionManager()
+        self.config_path = config_path
+        self.pool = <span class="keyword">None</span>
+
+    <span class="keyword">async def</span> connect(self):
+        <span class="comment"># Pool is created and cached on first call</span>
+        self.pool = <span class="keyword">await</span> self.manager.get_database_connection(
+            self.config_path, <span class="string">'async_pool'</span>
+        )
+
+    <span class="keyword">async def</span> disconnect(self):
+        <span class="keyword">await</span> self.manager.clear_cache_async()
+
+    <span class="keyword">async def</span> fetch_one(self, query, params=<span class="keyword">None</span>):
+        <span class="keyword">async with</span> self.pool <span class="keyword">as</span> conn:
+            <span class="keyword">async with</span> conn.cursor() <span class="keyword">as</span> cur:
+                <span class="keyword">await</span> cur.execute(query, params)
+                <span class="keyword">return await</span> cur.fetchone()
+
+    <span class="keyword">async def</span> fetch_all(self, query, params=<span class="keyword">None</span>):
+        <span class="keyword">async with</span> self.pool <span class="keyword">as</span> conn:
+            <span class="keyword">async with</span> conn.cursor() <span class="keyword">as</span> cur:
+                <span class="keyword">await</span> cur.execute(query, params)
+                <span class="keyword">return await</span> cur.fetchall()
+
+    <span class="keyword">async def</span> execute(self, query, params=<span class="keyword">None</span>):
+        <span class="keyword">async with</span> self.pool <span class="keyword">as</span> conn:
+            <span class="keyword">async with</span> conn.cursor() <span class="keyword">as</span> cur:
+                <span class="keyword">await</span> cur.execute(query, params)
+
+<span class="comment"># Usage in FastAPI</span>
+<span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI
+
+app = FastAPI()
+db = AsyncDatabase(<span class="string">'/path/to/config.yaml'</span>)
+
+@app.on_event(<span class="string">"startup"</span>)
+<span class="keyword">async def</span> startup():
+    <span class="keyword">await</span> db.connect()
+
+@app.on_event(<span class="string">"shutdown"</span>)
+<span class="keyword">async def</span> shutdown():
+    <span class="keyword">await</span> db.disconnect()
+
+@app.get(<span class="string">"/orders"</span>)
+<span class="keyword">async def</span> list_orders():
+    rows = <span class="keyword">await</span> db.fetch_all(<span class="string">'SELECT id, total FROM orders ORDER BY id;'</span>)
+    <span class="keyword">return</span> {<span class="string">"orders"</span>: [{<span class="string">"id"</span>: r[0], <span class="string">"total"</span>: r[1]} <span class="keyword">for</span> r <span class="keyword">in</span> rows]}</code></pre>
+    </div>
+
+    <!-- Summary table -->
+    <h2>Quick Reference</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Connection Type</th>
+                <th>Best For</th>
+                <th>Cached?</th>
+                <th>Context Manager</th>
+                <th>Pool Reusable?</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>normal</code></td>
+                <td>Scripts, CLI tools</td>
+                <td>Yes</td>
+                <td><code>with conn:</code></td>
+                <td>N/A</td>
+            </tr>
+            <tr>
+                <td><code>pool</code></td>
+                <td>Flask, Django, threaded apps</td>
+                <td>Yes</td>
+                <td><code>with pool:</code> borrows/returns</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td><code>async</code></td>
+                <td>Async scripts, lightweight tasks</td>
+                <td>Yes</td>
+                <td><code>async with conn:</code></td>
+                <td>N/A</td>
+            </tr>
+            <tr>
+                <td><code>async_pool</code></td>
+                <td>FastAPI, aiohttp, high concurrency</td>
+                <td>Yes</td>
+                <td><code>async with pool:</code> borrows/returns</td>
+                <td>Yes</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Cache Management API</h2>
+    <p>pgmonkey exposes cache management methods on <code>PGConnectionManager</code>:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>manager.cache_info</code></td>
+                <td>Returns dict with <code>size</code> and <code>connection_types</code> of cached connections.</td>
+            </tr>
+            <tr>
+                <td><code>manager.clear_cache()</code></td>
+                <td>Disconnects all cached connections and clears the cache. Use from sync code.</td>
+            </tr>
+            <tr>
+                <td><code>await manager.clear_cache_async()</code></td>
+                <td>Same as above, but safe to call from async code (inside an event loop).</td>
+            </tr>
+            <tr>
+                <td><code>force_reload=True</code></td>
+                <td>Pass to <code>get_database_connection()</code> to replace a cached connection with a fresh one.</td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<footer>
+    <p>&copy; 2025 pgmonkey by <a href="https://github.com/RexBytes">RexBytes</a> &nbsp;|&nbsp; <a href="https://github.com/RexBytes/pgmonkey">GitHub</a> &nbsp;|&nbsp; <a href="https://pypi.org/project/pgmonkey/">PyPI</a></p>
+    <p>Contact: <a href="mailto:pgmonkey@rexbytes.com">pgmonkey@rexbytes.com</a></p>
+    <p class="legal">pgmonkey is an independent open-source project and is not affiliated with, endorsed by, or sponsored by the PostgreSQL Global Development Group, or any other entity. PostgreSQL and the PostgreSQL logo are trademarks of the PostgreSQL Global Development Group. pgmonkey is licensed under the <a href="https://github.com/RexBytes/pgmonkey/blob/main/LICENSE">MIT License</a>.</p>
+</footer>
+
+</body>
+</html>
