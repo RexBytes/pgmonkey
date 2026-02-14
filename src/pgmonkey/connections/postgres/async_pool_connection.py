@@ -12,6 +12,8 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
         self.config = config
         self.async_pool_settings = async_pool_settings or {}
         self.pool = None
+        self._conn = None
+        self._pool_conn_ctx = None
 
     @staticmethod
     def construct_conninfo(config):
@@ -45,17 +47,24 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
             self.pool = None
 
     async def commit(self):
-        """No-op for pool connections. Transactions are committed within cursor/transaction contexts."""
-        pass
+        """Commits the current transaction on the acquired connection."""
+        if self._conn:
+            await self._conn.commit()
 
     async def rollback(self):
-        """No-op for pool connections. Transactions are rolled back within cursor/transaction contexts."""
-        pass
+        """Rolls back the current transaction on the acquired connection."""
+        if self._conn:
+            await self._conn.rollback()
 
     @asynccontextmanager
     async def transaction(self):
         """Creates a transaction context on a pooled connection."""
-        if self.pool:
+        if self._conn:
+            # Inside __aenter__/__aexit__ context - use the acquired connection
+            async with self._conn.transaction() as tx:
+                yield tx
+        elif self.pool:
+            # Standalone usage - acquire connection from pool
             async with self.pool.connection() as conn:
                 async with conn.transaction() as tx:
                     yield tx
@@ -65,7 +74,12 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
     @asynccontextmanager
     async def cursor(self):
         """Provides an async cursor from a pooled connection."""
-        if self.pool:
+        if self._conn:
+            # Inside __aenter__/__aexit__ context - use the acquired connection
+            async with self._conn.cursor() as cur:
+                yield cur
+        elif self.pool:
+            # Standalone usage - acquire connection from pool
             async with self.pool.connection() as conn:
                 async with conn.cursor() as cur:
                     yield cur
@@ -75,7 +89,20 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
     async def __aenter__(self):
         if not self.pool:
             await self.connect()
+        self._pool_conn_ctx = self.pool.connection()
+        self._conn = await self._pool_conn_ctx.__aenter__()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.disconnect()
+        try:
+            if exc_type:
+                if self._conn:
+                    await self._conn.rollback()
+            else:
+                if self._conn:
+                    await self._conn.commit()
+        finally:
+            if self._pool_conn_ctx:
+                await self._pool_conn_ctx.__aexit__(exc_type, exc_val, exc_tb)
+            self._conn = None
+            self._pool_conn_ctx = None

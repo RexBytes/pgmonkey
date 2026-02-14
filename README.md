@@ -28,9 +28,10 @@
    - [Async Pooled Connection](#async-pooled-connection)
    - [Using the Config File Default](#using-the-config-file-default)
    - [Transactions, Commit, and Rollback](#transactions-commit-and-rollback)
-7. [Testing All Connection Types](#testing-all-connection-types)
-8. [Testing Pool Capacity](#testing-pool-capacity)
-9. [Running the Test Suite](#running-the-test-suite)
+7. [Best Practice Recipes](#best-practice-recipes)
+8. [Testing All Connection Types](#testing-all-connection-types)
+9. [Testing Pool Capacity](#testing-pool-capacity)
+10. [Running the Test Suite](#running-the-test-suite)
 
 ## Installation
 
@@ -452,6 +453,133 @@ try:
 except Exception as e:
     await conn.rollback()
 ```
+
+## Best Practice Recipes
+
+pgmonkey handles several production concerns behind the scenes so you don't have to:
+
+- **Connection caching** — Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance, preventing "pool storms" where each call opens a new pool.
+- **Async pool lifecycle** — `async with pool_conn:` borrows a connection from the pool and returns it when the block exits. The pool stays open for reuse. Auto-commits on clean exit, rolls back on exception.
+- **atexit cleanup** — All cached connections are automatically closed when the process exits.
+- **Thread-safe caching** — The connection cache is protected by a threading lock.
+
+### App-Level Pattern: Sync Database Class (Flask)
+
+```python
+from pgmonkey import PGConnectionManager
+
+class Database:
+    def __init__(self, config_path):
+        self.manager = PGConnectionManager()
+        self.config_path = config_path
+        # Pool is created on first call, cached thereafter
+        self.pool = self.manager.get_database_connection(config_path, 'pool')
+
+    def fetch_one(self, query, params=None):
+        with self.pool as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                return cur.fetchone()
+
+    def fetch_all(self, query, params=None):
+        with self.pool as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                return cur.fetchall()
+
+    def execute(self, query, params=None):
+        with self.pool as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+
+# Usage in Flask
+from flask import Flask
+
+app = Flask(__name__)
+db = Database('/path/to/config.yaml')
+
+@app.route('/users')
+def list_users():
+    rows = db.fetch_all('SELECT id, name FROM users ORDER BY id;')
+    return {'users': [{'id': r[0], 'name': r[1]} for r in rows]}
+```
+
+### App-Level Pattern: Async Database Class (FastAPI)
+
+```python
+import asyncio
+from pgmonkey import PGConnectionManager
+
+class AsyncDatabase:
+    def __init__(self, config_path):
+        self.manager = PGConnectionManager()
+        self.config_path = config_path
+        self.pool = None
+
+    async def connect(self):
+        self.pool = await self.manager.get_database_connection(
+            self.config_path, 'async_pool'
+        )
+
+    async def disconnect(self):
+        await self.manager.clear_cache_async()
+
+    async def fetch_one(self, query, params=None):
+        async with self.pool as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, params)
+                return await cur.fetchone()
+
+    async def fetch_all(self, query, params=None):
+        async with self.pool as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, params)
+                return await cur.fetchall()
+
+    async def execute(self, query, params=None):
+        async with self.pool as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, params)
+
+# Usage in FastAPI
+from fastapi import FastAPI
+
+app = FastAPI()
+db = AsyncDatabase('/path/to/config.yaml')
+
+@app.on_event("startup")
+async def startup():
+    await db.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await db.disconnect()
+
+@app.get("/orders")
+async def list_orders():
+    rows = await db.fetch_all('SELECT id, total FROM orders ORDER BY id;')
+    return {"orders": [{"id": r[0], "total": r[1]} for r in rows]}
+```
+
+### Cache Management
+
+| Method | Description |
+|--------|-------------|
+| `manager.cache_info` | Returns dict with `size` and `connection_types` of cached connections |
+| `manager.clear_cache()` | Disconnects all cached connections (sync) |
+| `await manager.clear_cache_async()` | Disconnects all cached connections (async) |
+| `force_reload=True` | Pass to `get_database_connection()` to replace a cached connection |
+
+### Quick Reference
+
+| Type | Best For | Cached? | Context Manager |
+|------|----------|---------|-----------------|
+| `normal` | Scripts, CLI tools | Yes | `with conn:` |
+| `pool` | Flask, Django, threaded apps | Yes | `with pool:` borrows/returns |
+| `async` | Async scripts | Yes | `async with conn:` |
+| `async_pool` | FastAPI, aiohttp, high concurrency | Yes | `async with pool:` borrows/returns |
+
+For full recipes with code examples for every connection type, see the [Best Practices](https://rexbytes.github.io/pgmonkey/best_practices.html) documentation page.
 
 ## Testing All Connection Types
 
