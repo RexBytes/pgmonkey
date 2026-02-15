@@ -150,6 +150,29 @@ class TestSyncCaching:
         # Verify factory was called with the override type
         mock_get_sync.assert_called_once()
 
+    @patch.object(PGConnectionManager, '_get_postgresql_connection_sync')
+    def test_different_connection_type_override_gets_separate_cache_entry(self, mock_get_sync):
+        """Same config dict with different connection_type overrides should NOT share cache."""
+        conn_normal = _make_sync_connection()
+        conn_normal.connection_type = 'normal'
+        conn_pool = _make_sync_connection()
+        conn_pool.connection_type = 'pool'
+        mock_get_sync.side_effect = [conn_normal, conn_pool]
+        manager = PGConnectionManager()
+        config = _sync_config('pool')
+
+        # First call with override to 'normal'
+        result1 = manager.get_database_connection_from_dict(config, connection_type='normal')
+        assert result1 is conn_normal
+
+        # Second call with default type ('pool' from config)
+        result2 = manager.get_database_connection_from_dict(config)
+        assert result2 is conn_pool
+
+        # They must be different connections
+        assert result1 is not result2
+        assert manager.cache_info['size'] == 2
+
 
 # -- Async caching tests ---------------------------------------------------
 

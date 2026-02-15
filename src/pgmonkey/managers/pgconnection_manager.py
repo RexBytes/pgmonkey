@@ -142,7 +142,7 @@ class PGConnectionManager:
 
         is_async = resolved_type in ('async', 'async_pool')
 
-        cache_key = self._config_hash(config_data_dictionary)
+        cache_key = self._config_hash(config_data_dictionary) + ':' + resolved_type
         old_connection = None
 
         with self._cache_lock:

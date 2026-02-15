@@ -10,7 +10,7 @@ class TestPGPoolConnectionInit:
         assert conn.config == {'host': 'localhost'}
         assert conn.pool_settings == {'min_size': 2, 'max_size': 10}
         assert conn.pool is None
-        assert conn._pool_conn_ctx is None
+        assert getattr(conn._local, 'pool_conn_ctx', None) is None
 
     def test_default_pool_settings_empty(self):
         conn = PGPoolConnection({'host': 'localhost'})
@@ -142,7 +142,7 @@ class TestPGPoolConnectionCheckOnCheckout:
 class TestPGPoolConnectionContextManager:
 
     def test_enter_stores_pool_conn_ctx(self):
-        """__enter__ should store the pool context manager, not discard it."""
+        """__enter__ should store the pool context manager in thread-local, not discard it."""
         mock_pool = MagicMock()
         mock_pool_ctx = MagicMock()
         mock_raw_conn = MagicMock()
@@ -153,7 +153,7 @@ class TestPGPoolConnectionContextManager:
         conn.pool = mock_pool
         result = conn.__enter__()
 
-        assert conn._pool_conn_ctx is mock_pool_ctx
+        assert conn._local.pool_conn_ctx is mock_pool_ctx
         assert conn._get_conn() is mock_raw_conn
         assert result is conn
 
@@ -164,7 +164,7 @@ class TestPGPoolConnectionContextManager:
         mock_raw_conn = MagicMock()
 
         conn = PGPoolConnection({'host': 'localhost'})
-        conn._pool_conn_ctx = mock_pool_ctx
+        conn._local.pool_conn_ctx = mock_pool_ctx
         conn._set_conn(mock_raw_conn)
 
         conn.__exit__(None, None, None)
@@ -174,7 +174,7 @@ class TestPGPoolConnectionContextManager:
         # Raw connection's __exit__ should NOT be called
         mock_raw_conn.__exit__.assert_not_called()
         assert conn._get_conn() is None
-        assert conn._pool_conn_ctx is None
+        assert conn._local.pool_conn_ctx is None
 
     def test_exit_rollback_on_exception(self):
         """__exit__ should rollback on exception, then delegate to pool CM."""
@@ -182,7 +182,7 @@ class TestPGPoolConnectionContextManager:
         mock_raw_conn = MagicMock()
 
         conn = PGPoolConnection({'host': 'localhost'})
-        conn._pool_conn_ctx = mock_pool_ctx
+        conn._local.pool_conn_ctx = mock_pool_ctx
         conn._set_conn(mock_raw_conn)
 
         exc = ValueError("test")
@@ -199,7 +199,7 @@ class TestPGPoolConnectionContextManager:
         mock_raw_conn.commit.side_effect = Exception("commit failed")
 
         conn = PGPoolConnection({'host': 'localhost'})
-        conn._pool_conn_ctx = mock_pool_ctx
+        conn._local.pool_conn_ctx = mock_pool_ctx
         conn._set_conn(mock_raw_conn)
 
         with pytest.raises(Exception, match="commit failed"):
@@ -207,7 +207,7 @@ class TestPGPoolConnectionContextManager:
 
         mock_pool_ctx.__exit__.assert_called_once()
         assert conn._get_conn() is None
-        assert conn._pool_conn_ctx is None
+        assert conn._local.pool_conn_ctx is None
 
 
 class TestPGPoolConnectionConninfo:
@@ -221,7 +221,7 @@ class TestPGPoolConnectionConninfo:
 
 
 class TestPGPoolConnectionThreadSafety:
-    """Verify that _conn is stored in thread-local storage."""
+    """Verify that _conn and _pool_conn_ctx are stored in thread-local storage."""
 
     def test_conn_is_thread_local(self):
         """_get_conn and _set_conn use thread-local storage."""
@@ -232,3 +232,44 @@ class TestPGPoolConnectionThreadSafety:
         assert conn._get_conn() is mock
         conn._set_conn(None)
         assert conn._get_conn() is None
+
+    def test_pool_conn_ctx_is_thread_local(self):
+        """_pool_conn_ctx must be thread-local to prevent cross-thread corruption."""
+        import threading
+
+        conn = PGPoolConnection({'host': 'localhost'})
+
+        # Set up mock pool
+        mock_pool = MagicMock()
+
+        def make_ctx():
+            ctx = MagicMock()
+            raw = MagicMock()
+            ctx.__enter__ = MagicMock(return_value=raw)
+            ctx.__exit__ = MagicMock(return_value=False)
+            return ctx
+
+        mock_pool.connection = MagicMock(side_effect=make_ctx)
+        conn.pool = mock_pool
+
+        results = {}
+
+        def thread_work(thread_id):
+            """Each thread enters and checks its own pool_conn_ctx."""
+            conn.__enter__()
+            # Record this thread's pool_conn_ctx
+            results[thread_id] = conn._local.pool_conn_ctx
+            # Small sleep to let threads overlap
+            import time
+            time.sleep(0.01)
+            conn.__exit__(None, None, None)
+
+        t1 = threading.Thread(target=thread_work, args=(1,))
+        t2 = threading.Thread(target=thread_work, args=(2,))
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+        # Each thread should have gotten its own pool_conn_ctx (not the same object)
+        assert results[1] is not results[2]
