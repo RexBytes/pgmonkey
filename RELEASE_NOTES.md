@@ -1,3 +1,58 @@
+# pgmonkey v2.3.0 Release Notes
+
+## Overview
+
+pgmonkey v2.3.0 adds live server settings auditing via the new `--audit` flag on the `pgserverconfig` CLI command. This feature connects to a running PostgreSQL server, queries its current configuration, and compares it against recommended settings.
+
+## What's New
+
+### Server Settings Audit (`--audit`)
+
+The `pgserverconfig` CLI command now supports an `--audit` flag that connects to the live server and compares current settings against recommendations:
+
+```bash
+pgmonkey pgserverconfig --filepath config.yaml --audit
+```
+
+- Queries `pg_settings` for `max_connections`, `ssl`, `ssl_cert_file`, `ssl_key_file`, `ssl_ca_file`
+- Displays a comparison table: Setting, Recommended, Current, Source, Status (OK / MISMATCH / REVIEW / UNKNOWN)
+- Inspects `pg_hba_file_rules` (PostgreSQL 15+) when available
+- Gracefully handles permission errors — falls back to recommendations only
+- Entirely read-only — no server settings are modified
+
+Without `--audit`, the command works exactly as before.
+
+## Compatibility
+
+No breaking API changes. All existing code continues to work as before.
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | 3.10, 3.11, 3.12, 3.13 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+
+## Test Suite
+
+180 unit tests (up from 149 in v2.2.0), all passing. New tests cover:
+
+- Server settings inspector (permission handling, comparison logic, HBA rules)
+- Audit output formatting (comparison table, fallback on permission denied)
+
+## Files Changed
+
+- `src/pgmonkey/cli/cli_pg_server_config_subparser.py` — `--audit` CLI argument
+- `src/pgmonkey/serversettings/postgres_server_settings_inspector.py` — New: queries live server pg_settings and pg_hba_file_rules
+- `src/pgmonkey/serversettings/postgres_server_config_generator.py` — Audit comparison output
+- `src/pgmonkey/managers/pg_server_config_manager.py` — Audit connection and fallback logic
+- `src/pgmonkey/tests/unit/test_server_settings_inspector.py` — 26 new tests
+- `src/pgmonkey/tests/unit/test_server_config_generator.py` — 5 new audit tests
+- `README.md` — Documentation updates
+- `docs/` — Website documentation updates
+
+---
+
 # pgmonkey v2.2.0 Release Notes
 
 ## Overview

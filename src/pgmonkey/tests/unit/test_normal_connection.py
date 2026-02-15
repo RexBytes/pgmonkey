@@ -156,8 +156,8 @@ class TestPGNormalConnectionCursor:
 class TestPGNormalConnectionContextManager:
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')
-    def test_commits_on_success_without_disconnect(self, mock_connect):
-        """__exit__ commits but does not disconnect — connection stays alive for cache reuse."""
+    def test_commits_on_success_and_disconnects(self, mock_connect):
+        """__exit__ should commit then disconnect to prevent connection leaks."""
         mock_pg_conn = MagicMock(closed=False)
         mock_connect.return_value = mock_pg_conn
 
@@ -166,7 +166,8 @@ class TestPGNormalConnectionContextManager:
             assert c is conn
 
         mock_pg_conn.commit.assert_called_once()
-        mock_pg_conn.close.assert_not_called()
+        mock_pg_conn.close.assert_called_once()
+        assert conn.connection is None
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')
     def test_rollbacks_on_error(self, mock_connect):
@@ -180,6 +181,34 @@ class TestPGNormalConnectionContextManager:
 
         mock_pg_conn.rollback.assert_called_once()
         mock_pg_conn.commit.assert_not_called()
+
+    @patch('pgmonkey.connections.postgres.normal_connection.connect')
+    def test_disconnect_called_even_if_commit_raises(self, mock_connect):
+        """disconnect() must be called even if commit() raises (e.g. network error)."""
+        mock_pg_conn = MagicMock(closed=False)
+        mock_pg_conn.commit.side_effect = Exception("connection lost")
+        mock_connect.return_value = mock_pg_conn
+
+        conn = PGNormalConnection({'host': 'localhost'})
+        with pytest.raises(Exception, match="connection lost"):
+            with conn:
+                pass
+
+        mock_pg_conn.close.assert_called_once()
+
+    @patch('pgmonkey.connections.postgres.normal_connection.connect')
+    def test_disconnect_called_even_if_rollback_raises(self, mock_connect):
+        """disconnect() must be called even if rollback() raises (e.g. network error)."""
+        mock_pg_conn = MagicMock(closed=False)
+        mock_pg_conn.rollback.side_effect = Exception("connection lost")
+        mock_connect.return_value = mock_pg_conn
+
+        conn = PGNormalConnection({'host': 'localhost'})
+        with pytest.raises(Exception, match="connection lost"):
+            with conn:
+                raise ValueError("original error")
+
+        mock_pg_conn.close.assert_called_once()
 
 
 class TestPGNormalConnectionTransaction:

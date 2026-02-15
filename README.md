@@ -20,6 +20,7 @@
    - [Testing a Connection](#testing-a-connection)
    - [Generating Python Code](#generating-python-code)
    - [Server Configuration Recommendations](#server-configuration-recommendations)
+   - [Auditing Live Server Settings](#auditing-live-server-settings)
    - [Importing and Exporting Data](#importing-and-exporting-data)
 6. [Using pgmonkey in Python](#using-pgmonkey-in-python)
    - [Normal (Synchronous) Connection](#normal-synchronous-connection)
@@ -324,6 +325,36 @@ ssl_cert_file = 'server.crt'
 ssl_key_file = 'server.key'
 ssl_ca_file = 'ca.crt'
 ```
+
+### Auditing Live Server Settings
+
+Add `--audit` to connect to the live server and compare current settings against recommendations:
+
+```bash
+pgmonkey pgserverconfig --filepath /path/to/config.yaml --audit
+```
+
+This queries the server's `pg_settings` (read-only) and displays a comparison table:
+
+```
+1) Database type detected: PostgreSQL
+
+2) Server settings audit:
+
+   postgresql.conf:
+
+   Setting          Recommended  Current  Source              Status
+   ────────────────────────────────────────────────────────────────────
+   max_connections   22           100      configuration file  OK
+   ssl               on           on       configuration file  OK
+   ssl_cert_file     server.crt   server.crt  configuration file  OK
+   ssl_key_file      server.key   server.key  configuration file  OK
+   ssl_ca_file       ca.crt       ca.crt      configuration file  OK
+```
+
+The audit also inspects `pg_hba_file_rules` (PostgreSQL 15+) when available, showing current HBA rules alongside recommendations.
+
+If the connected role lacks permission to query `pg_settings`, the audit fails gracefully with a message and falls back to showing recommendations only. No server settings are ever modified — the audit is entirely read-only.
 
 ### Importing and Exporting Data
 
@@ -711,7 +742,7 @@ Run the tests:
 pytest
 ```
 
-The test suite uses mocks and covers all connection types, the connection factory, configuration management, code generation (both pgmonkey and native psycopg), config validation, and server config generation.
+The test suite uses mocks and covers all connection types, the connection factory, configuration management, code generation (both pgmonkey and native psycopg), config validation, server config generation, and server settings inspection.
 
 ---
 

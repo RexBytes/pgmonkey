@@ -68,9 +68,10 @@ class TestPGAsyncConnectionApplySettings:
 
         calls = mock_pg.execute.call_args_list
         assert len(calls) == 2
-        assert calls[0][0][0] == 'SET statement_timeout = %s'
+        # SET statements now use sql.SQL/sql.Identifier for safe identifier quoting
+        assert calls[0][0][0].as_string(None) == 'SET "statement_timeout" = %s'
         assert calls[0][0][1] == ('30000',)
-        assert calls[1][0][0] == 'SET lock_timeout = %s'
+        assert calls[1][0][0].as_string(None) == 'SET "lock_timeout" = %s'
         assert calls[1][0][1] == ('10000',)
 
     @pytest.mark.asyncio
@@ -121,8 +122,8 @@ class TestPGAsyncConnectionContextManager:
 
     @pytest.mark.asyncio
     @patch('pgmonkey.connections.postgres.async_connection.AsyncConnection')
-    async def test_aexit_does_not_disconnect(self, mock_cls):
-        """__aexit__ should commit but not disconnect — connection stays alive for cache reuse."""
+    async def test_aexit_commits_and_disconnects(self, mock_cls):
+        """__aexit__ should commit then disconnect to prevent connection leaks."""
         mock_pg = AsyncMock(closed=False)
         mock_pg.execute = AsyncMock()
         mock_pg.commit = AsyncMock()
@@ -133,8 +134,8 @@ class TestPGAsyncConnectionContextManager:
             pass
 
         mock_pg.commit.assert_awaited_once()
-        mock_pg.close.assert_not_called()
-        assert conn.connection is mock_pg
+        mock_pg.close.assert_awaited_once()
+        assert conn.connection is None
 
     @pytest.mark.asyncio
     @patch('pgmonkey.connections.postgres.async_connection.AsyncConnection')

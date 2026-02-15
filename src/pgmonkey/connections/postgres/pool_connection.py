@@ -15,6 +15,7 @@ class PGPoolConnection(PostgresBaseConnection):
         self.sync_settings = sync_settings or {}
         self.pool = None
         self._local = threading.local()
+        self._pool_conn_ctx = None
 
     @staticmethod
     def construct_conninfo(config):

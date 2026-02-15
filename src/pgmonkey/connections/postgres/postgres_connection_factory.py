@@ -36,7 +36,7 @@ class PostgresConnectionFactory:
                 ', '.join(sorted(unknown_keys)),
                 ', '.join(self.VALID_CONNECTION_KEYS),
             )
-        return {key: config[key] for key in self.VALID_CONNECTION_KEYS if key in config and config[key] is not None and config[key] != ''}
+        return {key: config[key] for key in self.VALID_CONNECTION_KEYS if key in config and config[key] is not None}
 
     def _validate_pool_settings(self):
         """Validate pool configuration ranges."""
