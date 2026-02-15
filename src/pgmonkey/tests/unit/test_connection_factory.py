@@ -9,12 +9,18 @@ from pgmonkey.connections.postgres.async_pool_connection import PGAsyncPoolConne
 
 class TestPostgresConnectionFactory:
 
-    def test_filter_config_strips_empty_values(self, sample_config):
-        """Empty string values like sslcert='' should be stripped from filtered config."""
+    def test_filter_config_keeps_empty_strings(self, sample_config):
+        """Empty string values like sslcert='' should be kept (psycopg/libpq treats them as unset)."""
         factory = PostgresConnectionFactory(sample_config, 'normal')
-        assert 'sslcert' not in factory.config
-        assert 'sslkey' not in factory.config
-        assert 'sslrootcert' not in factory.config
+        assert factory.config['sslcert'] == ''
+        assert factory.config['sslkey'] == ''
+        assert factory.config['sslrootcert'] == ''
+
+    def test_filter_config_strips_none_values(self, sample_config):
+        """None values should be stripped from filtered config."""
+        sample_config['postgresql']['connection_settings']['password'] = None
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        assert 'password' not in factory.config
 
     def test_filter_config_keeps_valid_values(self, sample_config, filtered_connection_settings):
         """Non-empty connection settings should be preserved."""

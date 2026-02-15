@@ -107,6 +107,14 @@ class TestCodeGeneratorPsycopgAsync:
         assert "async_settings" in output
         assert "PGConnectionManager" not in output
 
+    def test_uses_sql_identifier_for_set(self, sample_config_file, capsys):
+        """Generated async psycopg code should use sql.Identifier for SET statements."""
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'async', library='psycopg')
+        output = capsys.readouterr().out
+        assert "sql.SQL" in output
+        assert "sql.Identifier" in output
+
 
 class TestCodeGeneratorPsycopgAsyncPool:
 
@@ -118,6 +126,38 @@ class TestCodeGeneratorPsycopgAsyncPool:
         assert "await" in output
         assert "configure" in output
         assert "PGConnectionManager" not in output
+
+    def test_uses_sql_identifier_for_set(self, sample_config_file, capsys):
+        """Generated async pool psycopg code should use sql.Identifier for SET statements."""
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'async_pool', library='psycopg')
+        output = capsys.readouterr().out
+        assert "sql.SQL" in output
+        assert "sql.Identifier" in output
+
+
+class TestCodeGeneratorPathEscaping:
+
+    def test_single_quote_in_path_produces_valid_python(self, sample_config, tmp_path, capsys):
+        """Paths with single quotes must not break the generated code."""
+        config_dir = tmp_path / "o'brien"
+        config_dir.mkdir()
+        config_file = config_dir / "config.yaml"
+        with open(config_file, 'w') as f:
+            yaml.dump(sample_config, f, sort_keys=False)
+
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(str(config_file), 'normal')
+        output = capsys.readouterr().out
+
+        # Find the config_file_path assignment line and verify it compiles
+        for line in output.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("config_file_path = "):
+                compile(stripped, "<generated>", "exec")  # raises SyntaxError if broken
+                assert "o'brien" in stripped
+                return
+        pytest.fail("config_file_path assignment not found in output")
 
 
 class TestCodeGeneratorLibraryDefault:

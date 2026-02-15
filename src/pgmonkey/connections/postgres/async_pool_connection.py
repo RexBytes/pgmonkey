@@ -1,7 +1,7 @@
 import logging
 import warnings
 from psycopg_pool import AsyncConnectionPool
-from psycopg import conninfo as psycopg_conninfo
+from psycopg import conninfo as psycopg_conninfo, sql
 from .base_connection import PostgresBaseConnection
 from contextlib import asynccontextmanager
 
@@ -41,7 +41,7 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
                 async def _configure(conn):
                     for setting, value in async_settings.items():
                         try:
-                            await conn.execute(f"SET {setting} = %s", (str(value),))
+                            await conn.execute(sql.SQL("SET {} = %s").format(sql.Identifier(setting)), (str(value),))
                         except Exception as e:
                             logger.warning("Could not apply setting '%s': %s", setting, e)
                 kwargs['configure'] = _configure

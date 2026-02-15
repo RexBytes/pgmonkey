@@ -11,6 +11,7 @@ class TestPGPoolConnectionInit:
         assert conn.pool_settings == {'min_size': 2, 'max_size': 10}
         assert conn.pool is None
         assert conn._conn is None
+        assert conn._pool_conn_ctx is None
 
     def test_default_pool_settings_empty(self):
         conn = PGPoolConnection({'host': 'localhost'})
@@ -111,6 +112,77 @@ class TestPGPoolConnectionCheckOnCheckout:
         call_kwargs = mock_pool_cls.call_args[1]
         assert 'check' not in call_kwargs
         assert 'check_on_checkout' not in call_kwargs
+
+
+class TestPGPoolConnectionContextManager:
+
+    def test_enter_stores_pool_conn_ctx(self):
+        """__enter__ should store the pool context manager, not discard it."""
+        mock_pool = MagicMock()
+        mock_pool_ctx = MagicMock()
+        mock_raw_conn = MagicMock()
+        mock_pool.connection.return_value = mock_pool_ctx
+        mock_pool_ctx.__enter__ = MagicMock(return_value=mock_raw_conn)
+
+        conn = PGPoolConnection({'host': 'localhost'})
+        conn.pool = mock_pool
+        result = conn.__enter__()
+
+        assert conn._pool_conn_ctx is mock_pool_ctx
+        assert conn._conn is mock_raw_conn
+        assert result is conn
+
+    def test_exit_delegates_to_pool_ctx_not_raw_conn(self):
+        """__exit__ should call __exit__ on the pool CM (returns conn to pool),
+        not on the raw connection (which would close it)."""
+        mock_pool_ctx = MagicMock()
+        mock_raw_conn = MagicMock()
+
+        conn = PGPoolConnection({'host': 'localhost'})
+        conn._pool_conn_ctx = mock_pool_ctx
+        conn._conn = mock_raw_conn
+
+        conn.__exit__(None, None, None)
+
+        mock_raw_conn.commit.assert_called_once()
+        mock_pool_ctx.__exit__.assert_called_once_with(None, None, None)
+        # Raw connection's __exit__ should NOT be called
+        mock_raw_conn.__exit__.assert_not_called()
+        assert conn._conn is None
+        assert conn._pool_conn_ctx is None
+
+    def test_exit_rollback_on_exception(self):
+        """__exit__ should rollback on exception, then delegate to pool CM."""
+        mock_pool_ctx = MagicMock()
+        mock_raw_conn = MagicMock()
+
+        conn = PGPoolConnection({'host': 'localhost'})
+        conn._pool_conn_ctx = mock_pool_ctx
+        conn._conn = mock_raw_conn
+
+        exc = ValueError("test")
+        conn.__exit__(ValueError, exc, None)
+
+        mock_raw_conn.rollback.assert_called_once()
+        mock_raw_conn.commit.assert_not_called()
+        mock_pool_ctx.__exit__.assert_called_once_with(ValueError, exc, None)
+
+    def test_exit_cleans_up_even_on_commit_error(self):
+        """Pool CM cleanup should happen even if commit raises."""
+        mock_pool_ctx = MagicMock()
+        mock_raw_conn = MagicMock()
+        mock_raw_conn.commit.side_effect = Exception("commit failed")
+
+        conn = PGPoolConnection({'host': 'localhost'})
+        conn._pool_conn_ctx = mock_pool_ctx
+        conn._conn = mock_raw_conn
+
+        with pytest.raises(Exception, match="commit failed"):
+            conn.__exit__(None, None, None)
+
+        mock_pool_ctx.__exit__.assert_called_once()
+        assert conn._conn is None
+        assert conn._pool_conn_ctx is None
 
 
 class TestPGPoolConnectionConninfo:
