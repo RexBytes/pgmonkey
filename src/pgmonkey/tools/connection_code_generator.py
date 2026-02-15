@@ -62,7 +62,7 @@ from pgmonkey import PGConnectionManager
 
 def main():
     connection_manager = PGConnectionManager()
-    config_file_path = '{config_file_path}'
+    config_file_path = {repr(config_file_path)}
 
     # Get a normal (synchronous) PostgreSQL connection
     connection = connection_manager.get_database_connection(config_file_path, 'normal')
@@ -88,7 +88,7 @@ from pgmonkey import PGConnectionManager
 
 def main():
     connection_manager = PGConnectionManager()
-    config_file_path = '{config_file_path}'
+    config_file_path = {repr(config_file_path)}
 
     # Get a pooled PostgreSQL connection
     pool_connection = connection_manager.get_database_connection(config_file_path, 'pool')
@@ -115,7 +115,7 @@ from pgmonkey import PGConnectionManager
 
 async def main():
     connection_manager = PGConnectionManager()
-    config_file_path = '{config_file_path}'
+    config_file_path = {repr(config_file_path)}
 
     # Get an async PostgreSQL connection
     connection = await connection_manager.get_database_connection(config_file_path, 'async')
@@ -143,7 +143,7 @@ from pgmonkey import PGConnectionManager
 
 async def main():
     connection_manager = PGConnectionManager()
-    config_file_path = '{config_file_path}'
+    config_file_path = {repr(config_file_path)}
 
     # Get an async pooled PostgreSQL connection
     pool_connection = await connection_manager.get_database_connection(config_file_path, 'async_pool')
@@ -172,7 +172,7 @@ import yaml
 import psycopg
 
 def main():
-    config_file_path = '{config_file_path}'
+    config_file_path = {repr(config_file_path)}
 
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
@@ -202,7 +202,7 @@ from psycopg import conninfo
 from psycopg_pool import ConnectionPool
 
 def main():
-    config_file_path = '{config_file_path}'
+    config_file_path = {repr(config_file_path)}
 
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
@@ -241,7 +241,7 @@ import yaml
 from psycopg import AsyncConnection, sql
 
 async def main():
-    config_file_path = '{config_file_path}'
+    config_file_path = {repr(config_file_path)}
 
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
@@ -277,7 +277,7 @@ from psycopg import conninfo, sql
 from psycopg_pool import AsyncConnectionPool
 
 async def main():
-    config_file_path = '{config_file_path}'
+    config_file_path = {repr(config_file_path)}
 
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)

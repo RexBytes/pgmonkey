@@ -107,6 +107,15 @@ class TestPostgresqlConf:
 
         assert 'max_connections = 55' in settings  # int(50 * 1.1)
 
+    def test_string_max_size_handled(self, sample_config, tmp_path):
+        """max_size as a quoted string in YAML should not crash."""
+        sample_config['postgresql']['pool_settings']['max_size'] = '20'
+        sample_config['postgresql']['async_pool_settings']['max_size'] = '10'
+        gen = self._make_generator(tmp_path, sample_config)
+        settings = gen.generate_postgresql_conf()
+
+        assert 'max_connections = 22' in settings  # int(20 * 1.1)
+
     def test_no_pool_settings_defaults_to_20(self, sample_config, tmp_path):
         del sample_config['postgresql']['pool_settings']
         del sample_config['postgresql']['async_pool_settings']

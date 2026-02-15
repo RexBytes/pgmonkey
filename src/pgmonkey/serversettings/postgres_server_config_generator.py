@@ -59,8 +59,8 @@ class PostgresServerConfigGenerator:
         async_pool_settings = pg_config.get('async_pool_settings', {})
 
         # Use the larger max_size from either pool type
-        pool_max = pool_settings.get('max_size', 0) if pool_settings else 0
-        async_pool_max = async_pool_settings.get('max_size', 0) if async_pool_settings else 0
+        pool_max = int(pool_settings.get('max_size', 0)) if pool_settings else 0
+        async_pool_max = int(async_pool_settings.get('max_size', 0)) if async_pool_settings else 0
         max_size = max(pool_max, async_pool_max)
 
         if max_size > 0:

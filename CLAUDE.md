@@ -15,12 +15,13 @@ connection testing, and code generation.
 ## Key Design Decisions
 - Connections are cached by config content hash in PGConnectionManager with thread-safe locking
 - Pool connections store `_pool_conn_ctx` to properly return connections to the pool on __exit__
+- All connection __exit__ methods use try/finally to guarantee disconnect() even if commit/rollback fails
 - Config filter uses `is not None` (not truthiness) to preserve valid falsy values like empty passwords, keepalives=0
 - SET statements for GUC settings use `psycopg.sql.SQL`/`sql.Identifier` for safe identifier quoting
 
 ## Test Commands
 ```bash
-python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (188 tests)
+python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (192 tests)
 python -m pytest src/pgmonkey/tests/unit/ -v -x     # stop on first failure
 ```
 
@@ -73,3 +74,25 @@ which would drop `port: 0`, `keepalives: 0`, `password: ''`, etc.
 ### Non-issue: cache_info 'unknown' (false positive)
 `postgres_connection_factory.py:66` already sets `connection.connection_type = self.connection_type`
 on every connection, so `getattr(conn, 'connection_type', 'unknown')` in cache_info works correctly.
+
+## Bug Fixes Applied (2026-02-15 second review)
+
+### Fix: normal_connection + async_connection __exit__ connection leak
+**Files:** `connections/postgres/normal_connection.py`, `connections/postgres/async_connection.py`
+**Problem:** `__exit__`/`__aexit__` called commit/rollback then disconnect sequentially. If
+commit() or rollback() raised (e.g. network error), disconnect() was never called — the connection
+leaked. Pool connections already had try/finally from the first fix round; normal and async did not.
+**Fix:** Wrapped commit/rollback in try/finally to guarantee disconnect() is always called.
+
+### Fix: max_size string type crash in config generator
+**File:** `serversettings/postgres_server_config_generator.py`
+**Problem:** `max_size * 1.1` crashed with TypeError if max_size was a string (e.g. YAML
+`max_size: "10"` with quotes). While unquoted YAML parses as int, quoted values are strings.
+**Fix:** Added `int()` cast around `pool_settings.get('max_size', 0)` values.
+
+### Fix: Unescaped config_file_path in generated code templates
+**File:** `tools/connection_code_generator.py`
+**Problem:** All 8 code templates used `config_file_path = '{config_file_path}'` which broke
+if the path contained single quotes (e.g. `/home/o'brien/config.yaml`).
+**Fix:** Changed to `{repr(config_file_path)}` which produces properly escaped Python string
+literals regardless of quote characters in the path.
