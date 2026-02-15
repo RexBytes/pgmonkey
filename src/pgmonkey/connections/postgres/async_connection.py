@@ -11,12 +11,15 @@ class PGAsyncConnection(PostgresBaseConnection):
     def __init__(self, config, async_settings=None):
         self.config = config
         self.async_settings = async_settings or {}
+        self.autocommit = None
         self.connection: Optional[AsyncConnection] = None
 
     async def connect(self):
         """Establishes an asynchronous database connection."""
         if self.connection is None or self.connection.closed:
-            self.connection = await AsyncConnection.connect(**self.config)
+            self.connection = await AsyncConnection.connect(
+                autocommit=bool(self.autocommit), **self.config
+            )
             await self._apply_async_settings()
 
     async def _apply_async_settings(self):
@@ -58,7 +61,7 @@ class PGAsyncConnection(PostgresBaseConnection):
         """Creates a transaction context on the async connection."""
         if self.connection:
             async with self.connection.transaction():
-                yield
+                yield self
         else:
             raise Exception("No active connection available for transaction")
 

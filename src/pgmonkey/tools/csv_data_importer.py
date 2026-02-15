@@ -4,6 +4,7 @@ import yaml
 import re
 import chardet
 import sys
+from psycopg import sql
 from pgmonkey import PGConnectionManager
 from pathlib import Path
 from tqdm import tqdm
@@ -148,7 +149,7 @@ class CSVDataImporter:
             config_file.write("""
     # Import configuration options:
     #
-    # Booleans here can be True or False as required. 
+    # Booleans here can be True or False as required.
     #
     # has_headers: Boolean - True if the first row in the CSV contains column headers.
     # auto_create_table: Boolean - If True, the importer will automatically create the table if it doesn't exist.
@@ -204,12 +205,24 @@ class CSVDataImporter:
         """Validates a PostgreSQL column name. Allows numbers at the start if quoted."""
         return re.match(r'^([a-zA-Z_][a-zA-Z0-9_]*|"[0-9a-zA-Z_]+")$', column_name)
 
+    def _qualified_table(self):
+        """Returns a properly quoted schema.table SQL composable."""
+        return sql.SQL("{}.{}").format(
+            sql.Identifier(self.schema_name),
+            sql.Identifier(self.table_name),
+        )
+
     def _create_table_sync(self, connection, formatted_headers):
         """Synchronous table creation based on formatted CSV headers."""
         with connection.cursor() as cur:
-            columns_definitions = ", ".join([f"{col} TEXT" for col in formatted_headers])
-            create_table_query = f"CREATE TABLE {self.schema_name}.{self.table_name} ({columns_definitions})"
-            cur.execute(create_table_query)
+            columns = sql.SQL(", ").join(
+                sql.SQL("{} TEXT").format(sql.Identifier(col))
+                for col in formatted_headers
+            )
+            query = sql.SQL("CREATE TABLE {} ({})").format(
+                self._qualified_table(), columns
+            )
+            cur.execute(query)
 
     def _sync_ingest(self, connection):
         """Handles synchronous CSV ingestion using COPY for bulk insert, properly counting non-empty rows."""
@@ -252,7 +265,7 @@ class CSVDataImporter:
 
                 # Debugging output to check first row
                 for row in reader:
-                    print(f"📝 First row: {row}, Length: {len(row)}")
+                    print(f"First row: {row}, Length: {len(row)}")
                     break  # Only print first row
 
                 file.seek(0)  # Reset file position after debug print
@@ -299,7 +312,11 @@ class CSVDataImporter:
                     print(f"\nTable {self.schema_name}.{self.table_name} created successfully.")
                 else:
                     cur.execute(
-                        f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}' ORDER BY ordinal_position")
+                        "SELECT column_name FROM information_schema.columns "
+                        "WHERE table_schema = %s AND table_name = %s "
+                        "ORDER BY ordinal_position",
+                        (self.schema_name, self.table_name),
+                    )
                     existing_columns = [row[0] for row in cur.fetchall()]
                     if formatted_headers != existing_columns:
                         raise ValueError(
@@ -316,12 +333,18 @@ class CSVDataImporter:
                     if any(row):
                         break
 
-                # Create Copy Command & Output For Debugging
-                copy_sql = f"COPY {self.schema_name}.{self.table_name} ({', '.join(formatted_headers)}) FROM STDIN"
-                print(f"Executing COPY command: {copy_sql}")
+                # Create Copy Command using safe SQL composition
+                col_ids = sql.SQL(", ").join(
+                    sql.Identifier(col) for col in formatted_headers
+                )
+                copy_sql = sql.SQL("COPY {} ({}) FROM STDIN").format(
+                    self._qualified_table(), col_ids
+                )
+                copy_sql_str = copy_sql.as_string(cur)
+                print(f"Executing COPY command: {copy_sql_str}")
 
                 with tqdm(total=total_lines, desc="Importing data", unit="rows") as progress:
-                    with cur.copy(copy_sql) as copy:
+                    with cur.copy(copy_sql_str) as copy:
                         for row in reader:
                             if not any(row):
                                 continue
@@ -333,14 +356,16 @@ class CSVDataImporter:
                                 raise ValueError(
                                     f"Row length mismatch: Expected {len(formatted_headers)} columns, got {len(filtered_row)} - Row: {row}"
                                 )
-                            #print(f" Processed row after removing empty columns: {filtered_row}")
                             copy.write_row(filtered_row)
                             progress.update(1)
 
                 connection.commit()
 
                 # Check row count after COPY
-                cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
+                count_query = sql.SQL("SELECT COUNT(*) FROM {}").format(
+                    self._qualified_table()
+                )
+                cur.execute(count_query)
                 row_count = cur.fetchone()[0]
                 print(f"\nRow count after COPY: {row_count}")
 
@@ -349,13 +374,13 @@ class CSVDataImporter:
     def _check_table_exists_sync(self, connection):
         """Synchronous check if the table exists in the database."""
         with connection.cursor() as cur:
-            cur.execute(f"""
-                SELECT EXISTS (
-                    SELECT 1
-                    FROM information_schema.tables
-                    WHERE table_schema = '{self.schema_name}' AND table_name = '{self.table_name}'
-                )
-            """)
+            cur.execute(
+                "SELECT EXISTS ("
+                "  SELECT 1 FROM information_schema.tables"
+                "  WHERE table_schema = %s AND table_name = %s"
+                ")",
+                (self.schema_name, self.table_name),
+            )
             return cur.fetchone()[0]
 
     async def run(self):
@@ -368,4 +393,3 @@ class CSVDataImporter:
 
         with connection as conn:
             self._sync_ingest(conn)
-

@@ -2,6 +2,7 @@ import csv
 import os
 import yaml
 import sys
+from psycopg import sql
 from pathlib import Path
 from tqdm import tqdm
 from pgmonkey import PGConnectionManager
@@ -61,6 +62,13 @@ class CSVDataExporter:
             print("For export operations, switching to 'normal' connection for better performance.")
         return 'normal'
 
+    def _qualified_table(self):
+        """Returns a properly quoted schema.table SQL composable."""
+        return sql.SQL("{}.{}").format(
+            sql.Identifier(self.schema_name),
+            sql.Identifier(self.table_name),
+        )
+
     def _set_client_encoding(self, cur):
         """Set the client encoding only if it is different from the database's default."""
         # Get the current client encoding
@@ -69,7 +77,7 @@ class CSVDataExporter:
 
         # Set the desired encoding if different from the original one
         if self.encoding.lower() != original_encoding.lower():
-            cur.execute(f"SET CLIENT_ENCODING TO '{self.encoding}'")
+            cur.execute("SET CLIENT_ENCODING TO %s", (self.encoding,))
             print(f"Client encoding set to: {self.encoding}")
 
         return original_encoding
@@ -77,7 +85,7 @@ class CSVDataExporter:
     def _restore_client_encoding(self, cur, original_encoding):
         """Restore the original client encoding after the export."""
         if self.encoding.lower() != original_encoding.lower():
-            cur.execute(f"SET CLIENT_ENCODING TO '{original_encoding}'")
+            cur.execute("SET CLIENT_ENCODING TO %s", (original_encoding,))
             print(f"Restored client encoding to: {original_encoding}")
 
     def _prepopulate_export_config(self):
@@ -107,7 +115,7 @@ class CSVDataExporter:
             config_file.write("""
     # Export configuration options:
     #
-    # Booleans here can be True or False as required. 
+    # Booleans here can be True or False as required.
     #
     # delimiter: String - The character used to separate columns in the CSV file.
     #    Common delimiters include:
@@ -139,13 +147,23 @@ class CSVDataExporter:
 
             try:
                 # Get the total number of rows for the progress bar
-                cur.execute(f"SELECT COUNT(*) FROM {self.schema_name}.{self.table_name}")
+                count_query = sql.SQL("SELECT COUNT(*) FROM {}").format(
+                    self._qualified_table()
+                )
+                cur.execute(count_query)
                 total_rows = cur.fetchone()[0]
 
                 # Open the CSV file and write data
                 with open(self.csv_file, 'wb') as file:  # Open in binary mode
                     # Use the COPY TO command to stream the data from PostgreSQL
-                    with cur.copy(f"COPY {self.schema_name}.{self.table_name} TO STDOUT WITH CSV HEADER DELIMITER '{self.delimiter}'") as copy:
+                    copy_query = sql.SQL(
+                        "COPY {} TO STDOUT WITH CSV HEADER DELIMITER {}"
+                    ).format(
+                        self._qualified_table(),
+                        sql.Literal(self.delimiter),
+                    )
+                    copy_sql_str = copy_query.as_string(cur)
+                    with cur.copy(copy_sql_str) as copy:
                         with tqdm(total=total_rows, desc="Exporting data", unit="rows") as progress:
                             for data in copy:
                                 file.write(data)  # Write the memoryview directly to the file
@@ -167,10 +185,3 @@ class CSVDataExporter:
 
         with connection as conn:
             self._sync_export(conn)
-
-
-
-
-
-
-

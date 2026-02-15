@@ -11,6 +11,15 @@ class TestPGNormalConnectionInit:
         assert conn.config == {'host': 'localhost', 'dbname': 'test'}
         assert conn.connection is None
 
+    def test_stores_sync_settings(self):
+        settings = {'statement_timeout': '30000'}
+        conn = PGNormalConnection({'host': 'localhost'}, sync_settings=settings)
+        assert conn.sync_settings == settings
+
+    def test_default_sync_settings_empty(self):
+        conn = PGNormalConnection({'host': 'localhost'})
+        assert conn.sync_settings == {}
+
 
 class TestPGNormalConnectionConnect:
 
@@ -22,7 +31,7 @@ class TestPGNormalConnectionConnect:
         conn = PGNormalConnection({'host': 'localhost'})
         conn.connect()
 
-        mock_connect.assert_called_once_with(host='localhost')
+        mock_connect.assert_called_once_with(autocommit=False, host='localhost')
         assert conn.connection is mock_pg_conn
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')
@@ -34,6 +43,48 @@ class TestPGNormalConnectionConnect:
         conn.connect()
 
         mock_connect.assert_called_once()
+
+    @patch('pgmonkey.connections.postgres.normal_connection.connect')
+    def test_autocommit_passed_to_connect(self, mock_connect):
+        mock_pg_conn = MagicMock(closed=False)
+        mock_connect.return_value = mock_pg_conn
+
+        conn = PGNormalConnection({'host': 'localhost'})
+        conn.autocommit = True
+        conn.connect()
+
+        mock_connect.assert_called_once_with(autocommit=True, host='localhost')
+
+
+class TestPGNormalConnectionSyncSettings:
+
+    @patch('pgmonkey.connections.postgres.normal_connection.connect')
+    def test_applies_sync_settings_on_connect(self, mock_connect):
+        mock_pg_conn = MagicMock(closed=False)
+        mock_connect.return_value = mock_pg_conn
+
+        settings = {'statement_timeout': '30000', 'lock_timeout': '10000'}
+        conn = PGNormalConnection({'host': 'localhost'}, sync_settings=settings)
+        conn.connect()
+
+        calls = mock_pg_conn.execute.call_args_list
+        assert len(calls) == 2
+        assert calls[0][0][0] == 'SET statement_timeout = %s'
+        assert calls[0][0][1] == ('30000',)
+        assert calls[1][0][0] == 'SET lock_timeout = %s'
+        assert calls[1][0][1] == ('10000',)
+
+    @patch('pgmonkey.connections.postgres.normal_connection.connect')
+    def test_warns_on_bad_setting(self, mock_connect, caplog):
+        mock_pg_conn = MagicMock(closed=False)
+        mock_pg_conn.execute.side_effect = Exception("bad setting")
+        mock_connect.return_value = mock_pg_conn
+
+        conn = PGNormalConnection({'host': 'localhost'}, sync_settings={'bad': 'value'})
+        with caplog.at_level(logging.WARNING):
+            conn.connect()
+
+        assert "Could not apply setting" in caplog.text
 
 
 class TestPGNormalConnectionDisconnect:
@@ -105,7 +156,8 @@ class TestPGNormalConnectionCursor:
 class TestPGNormalConnectionContextManager:
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')
-    def test_commits_on_success(self, mock_connect):
+    def test_commits_on_success_and_disconnects(self, mock_connect):
+        """__exit__ should commit then disconnect to prevent connection leaks."""
         mock_pg_conn = MagicMock(closed=False)
         mock_connect.return_value = mock_pg_conn
 
@@ -115,6 +167,7 @@ class TestPGNormalConnectionContextManager:
 
         mock_pg_conn.commit.assert_called_once()
         mock_pg_conn.close.assert_called_once()
+        assert conn.connection is None
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')
     def test_rollbacks_on_error(self, mock_connect):
@@ -189,6 +242,16 @@ class TestPGNormalConnectionTransaction:
         mock_pg_conn.rollback.assert_called_once()
         mock_pg_conn.commit.assert_not_called()
         mock_pg_conn.close.assert_not_called()
+
+    @patch('pgmonkey.connections.postgres.normal_connection.connect')
+    def test_transaction_yields_self(self, mock_connect):
+        mock_pg_conn = MagicMock(closed=False)
+        mock_connect.return_value = mock_pg_conn
+
+        conn = PGNormalConnection({'host': 'localhost'})
+        conn.connect()
+        with conn.transaction() as tx:
+            assert tx is conn
 
 
 class TestPGNormalConnectionTestConnection:

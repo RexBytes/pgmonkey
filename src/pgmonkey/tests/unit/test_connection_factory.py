@@ -41,9 +41,26 @@ class TestPostgresConnectionFactory:
         assert 'hosst' in caplog.text
         assert "Unknown connection settings ignored" in caplog.text
 
+    def test_filter_config_preserves_none_but_not_empty_string(self, sample_config):
+        """None values should be kept (is not None check), empty strings should be stripped."""
+        # None values are preserved by the `is not None` check
+        sample_config['postgresql']['connection_settings']['keepalives'] = None
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        assert 'keepalives' not in factory.config
+
+    def test_filter_config_preserves_zero_values(self, sample_config):
+        """Zero values like keepalives=0 should NOT be silently dropped."""
+        sample_config['postgresql']['connection_settings']['keepalives'] = 0
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        assert factory.config['keepalives'] == 0
+
     def test_extracts_pool_settings(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'pool')
         assert factory.pool_settings == {'min_size': 2, 'max_size': 10, 'max_idle': 300, 'max_lifetime': 3600}
+
+    def test_extracts_sync_settings(self, sample_config):
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        assert factory.sync_settings['statement_timeout'] == '30000'
 
     def test_extracts_async_settings(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'async')
@@ -58,17 +75,32 @@ class TestPostgresConnectionFactory:
         factory = PostgresConnectionFactory(sample_config, 'pool')
         assert factory.pool_settings == {}
 
+    def test_missing_sync_settings_defaults_to_empty(self, sample_config):
+        del sample_config['postgresql']['sync_settings']
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        assert factory.sync_settings == {}
+
     def test_get_connection_normal(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'normal')
         conn = factory.get_connection()
         assert isinstance(conn, PGNormalConnection)
         assert conn.connection_type == 'normal'
 
+    def test_get_connection_normal_receives_sync_settings(self, sample_config):
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        conn = factory.get_connection()
+        assert conn.sync_settings == sample_config['postgresql']['sync_settings']
+
     def test_get_connection_pool(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'pool')
         conn = factory.get_connection()
         assert isinstance(conn, PGPoolConnection)
         assert conn.connection_type == 'pool'
+
+    def test_get_connection_pool_receives_sync_settings(self, sample_config):
+        factory = PostgresConnectionFactory(sample_config, 'pool')
+        conn = factory.get_connection()
+        assert conn.sync_settings == sample_config['postgresql']['sync_settings']
 
     def test_get_connection_async(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'async')
@@ -119,3 +151,29 @@ class TestPoolSettingsValidation:
         sample_config['postgresql']['pool_settings'] = {'min_size': 5, 'max_size': 5}
         factory = PostgresConnectionFactory(sample_config, 'pool')
         assert factory.pool_settings['min_size'] == factory.pool_settings['max_size']
+
+
+class TestAutocommitConfig:
+
+    def test_autocommit_true_set_on_connection(self, sample_config):
+        sample_config['postgresql']['connection_settings']['autocommit'] = True
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        conn = factory.get_connection()
+        assert conn.autocommit is True
+
+    def test_autocommit_false_set_on_connection(self, sample_config):
+        sample_config['postgresql']['connection_settings']['autocommit'] = False
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        conn = factory.get_connection()
+        assert conn.autocommit is False
+
+    def test_autocommit_not_set_leaves_default(self, sample_config):
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        conn = factory.get_connection()
+        assert conn.autocommit is None
+
+    def test_autocommit_removed_from_connection_config(self, sample_config):
+        """autocommit should not be passed as a psycopg connection parameter."""
+        sample_config['postgresql']['connection_settings']['autocommit'] = True
+        factory = PostgresConnectionFactory(sample_config, 'normal')
+        assert 'autocommit' not in factory.config
