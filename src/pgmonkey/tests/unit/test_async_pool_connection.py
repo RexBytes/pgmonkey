@@ -1,11 +1,10 @@
+import contextvars
 import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
 
 pytest.importorskip("pytest_asyncio")
 
-from pgmonkey.connections.postgres.async_pool_connection import (
-    PGAsyncPoolConnection, _async_pool_conn, _async_pool_conn_ctx,
-)
+from pgmonkey.connections.postgres.async_pool_connection import PGAsyncPoolConnection
 
 
 class TestPGAsyncPoolConnectionInit:
@@ -31,10 +30,12 @@ class TestPGAsyncPoolConnectionInit:
         assert conn.async_settings == {}
 
     def test_no_instance_conn_attribute(self):
-        """_conn is now stored in ContextVar, not on the instance."""
+        """_conn is stored in per-instance ContextVar, not as a plain attribute."""
         conn = PGAsyncPoolConnection({'host': 'localhost'})
         assert not hasattr(conn, '_conn')
-        assert not hasattr(conn, '_pool_conn_ctx')
+        # _pool_conn and _pool_conn_ctx are ContextVar instances on the object
+        assert isinstance(conn._pool_conn, contextvars.ContextVar)
+        assert isinstance(conn._pool_conn_ctx, contextvars.ContextVar)
 
 
 class TestPGAsyncPoolConnectionConnect:
@@ -101,7 +102,7 @@ class TestPGAsyncPoolConnectionContextVar:
 
     @pytest.mark.asyncio
     async def test_contextvar_used_for_conn(self):
-        """__aenter__ stores connection in ContextVar, __aexit__ clears it."""
+        """__aenter__ stores connection in per-instance ContextVar, __aexit__ clears it."""
         mock_inner_conn = MagicMock()
         mock_inner_conn.commit = AsyncMock()
         mock_inner_conn.rollback = AsyncMock()
@@ -115,14 +116,14 @@ class TestPGAsyncPoolConnectionContextVar:
         pool_conn.pool.connection = MagicMock(return_value=mock_pool_ctx)
 
         # Before entering: no connection in ContextVar
-        assert _async_pool_conn.get() is None
+        assert pool_conn._pool_conn.get() is None
 
         async with pool_conn:
             # Inside context: connection is in ContextVar
-            assert _async_pool_conn.get() is mock_inner_conn
+            assert pool_conn._pool_conn.get() is mock_inner_conn
 
         # After exiting: ContextVar cleared
-        assert _async_pool_conn.get() is None
+        assert pool_conn._pool_conn.get() is None
 
     @pytest.mark.asyncio
     async def test_context_manager_does_not_close_pool(self):
@@ -230,6 +231,43 @@ class TestPGAsyncPoolConnectionContextVar:
 
         # pool.connection() called once (for __aenter__), not again for cursor()
         pool_conn.pool.connection.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_different_instances_have_isolated_contextvars(self):
+        """Two PGAsyncPoolConnection instances must not share ContextVar state."""
+        mock_conn_a = MagicMock()
+        mock_conn_a.commit = AsyncMock()
+        mock_conn_b = MagicMock()
+        mock_conn_b.commit = AsyncMock()
+
+        def make_pool(mock_conn):
+            mock_ctx = AsyncMock()
+            mock_ctx.__aenter__ = AsyncMock(return_value=mock_conn)
+            mock_ctx.__aexit__ = AsyncMock(return_value=False)
+            pool = MagicMock()
+            pool.connection = MagicMock(return_value=mock_ctx)
+            return pool
+
+        pool_a = PGAsyncPoolConnection({'host': 'a'})
+        pool_a.pool = make_pool(mock_conn_a)
+
+        pool_b = PGAsyncPoolConnection({'host': 'b'})
+        pool_b.pool = make_pool(mock_conn_b)
+
+        # Nest two different pool instances - inner should not clobber outer
+        async with pool_a:
+            assert pool_a._pool_conn.get() is mock_conn_a
+            async with pool_b:
+                assert pool_b._pool_conn.get() is mock_conn_b
+                # pool_a's ContextVar should still hold its connection
+                assert pool_a._pool_conn.get() is mock_conn_a
+
+            # After pool_b exits, pool_a should still be intact
+            assert pool_a._pool_conn.get() is mock_conn_a
+
+        # After pool_a exits, both should be cleared
+        assert pool_a._pool_conn.get() is None
+        assert pool_b._pool_conn.get() is None
 
     @pytest.mark.asyncio
     async def test_transaction_yields_self(self):

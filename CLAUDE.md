@@ -124,3 +124,44 @@ any UTF-32-LE encoded file would be misdetected as UTF-16-LE.
 Since chunks can contain multiple rows, the bar severely underreported progress.
 **Fix:** Changed to `progress.update(bytes(data).count(b'\n'))` to count newline-terminated
 rows within each chunk for accurate progress tracking.
+
+## Bug Fixes Applied (2026-02-15 fourth review)
+
+### Fix: _pool_conn_ctx not thread-safe in pool_connection
+**File:** `connections/postgres/pool_connection.py`
+**Problem:** `_pool_conn_ctx` was stored as a regular instance attribute, but pool connections
+are designed for multi-threaded use (the borrowed connection was already in `threading.local`).
+When two threads called `__enter__`/`__exit__` concurrently on the same PGPoolConnection, they
+overwrote each other's pool context manager — one thread would exit another thread's CM,
+causing connection leaks and double-exits.
+**Fix:** Moved `_pool_conn_ctx` into `self._local` (the existing `threading.local` instance),
+making it per-thread just like the borrowed connection. Added a thread-safety test.
+
+### Fix: Cache key missing connection_type
+**File:** `managers/pgconnection_manager.py`
+**Problem:** `_config_hash()` only hashed the config dictionary. The resolved `connection_type`
+was not included in the cache key. Calling `get_database_connection` with the same config but
+different `connection_type` overrides (e.g. `'normal'` vs `'pool'`) returned the wrong cached
+connection — whichever type was created first would be returned for all subsequent calls.
+**Fix:** Appended `':' + resolved_type` to the cache key so each connection type gets its own
+cache entry.
+
+### Fix: Module-level ContextVars shared across all async pool instances
+**File:** `connections/postgres/async_pool_connection.py`
+**Problem:** `_async_pool_conn` and `_async_pool_conn_ctx` were module-level `ContextVar`s,
+shared across ALL `PGAsyncPoolConnection` instances. Nested `async with` on two different
+pool instances in the same async task would clobber each other's connection references,
+causing incorrect commit/rollback and potential connection leaks.
+**Fix:** Replaced with per-instance ContextVars (`self._pool_conn`, `self._pool_conn_ctx`)
+created in `__init__` with unique names using `id(self)`. Each instance now has isolated
+async-task-local state. Added a test verifying nested instances don't interfere.
+
+### Fix: pg_hba recommendation generated `host ... reject` for SSL modes
+**File:** `serversettings/postgres_server_config_generator.py`
+**Problem:** For non-verify SSL modes (prefer/require/allow), `generate_pg_hba_entry()` produced
+`host all all {address} reject` — a `host` rule with `reject` method blocks ALL connections
+(both SSL and non-SSL) from the subnet, which would prevent the very connection the user is
+trying to make.
+**Fix:** Changed to `hostssl all all {address} md5` which correctly recommends allowing
+SSL-only connections with password authentication. The `hostssl` type ensures only encrypted
+connections are permitted, matching the intent of using a non-disable SSL mode.

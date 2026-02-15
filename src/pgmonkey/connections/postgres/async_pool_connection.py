@@ -10,9 +10,6 @@ logger = logging.getLogger(__name__)
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, module='psycopg_pool')
 
-_async_pool_conn = contextvars.ContextVar('_async_pool_conn', default=None)
-_async_pool_conn_ctx = contextvars.ContextVar('_async_pool_conn_ctx', default=None)
-
 
 class PGAsyncPoolConnection(PostgresBaseConnection):
     def __init__(self, config, async_pool_settings=None, async_settings=None):
@@ -20,6 +17,8 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
         self.async_pool_settings = async_pool_settings or {}
         self.async_settings = async_settings or {}
         self.pool = None
+        self._pool_conn = contextvars.ContextVar(f'_pool_conn_{id(self)}', default=None)
+        self._pool_conn_ctx = contextvars.ContextVar(f'_pool_ctx_{id(self)}', default=None)
 
     @staticmethod
     def construct_conninfo(config):
@@ -72,20 +71,20 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
 
     async def commit(self):
         """Commits the current transaction on the acquired connection."""
-        conn = _async_pool_conn.get()
+        conn = self._pool_conn.get()
         if conn:
             await conn.commit()
 
     async def rollback(self):
         """Rolls back the current transaction on the acquired connection."""
-        conn = _async_pool_conn.get()
+        conn = self._pool_conn.get()
         if conn:
             await conn.rollback()
 
     @asynccontextmanager
     async def transaction(self):
         """Creates a transaction context on a pooled connection."""
-        conn = _async_pool_conn.get()
+        conn = self._pool_conn.get()
         if conn:
             # Inside __aenter__/__aexit__ context - use the acquired connection
             async with conn.transaction():
@@ -93,19 +92,19 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
         elif self.pool:
             # Standalone usage - acquire connection from pool
             async with self.pool.connection() as acquired:
-                token = _async_pool_conn.set(acquired)
+                token = self._pool_conn.set(acquired)
                 try:
                     async with acquired.transaction():
                         yield self
                 finally:
-                    _async_pool_conn.reset(token)
+                    self._pool_conn.reset(token)
         else:
             raise Exception("No active pool available for transaction")
 
     @asynccontextmanager
     async def cursor(self):
         """Provides an async cursor from a pooled connection."""
-        conn = _async_pool_conn.get()
+        conn = self._pool_conn.get()
         if conn:
             # Inside __aenter__/__aexit__ context - use the acquired connection
             async with conn.cursor() as cur:
@@ -123,13 +122,13 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
             await self.connect()
         pool_conn_ctx = self.pool.connection()
         conn = await pool_conn_ctx.__aenter__()
-        _async_pool_conn.set(conn)
-        _async_pool_conn_ctx.set(pool_conn_ctx)
+        self._pool_conn.set(conn)
+        self._pool_conn_ctx.set(pool_conn_ctx)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         try:
-            conn = _async_pool_conn.get()
+            conn = self._pool_conn.get()
             if exc_type:
                 if conn:
                     await conn.rollback()
@@ -137,8 +136,8 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
                 if conn:
                     await conn.commit()
         finally:
-            pool_conn_ctx = _async_pool_conn_ctx.get()
+            pool_conn_ctx = self._pool_conn_ctx.get()
             if pool_conn_ctx:
                 await pool_conn_ctx.__aexit__(exc_type, exc_val, exc_tb)
-            _async_pool_conn.set(None)
-            _async_pool_conn_ctx.set(None)
+            self._pool_conn.set(None)
+            self._pool_conn_ctx.set(None)

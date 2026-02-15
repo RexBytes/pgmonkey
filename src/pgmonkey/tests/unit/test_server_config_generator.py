@@ -56,15 +56,29 @@ class TestPgHbaEntry:
 
         assert 'clientcert=verify-ca' in entries[1]
 
-    def test_prefer_generates_host_reject(self, sample_config, tmp_path):
+    def test_prefer_generates_hostssl(self, sample_config, tmp_path):
         sample_config['postgresql']['connection_settings']['sslmode'] = 'prefer'
         sample_config['postgresql']['connection_settings']['host'] = '192.168.1.50'
         gen = self._make_generator(tmp_path, sample_config)
         entries = gen.generate_pg_hba_entry()
 
         assert len(entries) == 2
-        assert entries[1].startswith('host ')
-        assert 'reject' in entries[1]
+        assert 'hostssl' in entries[1]
+        assert 'md5' in entries[1]
+        assert '192.168.1.0/24' in entries[1]
+        # Should NOT have clientcert option (that's only for verify-ca/verify-full)
+        assert 'clientcert' not in entries[1]
+
+    def test_require_generates_hostssl(self, sample_config, tmp_path):
+        sample_config['postgresql']['connection_settings']['sslmode'] = 'require'
+        sample_config['postgresql']['connection_settings']['host'] = '10.0.0.5'
+        gen = self._make_generator(tmp_path, sample_config)
+        entries = gen.generate_pg_hba_entry()
+
+        assert len(entries) == 2
+        assert 'hostssl' in entries[1]
+        assert 'md5' in entries[1]
+        assert 'clientcert' not in entries[1]
 
     def test_disable_generates_no_entry(self, sample_config, tmp_path):
         sample_config['postgresql']['connection_settings']['sslmode'] = 'disable'
