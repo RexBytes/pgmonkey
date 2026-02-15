@@ -51,9 +51,10 @@ class TestPGAsyncConnectionApplySettings:
 
         calls = mock_pg.execute.call_args_list
         assert len(calls) == 2
-        assert calls[0][0][0] == 'SET statement_timeout = %s'
+        # SET statements now use sql.SQL/sql.Identifier for safe identifier quoting
+        assert calls[0][0][0].as_string(None) == 'SET "statement_timeout" = %s'
         assert calls[0][0][1] == ('30000',)
-        assert calls[1][0][0] == 'SET lock_timeout = %s'
+        assert calls[1][0][0].as_string(None) == 'SET "lock_timeout" = %s'
         assert calls[1][0][1] == ('10000',)
 
     @pytest.mark.asyncio

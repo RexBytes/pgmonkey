@@ -19,8 +19,7 @@ def cli_pg_server_config_subparser(subparsers):
 def pg_server_config_create_handler(args):
     pg_server_config_manager = args.pg_server_config_manager
 
-    if args.filepath:
-        if args.audit:
-            pg_server_config_manager.audit_server_config(args.filepath)
-        else:
-            pg_server_config_manager.get_server_config(args.filepath)
+    if args.audit:
+        pg_server_config_manager.audit_server_config(args.filepath)
+    else:
+        pg_server_config_manager.get_server_config(args.filepath)

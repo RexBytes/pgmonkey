@@ -13,6 +13,7 @@ class PGPoolConnection(PostgresBaseConnection):
         self.pool_settings = pool_settings or {}
         self.pool = None
         self._conn = None
+        self._pool_conn_ctx = None
 
     @staticmethod
     def construct_conninfo(config):
@@ -101,7 +102,8 @@ class PGPoolConnection(PostgresBaseConnection):
         """Acquire a connection from the pool."""
         if self.pool is None:
             self.connect()
-        self._conn = self.pool.connection().__enter__()
+        self._pool_conn_ctx = self.pool.connection()
+        self._conn = self._pool_conn_ctx.__enter__()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -111,6 +113,7 @@ class PGPoolConnection(PostgresBaseConnection):
             else:
                 self.commit()
         finally:
-            if self._conn:
-                self._conn.__exit__(exc_type, exc_val, exc_tb)
-                self._conn = None
+            if self._pool_conn_ctx:
+                self._pool_conn_ctx.__exit__(exc_type, exc_val, exc_tb)
+            self._conn = None
+            self._pool_conn_ctx = None

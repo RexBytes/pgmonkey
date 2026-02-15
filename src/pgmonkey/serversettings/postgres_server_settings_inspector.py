@@ -131,6 +131,9 @@ class PostgresServerSettingsInspector:
     @staticmethod
     def _evaluate_status(setting_name, recommended, current):
         """Determine if a setting matches the recommendation."""
+        if current is None:
+            return 'UNKNOWN'
+
         if setting_name == 'max_connections':
             try:
                 if int(current) >= int(recommended):

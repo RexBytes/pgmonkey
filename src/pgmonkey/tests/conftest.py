@@ -70,7 +70,7 @@ def sample_config_file(sample_config, tmp_path):
 
 @pytest.fixture
 def filtered_connection_settings():
-    """Returns the expected filtered connection settings (empty values stripped)."""
+    """Returns the expected filtered connection settings (only None values stripped)."""
     return {
         'user': 'testuser',
         'password': 'testpass',
@@ -78,6 +78,9 @@ def filtered_connection_settings():
         'port': '5432',
         'dbname': 'testdb',
         'sslmode': 'prefer',
+        'sslcert': '',
+        'sslkey': '',
+        'sslrootcert': '',
         'connect_timeout': '10',
         'application_name': 'pgmonkey_test',
         'keepalives': '1',

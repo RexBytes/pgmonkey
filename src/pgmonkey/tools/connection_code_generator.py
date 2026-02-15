@@ -179,7 +179,7 @@ def main():
 
     conn_settings = config['postgresql']['connection_settings']
     # Filter out empty values (e.g. blank SSL cert paths)
-    conn_params = {{k: v for k, v in conn_settings.items() if v}}
+    conn_params = {{k: v for k, v in conn_settings.items() if v is not None}}
 
     with psycopg.connect(**conn_params) as conn:
         with conn.cursor() as cur:
@@ -208,7 +208,7 @@ def main():
         config = yaml.safe_load(f)
 
     conn_settings = config['postgresql']['connection_settings']
-    conn_params = {{k: v for k, v in conn_settings.items() if v}}
+    conn_params = {{k: v for k, v in conn_settings.items() if v is not None}}
     pool_settings = config['postgresql'].get('pool_settings', {{}})
 
     # Remove pgmonkey-specific keys that psycopg_pool does not accept
@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
 import asyncio
 import yaml
-from psycopg import AsyncConnection
+from psycopg import AsyncConnection, sql
 
 async def main():
     config_file_path = '{config_file_path}'
@@ -247,13 +247,13 @@ async def main():
         config = yaml.safe_load(f)
 
     conn_settings = config['postgresql']['connection_settings']
-    conn_params = {{k: v for k, v in conn_settings.items() if v}}
+    conn_params = {{k: v for k, v in conn_settings.items() if v is not None}}
     async_settings = config['postgresql'].get('async_settings', {{}})
 
     async with await AsyncConnection.connect(**conn_params) as conn:
         # Apply GUC settings (statement_timeout, lock_timeout, etc.)
         for setting, value in async_settings.items():
-            await conn.execute(f"SET {{setting}} = %s", (str(value),))
+            await conn.execute(sql.SQL("SET {{}} = %s").format(sql.Identifier(setting)), (str(value),))
 
         async with conn.cursor() as cur:
             await cur.execute('SELECT 1;')
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
 import asyncio
 import yaml
-from psycopg import conninfo
+from psycopg import conninfo, sql
 from psycopg_pool import AsyncConnectionPool
 
 async def main():
@@ -283,7 +283,7 @@ async def main():
         config = yaml.safe_load(f)
 
     conn_settings = config['postgresql']['connection_settings']
-    conn_params = {{k: v for k, v in conn_settings.items() if v}}
+    conn_params = {{k: v for k, v in conn_settings.items() if v is not None}}
     pool_settings = config['postgresql'].get('async_pool_settings', {{}})
     async_settings = config['postgresql'].get('async_settings', {{}})
 
@@ -295,7 +295,7 @@ async def main():
     # Optional: configure callback to apply GUC settings to each connection
     async def configure(conn):
         for setting, value in async_settings.items():
-            await conn.execute(f"SET {{setting}} = %s", (str(value),))
+            await conn.execute(sql.SQL("SET {{}} = %s").format(sql.Identifier(setting)), (str(value),))
 
     pool = AsyncConnectionPool(
         conninfo=conninfo_str,

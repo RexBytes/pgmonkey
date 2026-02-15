@@ -235,3 +235,9 @@ class TestEvaluateStatus:
 
     def test_file_path_mismatch(self):
         assert PostgresServerSettingsInspector._evaluate_status('ssl_cert_file', 'server.crt', 'other.crt') == 'REVIEW'
+
+    def test_null_current_returns_unknown(self):
+        """pg_settings can return NULL values — should not crash."""
+        assert PostgresServerSettingsInspector._evaluate_status('ssl', 'on', None) == 'UNKNOWN'
+        assert PostgresServerSettingsInspector._evaluate_status('max_connections', '22', None) == 'UNKNOWN'
+        assert PostgresServerSettingsInspector._evaluate_status('ssl_cert_file', 'server.crt', None) == 'UNKNOWN'

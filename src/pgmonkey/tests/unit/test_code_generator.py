@@ -107,6 +107,14 @@ class TestCodeGeneratorPsycopgAsync:
         assert "async_settings" in output
         assert "PGConnectionManager" not in output
 
+    def test_uses_sql_identifier_for_set(self, sample_config_file, capsys):
+        """Generated async psycopg code should use sql.Identifier for SET statements."""
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'async', library='psycopg')
+        output = capsys.readouterr().out
+        assert "sql.SQL" in output
+        assert "sql.Identifier" in output
+
 
 class TestCodeGeneratorPsycopgAsyncPool:
 
@@ -118,6 +126,14 @@ class TestCodeGeneratorPsycopgAsyncPool:
         assert "await" in output
         assert "configure" in output
         assert "PGConnectionManager" not in output
+
+    def test_uses_sql_identifier_for_set(self, sample_config_file, capsys):
+        """Generated async pool psycopg code should use sql.Identifier for SET statements."""
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'async_pool', library='psycopg')
+        output = capsys.readouterr().out
+        assert "sql.SQL" in output
+        assert "sql.Identifier" in output
 
 
 class TestCodeGeneratorLibraryDefault:

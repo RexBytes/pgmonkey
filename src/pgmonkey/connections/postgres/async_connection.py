@@ -1,5 +1,5 @@
 import logging
-from psycopg import AsyncConnection, OperationalError
+from psycopg import AsyncConnection, OperationalError, sql
 from .base_connection import PostgresBaseConnection
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -23,7 +23,7 @@ class PGAsyncConnection(PostgresBaseConnection):
         """Applies PostgreSQL GUC settings via SET commands after connection is established."""
         for setting, value in self.async_settings.items():
             try:
-                await self.connection.execute(f"SET {setting} = %s", (str(value),))
+                await self.connection.execute(sql.SQL("SET {} = %s").format(sql.Identifier(setting)), (str(value),))
             except Exception as e:
                 logger.warning("Could not apply setting '%s': %s", setting, e)
 
