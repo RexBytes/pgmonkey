@@ -145,3 +145,23 @@ different `connection_type` overrides (e.g. `'normal'` vs `'pool'`) returned the
 connection — whichever type was created first would be returned for all subsequent calls.
 **Fix:** Appended `':' + resolved_type` to the cache key so each connection type gets its own
 cache entry.
+
+### Fix: Module-level ContextVars shared across all async pool instances
+**File:** `connections/postgres/async_pool_connection.py`
+**Problem:** `_async_pool_conn` and `_async_pool_conn_ctx` were module-level `ContextVar`s,
+shared across ALL `PGAsyncPoolConnection` instances. Nested `async with` on two different
+pool instances in the same async task would clobber each other's connection references,
+causing incorrect commit/rollback and potential connection leaks.
+**Fix:** Replaced with per-instance ContextVars (`self._pool_conn`, `self._pool_conn_ctx`)
+created in `__init__` with unique names using `id(self)`. Each instance now has isolated
+async-task-local state. Added a test verifying nested instances don't interfere.
+
+### Fix: pg_hba recommendation generated `host ... reject` for SSL modes
+**File:** `serversettings/postgres_server_config_generator.py`
+**Problem:** For non-verify SSL modes (prefer/require/allow), `generate_pg_hba_entry()` produced
+`host all all {address} reject` — a `host` rule with `reject` method blocks ALL connections
+(both SSL and non-SSL) from the subnet, which would prevent the very connection the user is
+trying to make.
+**Fix:** Changed to `hostssl all all {address} md5` which correctly recommends allowing
+SSL-only connections with password authentication. The `hostssl` type ensures only encrypted
+connections are permitted, matching the intent of using a non-disable SSL mode.
