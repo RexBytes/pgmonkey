@@ -2,7 +2,7 @@
 
 ## Overview
 
-pgmonkey v2.2.0 improves robustness with bug fixes across connection management, adds config validation, introduces `check_on_checkout` and `timeout` pool settings, applies `async_settings` to async pool connections, replaces `print()` with proper `logging`, and adds native psycopg/psycopg_pool code generation via `--library psycopg`.
+pgmonkey v2.2.0 improves robustness with bug fixes across connection management, adds config validation, introduces `check_on_checkout` and `timeout` pool settings, applies `async_settings` to async pool connections, replaces `print()` with proper `logging`, adds native psycopg/psycopg_pool code generation via `--library psycopg`, and adds live server settings auditing via `--audit`.
 
 ## What's New
 
@@ -45,6 +45,22 @@ Two new pool settings for both `pool_settings` and `async_pool_settings`:
 | `timeout` | Seconds to wait for a connection from the pool before raising an error | `30` |
 | `check_on_checkout` | Validate connections with `SELECT 1` before handing to caller | `false` |
 
+### Server Settings Audit (`--audit`)
+
+The `pgserverconfig` CLI command now supports an `--audit` flag that connects to the live server and compares current settings against recommendations:
+
+```bash
+pgmonkey pgserverconfig --filepath config.yaml --audit
+```
+
+- Queries `pg_settings` for `max_connections`, `ssl`, `ssl_cert_file`, `ssl_key_file`, `ssl_ca_file`
+- Displays a comparison table: Setting, Recommended, Current, Source, Status (OK / MISMATCH / REVIEW / UNKNOWN)
+- Inspects `pg_hba_file_rules` (PostgreSQL 15+) when available
+- Gracefully handles permission errors — falls back to recommendations only
+- Entirely read-only — no server settings are modified
+
+Without `--audit`, the command works exactly as before.
+
 ### Project Scope Document
 
 Added `PROJECTSCOPE.md` defining core responsibilities, explicit non-goals, design principles, architecture boundaries, and PR guidelines.
@@ -62,7 +78,7 @@ No breaking API changes. All existing code continues to work as before.
 
 ## Test Suite
 
-149 unit tests (up from 132 in v2.1.0), all passing. New tests cover:
+180 unit tests (up from 132 in v2.1.0), all passing. New tests cover:
 
 - Logging output (`caplog`) instead of `print()` (`capsys`)
 - `NormalConnection.transaction()` commit/rollback without disconnect
@@ -71,6 +87,8 @@ No breaking API changes. All existing code continues to work as before.
 - `async_settings` passthrough to async pool connections
 - Native psycopg code generation for all 4 connection types
 - Backward compatibility (default library is pgmonkey)
+- Server settings inspector (permission handling, comparison logic, HBA rules)
+- Audit output formatting (comparison table, fallback on permission denied)
 
 ## Files Changed
 
@@ -84,6 +102,10 @@ No breaking API changes. All existing code continues to work as before.
 - `src/pgmonkey/tools/connection_code_generator.py` — Native psycopg templates, library dispatch
 - `src/pgmonkey/managers/pgcodegen_manager.py` — Library parameter
 - `src/pgmonkey/cli/cli_pgconfig_subparser.py` — `--library` CLI argument
+- `src/pgmonkey/cli/cli_pg_server_config_subparser.py` — `--audit` CLI argument
+- `src/pgmonkey/serversettings/postgres_server_settings_inspector.py` — New: queries live server pg_settings and pg_hba_file_rules
+- `src/pgmonkey/serversettings/postgres_server_config_generator.py` — Audit comparison output
+- `src/pgmonkey/managers/pg_server_config_manager.py` — Audit connection and fallback logic
 - `src/pgmonkey/tests/unit/` — Updated and new test files
 - `PROJECTSCOPE.md` — New project scope document
 - `README.md` — Documentation updates

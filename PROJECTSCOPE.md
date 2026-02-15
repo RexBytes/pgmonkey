@@ -33,6 +33,7 @@ These are the things pgmonkey owns:
 | **CSV import/export** | Bulk-load CSV into a table; export a table to CSV. Simple, no transforms. |
 | **Code generation** | Print working Python examples for each connection type given a config file. |
 | **Server config hints** | Generate recommended `pg_hba.conf` / `postgresql.conf` snippets from client config. |
+| **Server settings audit** | Query live server `pg_settings` and `pg_hba_file_rules` (read-only) to compare current values against recommendations. Gracefully handles permission errors. |
 
 ---
 
@@ -170,6 +171,7 @@ pgmonkey delegates to this.
 | `pgconfig test` | Validate a connection works | SELECT 1 — doesn't inspect schema |
 | `pgconfig generate-code` | Print Python example | Starter code — not a code generator framework |
 | `pgserverconfig` | Suggest server-side settings | Recommendations — not an installer |
+| `pgserverconfig --audit` | Compare live server settings against recommendations | Read-only queries — never modifies server settings |
 | `pgimport` | Load CSV into a table | Bulk insert — no transforms, joins, or upserts |
 | `pgexport` | Dump a table to CSV | Full table — no WHERE clauses or joins |
 
@@ -207,7 +209,7 @@ parsing and print output. Business logic lives in `managers/` and `tools/`.
 
 ## Version & Compatibility
 
-- **Current version:** 2.1.0
+- **Current version:** 2.2.0
 - **Python:** 3.10+
 - **psycopg:** >=3.1.20, <4.0.0
 - **psycopg_pool:** >=3.1.9, <4.0.0

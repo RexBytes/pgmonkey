@@ -231,7 +231,12 @@ footer p { margin-bottom: 8px; }
         <tr>
             <td>pgmonkey pgserverconfig</td>
             <td>Generate server configuration recommendations.</td>
-            <td><code>pgmonkey pgserverconfig --connconfig config.yaml</code></td>
+            <td><code>pgmonkey pgserverconfig --filepath config.yaml</code></td>
+        </tr>
+        <tr>
+            <td>pgmonkey pgserverconfig --audit</td>
+            <td>Audit live server settings against recommendations (read-only).</td>
+            <td><code>pgmonkey pgserverconfig --filepath config.yaml --audit</code></td>
         </tr>
         <tr>
             <td>pgmonkey pgimport</td>
@@ -583,6 +588,56 @@ Async pooling tested successfully with 6 concurrent connections.
 Connection test completed successfully.</code></pre>
 
 <!-- ============================================================ -->
+<h2>Server Configuration Recommendations &amp; Audit</h2>
+
+<p>Generate recommended PostgreSQL server settings based on your config file:</p>
+
+<pre><code>pgmonkey pgserverconfig --filepath /path/to/config.yaml</code></pre>
+
+<p>This outputs recommended entries for <code>postgresql.conf</code> and <code>pg_hba.conf</code> based on your pool sizes and SSL settings.</p>
+
+<h3>Auditing Live Server Settings</h3>
+
+<p>Add <code>--audit</code> to connect to the live server and compare current settings against recommendations:</p>
+
+<pre><code>pgmonkey pgserverconfig --filepath /path/to/config.yaml --audit</code></pre>
+
+<p>The audit queries the server's <code>pg_settings</code> view (read-only) and displays a comparison table:</p>
+
+<pre><code>1) Database type detected: PostgreSQL
+
+2) Server settings audit:
+
+   postgresql.conf:
+
+   Setting          Recommended  Current  Source              Status
+   ────────────────────────────────────────────────────────────────────
+   max_connections   22           100      configuration file  OK
+   ssl               on           on       configuration file  OK
+   ssl_cert_file     server.crt   server.crt  configuration file  OK
+   ssl_key_file      server.key   server.key  configuration file  OK
+   ssl_ca_file       ca.crt       ca.crt      configuration file  OK</code></pre>
+
+<h4>Status Values</h4>
+<table>
+    <thead>
+        <tr><th>Status</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><strong>OK</strong></td><td>Current setting meets or exceeds the recommendation</td></tr>
+        <tr><td><strong>MISMATCH</strong></td><td>Current setting does not meet the recommendation (e.g., <code>max_connections</code> too low, <code>ssl</code> is off)</td></tr>
+        <tr><td><strong>REVIEW</strong></td><td>Values differ but may be intentional (e.g., different SSL file paths)</td></tr>
+        <tr><td><strong>UNKNOWN</strong></td><td>Setting not found on server or could not be compared</td></tr>
+    </tbody>
+</table>
+
+<h4>pg_hba.conf Inspection</h4>
+<p>On PostgreSQL 15+, the audit also queries <code>pg_hba_file_rules</code> to display current HBA rules alongside recommendations.</p>
+
+<h4>Permission Handling</h4>
+<p>If the connected role lacks permission to query <code>pg_settings</code>, the audit fails gracefully with a clear message and falls back to showing recommendations only. No server settings are ever modified &mdash; the audit is entirely read-only.</p>
+
+<!-- ============================================================ -->
 <h2>Importing and Exporting Data</h2>
 
 <h3>Importing Data</h3>
@@ -914,7 +969,7 @@ Connection test completed successfully.</code></pre>
 
 <pre><code>pip install pgmonkey[test]</code></pre>
 
-<p>This adds <strong>pytest</strong>, <strong>pytest-asyncio</strong>, and <strong>pytest-mock</strong> for running the unit test suite (149 tests, no database required).</p>
+<p>This adds <strong>pytest</strong>, <strong>pytest-asyncio</strong>, and <strong>pytest-mock</strong> for running the unit test suite (180 tests, no database required).</p>
 
 <!-- ============================================================ -->
 <h2>Raspberry Pi Users: Installation via PiWheels</h2>
