@@ -52,13 +52,14 @@ causing mysterious authentication failures.
 psycopg/libpq treats empty strings as "use default" for most parameters.
 
 ### Fix #6: SQL setting name not parameterized (injection risk in identifier)
-**Files:** `connections/postgres/async_connection.py`, `connections/postgres/async_pool_connection.py`,
+**Files:** `connections/postgres/normal_connection.py`, `connections/postgres/pool_connection.py`,
+`connections/postgres/async_connection.py`, `connections/postgres/async_pool_connection.py`,
 `tools/connection_code_generator.py`
 **Problem:** GUC SET statements used `f"SET {setting} = %s"` — the setting name (an SQL identifier)
 was interpolated via f-string. While the values come from the user's own config, this is bad
 practice and the generated example code taught users unsafe patterns.
 **Fix:** Changed to `sql.SQL("SET {} = %s").format(sql.Identifier(setting))` using psycopg's
-safe SQL composition. Applied to both production code and generated code templates.
+safe SQL composition. Applied to all four connection types and generated code templates.
 
 ### Fix #7: Falsy config values filtered in generated code
 **File:** `tools/connection_code_generator.py`
@@ -96,3 +97,30 @@ leaked. Pool connections already had try/finally from the first fix round; norma
 if the path contained single quotes (e.g. `/home/o'brien/config.yaml`).
 **Fix:** Changed to `{repr(config_file_path)}` which produces properly escaped Python string
 literals regardless of quote characters in the path.
+
+## Bug Fixes Applied (2026-02-15 third review)
+
+### Fix: GUC SET f-string in sync connections (Fix #6 incomplete)
+**Files:** `connections/postgres/normal_connection.py`, `connections/postgres/pool_connection.py`
+**Problem:** Fix #6 was only applied to async_connection.py and async_pool_connection.py.
+The sync counterparts (normal_connection.py and pool_connection.py) still used
+`f"SET {setting} = %s"` for GUC settings — the same unsafe f-string interpolation pattern.
+**Fix:** Added `sql` import from psycopg and changed to
+`sql.SQL("SET {} = %s").format(sql.Identifier(setting))` in both files, matching the async
+implementations. Updated corresponding test assertions.
+
+### Fix: BOM detection order in CSV importer
+**File:** `tools/csv_data_importer.py`
+**Problem:** `_detect_bom()` checked UTF-16-LE BOM (`\xff\xfe`) before UTF-32-LE BOM
+(`\xff\xfe\x00\x00`). Since the UTF-32-LE BOM starts with the same two bytes as UTF-16-LE,
+any UTF-32-LE encoded file would be misdetected as UTF-16-LE.
+**Fix:** Reordered BOM checks: UTF-32 BOMs (4 bytes) are now checked before UTF-16 BOMs
+(2 bytes), ensuring longer matches take priority.
+
+### Fix: CSV exporter progress bar counting chunks instead of rows
+**File:** `tools/csv_data_exporter.py`
+**Problem:** `_sync_export()` iterated over COPY TO chunks (byte buffers) and called
+`progress.update(1)` per chunk, but the progress bar total was set to the actual row count.
+Since chunks can contain multiple rows, the bar severely underreported progress.
+**Fix:** Changed to `progress.update(bytes(data).count(b'\n'))` to count newline-terminated
+rows within each chunk for accurate progress tracking.

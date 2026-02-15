@@ -64,16 +64,17 @@ class CSVDataImporter:
         """Detects BOM encoding from the start of the file."""
         with open(self.csv_file, 'rb') as f:
             first_bytes = f.read(4)
-            if first_bytes.startswith(b'\xef\xbb\xbf'):
+            # Check longer BOMs first: UTF-32 BOMs start with the same bytes as UTF-16
+            if first_bytes.startswith(b'\xff\xfe\x00\x00'):
+                return 'utf-32-le'
+            elif first_bytes.startswith(b'\x00\x00\xfe\xff'):
+                return 'utf-32-be'
+            elif first_bytes.startswith(b'\xef\xbb\xbf'):
                 return 'utf-8-sig'
             elif first_bytes.startswith(b'\xff\xfe'):
                 return 'utf-16-le'
             elif first_bytes.startswith(b'\xfe\xff'):
                 return 'utf-16-be'
-            elif first_bytes.startswith(b'\xff\xfe\x00\x00'):
-                return 'utf-32-le'
-            elif first_bytes.startswith(b'\x00\x00\xfe\xff'):
-                return 'utf-32-be'
         return None
 
     def _prepare_header_mapping(self):

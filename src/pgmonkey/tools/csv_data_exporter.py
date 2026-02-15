@@ -167,7 +167,8 @@ class CSVDataExporter:
                         with tqdm(total=total_rows, desc="Exporting data", unit="rows") as progress:
                             for data in copy:
                                 file.write(data)  # Write the memoryview directly to the file
-                                progress.update(1)  # Update progress bar after each chunk
+                                # Count newlines in each chunk for accurate row progress
+                                progress.update(bytes(data).count(b'\n'))
 
                 print(f"\nData from {self.schema_name}.{self.table_name} exported to {self.csv_file}.")
 
