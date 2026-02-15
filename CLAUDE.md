@@ -124,3 +124,24 @@ any UTF-32-LE encoded file would be misdetected as UTF-16-LE.
 Since chunks can contain multiple rows, the bar severely underreported progress.
 **Fix:** Changed to `progress.update(bytes(data).count(b'\n'))` to count newline-terminated
 rows within each chunk for accurate progress tracking.
+
+## Bug Fixes Applied (2026-02-15 fourth review)
+
+### Fix: _pool_conn_ctx not thread-safe in pool_connection
+**File:** `connections/postgres/pool_connection.py`
+**Problem:** `_pool_conn_ctx` was stored as a regular instance attribute, but pool connections
+are designed for multi-threaded use (the borrowed connection was already in `threading.local`).
+When two threads called `__enter__`/`__exit__` concurrently on the same PGPoolConnection, they
+overwrote each other's pool context manager — one thread would exit another thread's CM,
+causing connection leaks and double-exits.
+**Fix:** Moved `_pool_conn_ctx` into `self._local` (the existing `threading.local` instance),
+making it per-thread just like the borrowed connection. Added a thread-safety test.
+
+### Fix: Cache key missing connection_type
+**File:** `managers/pgconnection_manager.py`
+**Problem:** `_config_hash()` only hashed the config dictionary. The resolved `connection_type`
+was not included in the cache key. Calling `get_database_connection` with the same config but
+different `connection_type` overrides (e.g. `'normal'` vs `'pool'`) returned the wrong cached
+connection — whichever type was created first would be returned for all subsequent calls.
+**Fix:** Appended `':' + resolved_type` to the cache key so each connection type gets its own
+cache entry.
