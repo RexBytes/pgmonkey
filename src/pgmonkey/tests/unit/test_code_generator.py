@@ -62,3 +62,69 @@ class TestCodeGeneratorUnsupportedType:
         gen.generate_connection_code(sample_config_file, 'invalid_type')
         output = capsys.readouterr().out
         assert "Unsupported connection type" in output
+
+    def test_prints_unsupported_message_psycopg(self, sample_config_file, capsys):
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'invalid_type', library='psycopg')
+        output = capsys.readouterr().out
+        assert "Unsupported connection type" in output
+
+
+# -- Native psycopg library tests ------------------------------------------
+
+class TestCodeGeneratorPsycopgNormal:
+
+    def test_generates_psycopg_normal_code(self, sample_config_file, capsys):
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'normal', library='psycopg')
+        output = capsys.readouterr().out
+        assert "psycopg" in output.lower()
+        assert "import psycopg" in output
+        assert "psycopg.connect" in output
+        assert "PGConnectionManager" not in output
+
+
+class TestCodeGeneratorPsycopgPool:
+
+    def test_generates_psycopg_pool_code(self, sample_config_file, capsys):
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'pool', library='psycopg')
+        output = capsys.readouterr().out
+        assert "psycopg_pool" in output.lower()
+        assert "ConnectionPool" in output
+        assert "make_conninfo" in output
+        assert "PGConnectionManager" not in output
+
+
+class TestCodeGeneratorPsycopgAsync:
+
+    def test_generates_psycopg_async_code(self, sample_config_file, capsys):
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'async', library='psycopg')
+        output = capsys.readouterr().out
+        assert "AsyncConnection" in output
+        assert "await" in output
+        assert "async_settings" in output
+        assert "PGConnectionManager" not in output
+
+
+class TestCodeGeneratorPsycopgAsyncPool:
+
+    def test_generates_psycopg_async_pool_code(self, sample_config_file, capsys):
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'async_pool', library='psycopg')
+        output = capsys.readouterr().out
+        assert "AsyncConnectionPool" in output
+        assert "await" in output
+        assert "configure" in output
+        assert "PGConnectionManager" not in output
+
+
+class TestCodeGeneratorLibraryDefault:
+
+    def test_defaults_to_pgmonkey(self, sample_config_file, capsys):
+        """Without library arg, should generate pgmonkey code (backward compat)."""
+        gen = ConnectionCodeGenerator()
+        gen.generate_connection_code(sample_config_file, 'normal')
+        output = capsys.readouterr().out
+        assert "PGConnectionManager" in output

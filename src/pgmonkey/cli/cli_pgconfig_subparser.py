@@ -36,6 +36,10 @@ def cli_pgconfig_subparser(subparsers):
                              help='Path to the configuration file you want to use.')
     code_parser.add_argument('--connection-type', choices=CONNECTION_TYPE_CHOICES, default=None,
                              help='Connection type for generated code. Overrides the value in the config file.')
+    code_parser.add_argument('--library', choices=['pgmonkey', 'psycopg'], default='pgmonkey',
+                             help='Target library for generated code. '
+                                  '"pgmonkey" (default) generates code using pgmonkey. '
+                                  '"psycopg" generates code using psycopg/psycopg_pool directly.')
     code_parser.set_defaults(func=pgconfig_generate_code_handler, pgcodegen_manager=pgcodegen_manager)
 
 
@@ -58,4 +62,5 @@ def pgconfig_test_handler(args):
 def pgconfig_generate_code_handler(args):
     pgcodegen_manager = args.pgcodegen_manager
     connection_type = getattr(args, 'connection_type', None)
-    pgcodegen_manager.generate_connection_code(args.filepath, connection_type)
+    library = getattr(args, 'library', 'pgmonkey')
+    pgcodegen_manager.generate_connection_code(args.filepath, connection_type, library=library)
