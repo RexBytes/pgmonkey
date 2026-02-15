@@ -106,10 +106,13 @@ postgresql:
   pool_settings:
     min_size: 5
     max_size: 20
+    timeout: 30  # Seconds to wait for a connection from the pool before raising an error
     max_idle: 300  # Seconds a connection can remain idle before being closed
     max_lifetime: 3600  # Seconds a connection can be reused
+    check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
 
   # Settings for 'async' connection type (applied via SET commands on connection)
+  # These settings are also applied to 'async_pool' connections via a configure callback.
   async_settings:
     idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction (ms)
     statement_timeout: '30000'  # Cancel statements exceeding this time (ms)
@@ -120,8 +123,10 @@ postgresql:
   async_pool_settings:
     min_size: 5
     max_size: 20
+    timeout: 30  # Seconds to wait for a connection from the pool before raising an error
     max_idle: 300
     max_lifetime: 3600
+    check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
 ```
 
 ### Connection Settings
@@ -152,12 +157,14 @@ Used by `pool` connection type.
 |-----------|-------------|---------|
 | `min_size` | Minimum number of connections in the pool | `5` |
 | `max_size` | Maximum number of connections in the pool | `20` |
+| `timeout` | Seconds to wait for a connection from the pool before raising an error | `30` |
 | `max_idle` | Seconds a connection can remain idle before being closed | `300` |
 | `max_lifetime` | Seconds a connection can be reused | `3600` |
+| `check_on_checkout` | Validate connections with `SELECT 1` before handing to caller | `false` |
 
 ### Async Settings
 
-Used by `async` connection type. These are applied via SQL `SET` commands when the connection is established.
+Used by `async` and `async_pool` connection types. These are applied via SQL `SET` commands when the connection is established. For `async_pool`, they are applied to each connection via a psycopg_pool `configure` callback.
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
@@ -168,14 +175,16 @@ Used by `async` connection type. These are applied via SQL `SET` commands when t
 
 ### Async Pool Settings
 
-Used by `async_pool` connection type. Same parameters as pool settings.
+Used by `async_pool` connection type. Same parameters as pool settings. The `async_settings` section (above) is also applied to async pool connections.
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `min_size` | Minimum connections in the async pool | `5` |
 | `max_size` | Maximum connections in the async pool | `20` |
+| `timeout` | Seconds to wait for a connection from the pool before raising an error | `30` |
 | `max_idle` | Seconds a connection can remain idle | `300` |
 | `max_lifetime` | Seconds a connection can be reused | `3600` |
+| `check_on_checkout` | Validate connections with `SELECT 1` before handing to caller | `false` |
 
 ## Authentication Methods
 
@@ -277,7 +286,15 @@ pgmonkey pgconfig generate-code --filepath /path/to/config.yaml
 
 # Generate code for a specific connection type
 pgmonkey pgconfig generate-code --filepath /path/to/config.yaml --connection-type async_pool
+
+# Generate code using native psycopg/psycopg_pool instead of pgmonkey
+pgmonkey pgconfig generate-code --filepath /path/to/config.yaml --connection-type pool --library psycopg
 ```
+
+The `--library` flag controls which library the generated code targets:
+
+- `pgmonkey` (default) — generates code using pgmonkey's `PGConnectionManager`.
+- `psycopg` — generates code using `psycopg` and `psycopg_pool` directly, reading connection settings from the same YAML config file.
 
 ### Server Configuration Recommendations
 
@@ -461,7 +478,8 @@ pgmonkey handles several production concerns behind the scenes so you don't have
 - **Connection caching** — Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance, preventing "pool storms" where each call opens a new pool.
 - **Async pool lifecycle** — `async with pool_conn:` borrows a connection from the pool and returns it when the block exits. The pool stays open for reuse. Auto-commits on clean exit, rolls back on exception.
 - **atexit cleanup** — All cached connections are automatically closed when the process exits.
-- **Thread-safe caching** — The connection cache is protected by a threading lock.
+- **Thread-safe caching** — The connection cache is protected by a threading lock with double-check locking to prevent race conditions.
+- **Config validation** — Unknown connection setting keys produce a warning log message. Pool settings are validated (e.g., `min_size` cannot exceed `max_size`).
 
 ### App-Level Pattern: Sync Database Class (Flask)
 
@@ -693,7 +711,7 @@ Run the tests:
 pytest
 ```
 
-The test suite uses mocks and covers all connection types, the connection factory, configuration management, code generation, and server config generation.
+The test suite uses mocks and covers all connection types, the connection factory, configuration management, code generation (both pgmonkey and native psycopg), config validation, and server config generation.
 
 ---
 

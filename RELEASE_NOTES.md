@@ -1,3 +1,96 @@
+# pgmonkey v2.2.0 Release Notes
+
+## Overview
+
+pgmonkey v2.2.0 improves robustness with bug fixes across connection management, adds config validation, introduces `check_on_checkout` and `timeout` pool settings, applies `async_settings` to async pool connections, replaces `print()` with proper `logging`, and adds native psycopg/psycopg_pool code generation via `--library psycopg`.
+
+## What's New
+
+### Native psycopg Code Generation (`--library psycopg`)
+
+The `generate-code` CLI command now supports a `--library` flag with two choices:
+
+- `pgmonkey` (default) — generates code using pgmonkey's `PGConnectionManager`.
+- `psycopg` — generates code using `psycopg` and `psycopg_pool` directly, reading connection settings from the same YAML config file.
+
+All four connection types (`normal`, `pool`, `async`, `async_pool`) have native psycopg templates.
+
+```bash
+# Generate native psycopg pool code
+pgmonkey pgconfig generate-code --filepath config.yaml --connection-type pool --library psycopg
+```
+
+### Bug Fixes
+
+- **Race condition in connection caching** — Fixed with double-check locking pattern. Two threads hitting the same config simultaneously no longer both create connections (one leaking).
+- **`NormalConnection.transaction()` disconnect** — Removed `disconnect()` from the `finally` block. Connection lifecycle is now managed externally, consistent with pool connections.
+- **Pool `test_connection()` false positive** — Now uses `ExitStack` to hold connections concurrently, properly validating pool capacity instead of sequentially acquiring and returning.
+- **`async_settings` not applied to `async_pool`** — GUC settings (`statement_timeout`, `lock_timeout`, etc.) are now applied to every async pool connection via psycopg_pool's `configure` callback.
+
+### Logging Instead of `print()`
+
+All connection classes now use `logging.getLogger(__name__)` instead of `print()`. This follows Python library best practices — users can control output via standard logging configuration. CLI output still uses `print()` where appropriate.
+
+### Config Validation
+
+- Unknown keys in `connection_settings` now produce a warning log message listing the unrecognized keys along with the valid keys.
+- Pool settings (`pool_settings` and `async_pool_settings`) are validated: `min_size` cannot exceed `max_size` (raises `ValueError`).
+
+### New Pool Configuration Options
+
+Two new pool settings for both `pool_settings` and `async_pool_settings`:
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `timeout` | Seconds to wait for a connection from the pool before raising an error | `30` |
+| `check_on_checkout` | Validate connections with `SELECT 1` before handing to caller | `false` |
+
+### Project Scope Document
+
+Added `PROJECTSCOPE.md` defining core responsibilities, explicit non-goals, design principles, architecture boundaries, and PR guidelines.
+
+## Compatibility
+
+No breaking API changes. All existing code continues to work as before.
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | 3.10, 3.11, 3.12, 3.13 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+
+## Test Suite
+
+149 unit tests (up from 132 in v2.1.0), all passing. New tests cover:
+
+- Logging output (`caplog`) instead of `print()` (`capsys`)
+- `NormalConnection.transaction()` commit/rollback without disconnect
+- `check_on_checkout` pool configuration
+- Config validation (unknown keys warning, pool range validation)
+- `async_settings` passthrough to async pool connections
+- Native psycopg code generation for all 4 connection types
+- Backward compatibility (default library is pgmonkey)
+
+## Files Changed
+
+- `src/pgmonkey/connections/postgres/normal_connection.py` — Logging, transaction fix
+- `src/pgmonkey/connections/postgres/async_connection.py` — Logging
+- `src/pgmonkey/connections/postgres/pool_connection.py` — Logging, ExitStack test, check_on_checkout
+- `src/pgmonkey/connections/postgres/async_pool_connection.py` — Logging, async_settings configure callback, check_on_checkout
+- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` — Config validation, async_settings passthrough
+- `src/pgmonkey/managers/pgconnection_manager.py` — Logging, double-check locking
+- `src/pgmonkey/common/templates/postgres.yaml` — timeout, check_on_checkout
+- `src/pgmonkey/tools/connection_code_generator.py` — Native psycopg templates, library dispatch
+- `src/pgmonkey/managers/pgcodegen_manager.py` — Library parameter
+- `src/pgmonkey/cli/cli_pgconfig_subparser.py` — `--library` CLI argument
+- `src/pgmonkey/tests/unit/` — Updated and new test files
+- `PROJECTSCOPE.md` — New project scope document
+- `README.md` — Documentation updates
+- `docs/` — Website documentation updates
+
+---
+
 # pgmonkey v2.1.0 Release Notes
 
 ## Overview
