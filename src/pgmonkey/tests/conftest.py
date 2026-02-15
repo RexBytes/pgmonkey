@@ -38,6 +38,10 @@ def sample_config():
                 'keepalives_interval': '15',
                 'keepalives_count': '5',
             },
+            'sync_settings': {
+                'statement_timeout': '30000',
+                'lock_timeout': '10000',
+            },
             'pool_settings': {
                 'min_size': 2,
                 'max_size': 10,

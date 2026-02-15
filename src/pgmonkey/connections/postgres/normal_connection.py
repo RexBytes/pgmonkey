@@ -7,13 +7,24 @@ logger = logging.getLogger(__name__)
 
 
 class PGNormalConnection(PostgresBaseConnection):
-    def __init__(self, config):
+    def __init__(self, config, sync_settings=None):
         self.config = config
+        self.sync_settings = sync_settings or {}
+        self.autocommit = None
         self.connection = None
 
     def connect(self):
         if self.connection is None or self.connection.closed:
-            self.connection = connect(**self.config)
+            self.connection = connect(autocommit=bool(self.autocommit), **self.config)
+            self._apply_sync_settings()
+
+    def _apply_sync_settings(self):
+        """Applies PostgreSQL GUC settings via SET commands after connection is established."""
+        for setting, value in self.sync_settings.items():
+            try:
+                self.connection.execute(f"SET {setting} = %s", (str(value),))
+            except Exception as e:
+                logger.warning("Could not apply setting '%s': %s", setting, e)
 
     def test_connection(self):
         try:
@@ -61,4 +72,3 @@ class PGNormalConnection(PostgresBaseConnection):
             self.rollback()
         else:
             self.commit()
-        self.disconnect()

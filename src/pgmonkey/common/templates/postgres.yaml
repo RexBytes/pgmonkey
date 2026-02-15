@@ -21,6 +21,16 @@ postgresql:
     keepalives_idle: '60'  # Seconds before sending a keepalive probe
     keepalives_interval: '15'  # Seconds between keepalive probes
     keepalives_count: '5'  # Max keepalive probes before closing the connection
+    # autocommit: false  # Enable autocommit mode (required for DDL like CREATE DATABASE, VACUUM, etc.)
+
+  # Session-level GUC settings for 'normal' and 'pool' connection types.
+  # For 'normal': applied via SET commands after connect.
+  # For 'pool': applied via psycopg_pool's configure callback on each checkout.
+  sync_settings:
+    # statement_timeout: '30000'  # Cancel statements exceeding this time (ms)
+    # lock_timeout: '10000'  # Timeout for acquiring locks (ms)
+    # idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction (ms)
+    # work_mem: '256MB'  # Memory for sort operations and more
 
   # Settings for 'pool' connection type
   pool_settings:
@@ -30,8 +40,13 @@ postgresql:
     max_idle: 300  # Seconds a connection can remain idle before being closed
     max_lifetime: 3600  # Seconds a connection can be reused
     check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
+    # max_waiting: 0  # Max clients queued waiting for a connection (0 = unlimited)
+    # reconnect_timeout: 300  # Seconds to keep trying to reconnect failed connections (0 = forever)
+    # num_workers: 3  # Number of background workers maintaining pool connections
 
-  # Settings for 'async' connection type (applied via SET commands on connection)
+  # Session-level GUC settings for 'async' and 'async_pool' connection types.
+  # For 'async': applied via SET commands after connect.
+  # For 'async_pool': applied via psycopg_pool's configure callback on each checkout.
   async_settings:
     idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction (ms)
     statement_timeout: '30000'  # Cancel statements exceeding this time (ms)
@@ -46,3 +61,6 @@ postgresql:
     max_idle: 300
     max_lifetime: 3600
     check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
+    # max_waiting: 0  # Max clients queued waiting for a connection (0 = unlimited)
+    # reconnect_timeout: 300  # Seconds to keep trying to reconnect failed connections (0 = forever)
+    # num_workers: 3  # Number of background workers maintaining pool connections

@@ -10,11 +10,22 @@ class TestPGPoolConnectionInit:
         assert conn.config == {'host': 'localhost'}
         assert conn.pool_settings == {'min_size': 2, 'max_size': 10}
         assert conn.pool is None
-        assert conn._conn is None
 
     def test_default_pool_settings_empty(self):
         conn = PGPoolConnection({'host': 'localhost'})
         assert conn.pool_settings == {}
+
+    def test_stores_sync_settings(self):
+        conn = PGPoolConnection({'host': 'localhost'}, sync_settings={'statement_timeout': '30000'})
+        assert conn.sync_settings == {'statement_timeout': '30000'}
+
+    def test_default_sync_settings_empty(self):
+        conn = PGPoolConnection({'host': 'localhost'})
+        assert conn.sync_settings == {}
+
+    def test_thread_local_initialized(self):
+        conn = PGPoolConnection({'host': 'localhost'})
+        assert conn._get_conn() is None
 
 
 class TestPGPoolConnectionConnect:
@@ -37,6 +48,20 @@ class TestPGPoolConnectionConnect:
         conn.connect()
         conn.connect()
         mock_pool_cls.assert_called_once()
+
+    @patch('pgmonkey.connections.postgres.pool_connection.psycopg_conninfo')
+    @patch('pgmonkey.connections.postgres.pool_connection.ConnectionPool')
+    def test_sync_settings_sets_configure_callback(self, mock_pool_cls, mock_conninfo):
+        mock_conninfo.make_conninfo.return_value = 'host=localhost'
+        conn = PGPoolConnection(
+            {'host': 'localhost'}, {'min_size': 2},
+            sync_settings={'statement_timeout': '30000'}
+        )
+        conn.connect()
+
+        call_kwargs = mock_pool_cls.call_args[1]
+        assert 'configure' in call_kwargs
+        assert callable(call_kwargs['configure'])
 
 
 class TestPGPoolConnectionDisconnect:
@@ -75,14 +100,14 @@ class TestPGPoolConnectionCursorCommitRollback:
     def test_commit_delegates_to_pool_conn(self):
         mock_conn = MagicMock()
         conn = PGPoolConnection({'host': 'localhost'})
-        conn._conn = mock_conn
+        conn._set_conn(mock_conn)
         conn.commit()
         mock_conn.commit.assert_called_once()
 
     def test_rollback_delegates_to_pool_conn(self):
         mock_conn = MagicMock()
         conn = PGPoolConnection({'host': 'localhost'})
-        conn._conn = mock_conn
+        conn._set_conn(mock_conn)
         conn.rollback()
         mock_conn.rollback.assert_called_once()
 
@@ -121,3 +146,17 @@ class TestPGPoolConnectionConninfo:
         result = PGPoolConnection.construct_conninfo({'host': 'localhost', 'dbname': 'test'})
         mock_conninfo.make_conninfo.assert_called_once_with(host='localhost', dbname='test')
         assert result == 'host=localhost dbname=test'
+
+
+class TestPGPoolConnectionThreadSafety:
+    """Verify that _conn is stored in thread-local storage."""
+
+    def test_conn_is_thread_local(self):
+        """_get_conn and _set_conn use thread-local storage."""
+        conn = PGPoolConnection({'host': 'localhost'})
+        assert conn._get_conn() is None
+        mock = MagicMock()
+        conn._set_conn(mock)
+        assert conn._get_conn() is mock
+        conn._set_conn(None)
+        assert conn._get_conn() is None

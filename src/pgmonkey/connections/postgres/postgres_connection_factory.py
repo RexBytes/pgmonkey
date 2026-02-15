@@ -13,13 +13,15 @@ class PostgresConnectionFactory:
         'user', 'password', 'host', 'port', 'dbname', 'sslmode',
         'sslcert', 'sslkey', 'sslrootcert', 'connect_timeout',
         'application_name', 'keepalives', 'keepalives_idle',
-        'keepalives_interval', 'keepalives_count',
+        'keepalives_interval', 'keepalives_count', 'autocommit',
     ]
 
     def __init__(self, config, connection_type):
         self.connection_type = connection_type
         self.config = self._filter_config(config['postgresql']['connection_settings'])
+        self.autocommit = self.config.pop('autocommit', None)
         self.pool_settings = config['postgresql'].get('pool_settings', {}) or {}
+        self.sync_settings = config['postgresql'].get('sync_settings', {}) or {}
         self.async_settings = config['postgresql'].get('async_settings', {}) or {}
         self.async_pool_settings = config['postgresql'].get('async_pool_settings', {}) or {}
         self._validate_pool_settings()
@@ -34,7 +36,7 @@ class PostgresConnectionFactory:
                 ', '.join(sorted(unknown_keys)),
                 ', '.join(self.VALID_CONNECTION_KEYS),
             )
-        return {key: config[key] for key in self.VALID_CONNECTION_KEYS if key in config and config[key]}
+        return {key: config[key] for key in self.VALID_CONNECTION_KEYS if key in config and config[key] is not None and config[key] != ''}
 
     def _validate_pool_settings(self):
         """Validate pool configuration ranges."""
@@ -53,15 +55,18 @@ class PostgresConnectionFactory:
 
     def get_connection(self):
         if self.connection_type == 'normal':
-            connection = PGNormalConnection(self.config)
+            connection = PGNormalConnection(self.config, self.sync_settings)
         elif self.connection_type == 'pool':
-            connection = PGPoolConnection(self.config, self.pool_settings)
+            connection = PGPoolConnection(self.config, self.pool_settings, self.sync_settings)
         elif self.connection_type == 'async':
             connection = PGAsyncConnection(self.config, self.async_settings)
         elif self.connection_type == 'async_pool':
             connection = PGAsyncPoolConnection(self.config, self.async_pool_settings, self.async_settings)
         else:
             raise ValueError(f"Unsupported connection type: {self.connection_type}")
+
+        if self.autocommit is not None:
+            connection.autocommit = self.autocommit
 
         connection.connection_type = self.connection_type
         return connection
