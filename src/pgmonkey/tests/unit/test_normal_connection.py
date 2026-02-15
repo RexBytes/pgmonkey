@@ -1,6 +1,7 @@
 import logging
 import pytest
 from unittest.mock import patch, MagicMock
+from psycopg import sql
 from pgmonkey.connections.postgres.normal_connection import PGNormalConnection
 
 
@@ -69,9 +70,9 @@ class TestPGNormalConnectionSyncSettings:
 
         calls = mock_pg_conn.execute.call_args_list
         assert len(calls) == 2
-        assert calls[0][0][0] == 'SET statement_timeout = %s'
+        assert calls[0][0][0] == sql.SQL("SET {} = %s").format(sql.Identifier('statement_timeout'))
         assert calls[0][0][1] == ('30000',)
-        assert calls[1][0][0] == 'SET lock_timeout = %s'
+        assert calls[1][0][0] == sql.SQL("SET {} = %s").format(sql.Identifier('lock_timeout'))
         assert calls[1][0][1] == ('10000',)
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')

@@ -2,7 +2,7 @@ import logging
 import threading
 from contextlib import contextmanager, ExitStack
 from psycopg_pool import ConnectionPool
-from psycopg import OperationalError, conninfo as psycopg_conninfo
+from psycopg import OperationalError, conninfo as psycopg_conninfo, sql
 from .base_connection import PostgresBaseConnection
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class PGPoolConnection(PostgresBaseConnection):
                 def _configure(conn):
                     for setting, value in sync_settings.items():
                         try:
-                            conn.execute(f"SET {setting} = %s", (str(value),))
+                            conn.execute(sql.SQL("SET {} = %s").format(sql.Identifier(setting)), (str(value),))
                         except Exception as e:
                             logger.warning("Could not apply setting '%s': %s", setting, e)
                 kwargs['configure'] = _configure

@@ -1,5 +1,5 @@
 import logging
-from psycopg import connect, OperationalError
+from psycopg import connect, OperationalError, sql
 from .base_connection import PostgresBaseConnection
 from contextlib import contextmanager
 
@@ -22,7 +22,7 @@ class PGNormalConnection(PostgresBaseConnection):
         """Applies PostgreSQL GUC settings via SET commands after connection is established."""
         for setting, value in self.sync_settings.items():
             try:
-                self.connection.execute(f"SET {setting} = %s", (str(value),))
+                self.connection.execute(sql.SQL("SET {} = %s").format(sql.Identifier(setting)), (str(value),))
             except Exception as e:
                 logger.warning("Could not apply setting '%s': %s", setting, e)
 
