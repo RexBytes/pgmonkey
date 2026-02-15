@@ -225,8 +225,8 @@ footer p { margin-bottom: 8px; }
         </tr>
         <tr>
             <td>pgmonkey pgconfig generate-code</td>
-            <td>Generate example Python code.</td>
-            <td><code>pgmonkey pgconfig generate-code --connconfig config.yaml --connection-type async</code></td>
+            <td>Generate example Python code. Use <code>--library psycopg</code> for native psycopg code.</td>
+            <td><code>pgmonkey pgconfig generate-code --connconfig config.yaml --connection-type async --library psycopg</code></td>
         </tr>
         <tr>
             <td>pgmonkey pgserverconfig</td>
@@ -294,10 +294,13 @@ conn = <span class="kw">await</span> manager.<span class="fn">get_database_conne
   pool_settings:
     min_size: <span class="op">5</span>
     max_size: <span class="op">20</span>
+    timeout: <span class="op">30</span>            <span class="cm"># Seconds to wait for a connection from the pool</span>
     max_idle: <span class="op">300</span>          <span class="cm"># Seconds idle before closed</span>
     max_lifetime: <span class="op">3600</span>     <span class="cm"># Seconds before reuse expires</span>
+    check_on_checkout: <span class="op">false</span>  <span class="cm"># Validate connections with SELECT 1 before use</span>
 
-  <span class="cm"># Settings for 'async' connection type (applied via SET commands)</span>
+  <span class="cm"># Settings for 'async' and 'async_pool' connection types (applied via SET commands)</span>
+  <span class="cm"># For async_pool, these are applied to each connection via a configure callback.</span>
   async_settings:
     idle_in_transaction_session_timeout: <span class="st">'5000'</span>   <span class="cm"># ms</span>
     statement_timeout: <span class="st">'30000'</span>                     <span class="cm"># ms</span>
@@ -308,8 +311,10 @@ conn = <span class="kw">await</span> manager.<span class="fn">get_database_conne
   async_pool_settings:
     min_size: <span class="op">5</span>
     max_size: <span class="op">20</span>
+    timeout: <span class="op">30</span>            <span class="cm"># Seconds to wait for a connection from the pool</span>
     max_idle: <span class="op">300</span>
-    max_lifetime: <span class="op">3600</span></code></pre>
+    max_lifetime: <span class="op">3600</span>
+    check_on_checkout: <span class="op">false</span>  <span class="cm"># Validate connections with SELECT 1 before use</span></code></pre>
 
 <h3>Configuration Parameter Reference</h3>
 
@@ -336,16 +341,20 @@ conn = <span class="kw">await</span> manager.<span class="fn">get_database_conne
         <tr><td>connection_settings.keepalives_count</td><td>Max probes before closing.</td><td><code>'5'</code></td></tr>
         <tr><td>pool_settings.min_size</td><td>Min connections in the pool.</td><td><code>5</code></td></tr>
         <tr><td>pool_settings.max_size</td><td>Max connections in the pool.</td><td><code>20</code></td></tr>
+        <tr><td>pool_settings.timeout</td><td>Seconds to wait for a connection from the pool.</td><td><code>30</code></td></tr>
         <tr><td>pool_settings.max_idle</td><td>Seconds idle before connection is closed.</td><td><code>300</code></td></tr>
         <tr><td>pool_settings.max_lifetime</td><td>Seconds before a connection is recycled.</td><td><code>3600</code></td></tr>
+        <tr><td>pool_settings.check_on_checkout</td><td>Validate connections with <code>SELECT 1</code> before use.</td><td><code>false</code></td></tr>
         <tr><td>async_settings.idle_in_transaction_session_timeout</td><td>Idle in transaction timeout (ms).</td><td><code>'5000'</code></td></tr>
         <tr><td>async_settings.statement_timeout</td><td>Statement execution timeout (ms).</td><td><code>'30000'</code></td></tr>
         <tr><td>async_settings.lock_timeout</td><td>Lock acquisition timeout (ms).</td><td><code>'10000'</code></td></tr>
         <tr><td>async_settings.work_mem</td><td>Memory for sort operations.</td><td><code>'256MB'</code></td></tr>
         <tr><td>async_pool_settings.min_size</td><td>Min connections in the async pool.</td><td><code>5</code></td></tr>
         <tr><td>async_pool_settings.max_size</td><td>Max connections in the async pool.</td><td><code>20</code></td></tr>
+        <tr><td>async_pool_settings.timeout</td><td>Seconds to wait for a connection from the async pool.</td><td><code>30</code></td></tr>
         <tr><td>async_pool_settings.max_idle</td><td>Seconds idle before async connection is closed.</td><td><code>300</code></td></tr>
         <tr><td>async_pool_settings.max_lifetime</td><td>Seconds before an async connection is recycled.</td><td><code>3600</code></td></tr>
+        <tr><td>async_pool_settings.check_on_checkout</td><td>Validate connections with <code>SELECT 1</code> before use.</td><td><code>false</code></td></tr>
     </tbody>
 </table>
 
@@ -718,9 +727,174 @@ Connection test completed successfully.</code></pre>
     asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
 
 <!-- ============================================================ -->
+<h2>Native psycopg Code Generation</h2>
+
+<p>Use <code>--library psycopg</code> to generate code that uses <code>psycopg</code> and <code>psycopg_pool</code> directly, reading connection settings from the same pgmonkey YAML config file. This is useful if you want to use pgmonkey only for configuration management while writing your own connection code.</p>
+
+<h3>1. Normal Connection (psycopg)</h3>
+
+<pre><code>$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type normal --library psycopg</code></pre>
+
+<p><strong>Generated Code:</strong></p>
+
+<pre><code><span class="cm"># Example: Normal synchronous connection using psycopg</span>
+<span class="cm"># Reads connection settings from your pgmonkey YAML config file.</span>
+
+<span class="kw">import</span> yaml
+<span class="kw">import</span> psycopg
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    config_file_path = <span class="st">'config.yaml'</span>
+
+    <span class="kw">with</span> <span class="nb">open</span>(config_file_path, <span class="st">'r'</span>) <span class="kw">as</span> f:
+        config = yaml.<span class="fn">safe_load</span>(f)
+
+    conn_settings = config[<span class="st">'postgresql'</span>][<span class="st">'connection_settings'</span>]
+    <span class="cm"># Filter out empty values (e.g. blank SSL cert paths)</span>
+    conn_params = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> conn_settings.<span class="fn">items</span>() <span class="kw">if</span> v}
+
+    <span class="kw">with</span> psycopg.<span class="fn">connect</span>(**conn_params) <span class="kw">as</span> conn:
+        <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            cur.<span class="fn">execute</span>(<span class="st">'SELECT 1;'</span>)
+            <span class="nb">print</span>(cur.<span class="fn">fetchone</span>())
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">main</span>()</code></pre>
+
+<h3>2. Pooled Connection (psycopg_pool)</h3>
+
+<pre><code>$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type pool --library psycopg</code></pre>
+
+<p><strong>Generated Code:</strong></p>
+
+<pre><code><span class="cm"># Example: Pooled synchronous connection using psycopg_pool</span>
+<span class="cm"># Reads connection and pool settings from your pgmonkey YAML config file.</span>
+
+<span class="kw">import</span> yaml
+<span class="kw">from</span> psycopg <span class="kw">import</span> conninfo
+<span class="kw">from</span> psycopg_pool <span class="kw">import</span> ConnectionPool
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    config_file_path = <span class="st">'config.yaml'</span>
+
+    <span class="kw">with</span> <span class="nb">open</span>(config_file_path, <span class="st">'r'</span>) <span class="kw">as</span> f:
+        config = yaml.<span class="fn">safe_load</span>(f)
+
+    conn_settings = config[<span class="st">'postgresql'</span>][<span class="st">'connection_settings'</span>]
+    conn_params = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> conn_settings.<span class="fn">items</span>() <span class="kw">if</span> v}
+    pool_settings = config[<span class="st">'postgresql'</span>].<span class="fn">get</span>(<span class="st">'pool_settings'</span>, {})
+
+    <span class="cm"># Remove pgmonkey-specific keys that psycopg_pool does not accept</span>
+    pool_settings.<span class="fn">pop</span>(<span class="st">'check_on_checkout'</span>, <span class="kw">None</span>)
+
+    conninfo_str = conninfo.<span class="fn">make_conninfo</span>(**conn_params)
+    pool = ConnectionPool(conninfo=conninfo_str, **pool_settings)
+
+    <span class="kw">try</span>:
+        <span class="kw">with</span> pool.<span class="fn">connection</span>() <span class="kw">as</span> conn:
+            <span class="kw">with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+                cur.<span class="fn">execute</span>(<span class="st">'SELECT 1;'</span>)
+                <span class="nb">print</span>(cur.<span class="fn">fetchone</span>())
+    <span class="kw">finally</span>:
+        pool.<span class="fn">close</span>()
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">main</span>()</code></pre>
+
+<h3>3. Async Connection (psycopg AsyncConnection)</h3>
+
+<pre><code>$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type async --library psycopg</code></pre>
+
+<p><strong>Generated Code:</strong></p>
+
+<pre><code><span class="cm"># Example: Asynchronous connection using psycopg (AsyncConnection)</span>
+<span class="cm"># Reads connection and async settings from your pgmonkey YAML config file.</span>
+
+<span class="kw">import</span> asyncio
+<span class="kw">import</span> yaml
+<span class="kw">from</span> psycopg <span class="kw">import</span> AsyncConnection
+
+<span class="kw">async def</span> <span class="fn">main</span>():
+    config_file_path = <span class="st">'config.yaml'</span>
+
+    <span class="kw">with</span> <span class="nb">open</span>(config_file_path, <span class="st">'r'</span>) <span class="kw">as</span> f:
+        config = yaml.<span class="fn">safe_load</span>(f)
+
+    conn_settings = config[<span class="st">'postgresql'</span>][<span class="st">'connection_settings'</span>]
+    conn_params = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> conn_settings.<span class="fn">items</span>() <span class="kw">if</span> v}
+    async_settings = config[<span class="st">'postgresql'</span>].<span class="fn">get</span>(<span class="st">'async_settings'</span>, {})
+
+    <span class="kw">async with await</span> AsyncConnection.<span class="fn">connect</span>(**conn_params) <span class="kw">as</span> conn:
+        <span class="cm"># Apply GUC settings (statement_timeout, lock_timeout, etc.)</span>
+        <span class="kw">for</span> setting, value <span class="kw">in</span> async_settings.<span class="fn">items</span>():
+            <span class="kw">await</span> conn.<span class="fn">execute</span>(<span class="st">f"SET {setting} = %s"</span>, (<span class="nb">str</span>(value),))
+
+        <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+            <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT 1;'</span>)
+            result = <span class="kw">await</span> cur.<span class="fn">fetchone</span>()
+            <span class="nb">print</span>(result)
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
+
+<h3>4. Async Pooled Connection (psycopg_pool AsyncConnectionPool)</h3>
+
+<pre><code>$ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type async_pool --library psycopg</code></pre>
+
+<p><strong>Generated Code:</strong></p>
+
+<pre><code><span class="cm"># Example: Asynchronous pooled connection using psycopg_pool (AsyncConnectionPool)</span>
+<span class="cm"># Reads connection, pool, and async settings from your pgmonkey YAML config file.</span>
+
+<span class="kw">import</span> asyncio
+<span class="kw">import</span> yaml
+<span class="kw">from</span> psycopg <span class="kw">import</span> conninfo
+<span class="kw">from</span> psycopg_pool <span class="kw">import</span> AsyncConnectionPool
+
+<span class="kw">async def</span> <span class="fn">main</span>():
+    config_file_path = <span class="st">'config.yaml'</span>
+
+    <span class="kw">with</span> <span class="nb">open</span>(config_file_path, <span class="st">'r'</span>) <span class="kw">as</span> f:
+        config = yaml.<span class="fn">safe_load</span>(f)
+
+    conn_settings = config[<span class="st">'postgresql'</span>][<span class="st">'connection_settings'</span>]
+    conn_params = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> conn_settings.<span class="fn">items</span>() <span class="kw">if</span> v}
+    pool_settings = config[<span class="st">'postgresql'</span>].<span class="fn">get</span>(<span class="st">'async_pool_settings'</span>, {})
+    async_settings = config[<span class="st">'postgresql'</span>].<span class="fn">get</span>(<span class="st">'async_settings'</span>, {})
+
+    <span class="cm"># Remove pgmonkey-specific keys that psycopg_pool does not accept</span>
+    pool_settings.<span class="fn">pop</span>(<span class="st">'check_on_checkout'</span>, <span class="kw">None</span>)
+
+    conninfo_str = conninfo.<span class="fn">make_conninfo</span>(**conn_params)
+
+    <span class="cm"># Optional: configure callback to apply GUC settings to each connection</span>
+    <span class="kw">async def</span> <span class="fn">configure</span>(conn):
+        <span class="kw">for</span> setting, value <span class="kw">in</span> async_settings.<span class="fn">items</span>():
+            <span class="kw">await</span> conn.<span class="fn">execute</span>(<span class="st">f"SET {setting} = %s"</span>, (<span class="nb">str</span>(value),))
+
+    pool = AsyncConnectionPool(
+        conninfo=conninfo_str,
+        configure=configure <span class="kw">if</span> async_settings <span class="kw">else</span> <span class="kw">None</span>,
+        **pool_settings,
+    )
+    <span class="kw">await</span> pool.<span class="fn">open</span>()
+
+    <span class="kw">try</span>:
+        <span class="kw">async with</span> pool.<span class="fn">connection</span>() <span class="kw">as</span> conn:
+            <span class="kw">async with</span> conn.<span class="fn">cursor</span>() <span class="kw">as</span> cur:
+                <span class="kw">await</span> cur.<span class="fn">execute</span>(<span class="st">'SELECT 1;'</span>)
+                result = <span class="kw">await</span> cur.<span class="fn">fetchone</span>()
+                <span class="nb">print</span>(result)
+    <span class="kw">finally</span>:
+        <span class="kw">await</span> pool.<span class="fn">close</span>()
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
+
+<!-- ============================================================ -->
 <h2>Compatibility</h2>
 
-<p>pgmonkey v2.0.0 is tested and supported on the following:</p>
+<p>pgmonkey is tested and supported on the following:</p>
 
 <table>
     <thead>
@@ -740,7 +914,7 @@ Connection test completed successfully.</code></pre>
 
 <pre><code>pip install pgmonkey[test]</code></pre>
 
-<p>This adds <strong>pytest</strong>, <strong>pytest-asyncio</strong>, and <strong>pytest-mock</strong> for running the unit test suite (132 tests, no database required).</p>
+<p>This adds <strong>pytest</strong>, <strong>pytest-asyncio</strong>, and <strong>pytest-mock</strong> for running the unit test suite (149 tests, no database required).</p>
 
 <!-- ============================================================ -->
 <h2>Raspberry Pi Users: Installation via PiWheels</h2>

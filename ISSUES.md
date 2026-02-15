@@ -149,3 +149,166 @@ Added:
   (Flask sync, FastAPI async).
 - README section "Best Practice Recipes" with the same content.
 - Navigation links added to `docs/index.html` and `docs/reference.html`.
+
+---
+
+## Issue #6: Race Condition in Connection Caching
+
+**Status:** Fixed
+**Severity:** High
+**Affected versions:** 2.1.0
+**Affected types:** All
+
+### Problem
+
+The cache lock was released between the cache-miss check and connection
+creation/storage. Two threads hitting the same config simultaneously could
+both get cache misses, both create connections, and one would be silently
+overwritten (leaked).
+
+### Fix
+
+Implemented double-check locking pattern. After creating a connection outside
+the lock, the lock is re-acquired and the cache is checked again. If another
+thread stored a connection in the meantime, the newly created one is discarded
+(disconnected) and the cached one is returned.
+
+### Files Changed
+
+- `src/pgmonkey/managers/pgconnection_manager.py` — Double-check locking for
+  both sync and async paths.
+
+---
+
+## Issue #7: `NormalConnection.transaction()` Always Disconnects
+
+**Status:** Fixed
+**Severity:** Medium
+**Affected versions:** All prior versions
+**Affected types:** `normal`
+
+### Problem
+
+The `finally` block in `NormalConnection.transaction()` called
+`self.disconnect()`, meaning every `transaction()` call destroyed the
+connection. For cached connections, this left a dead connection in the cache.
+
+### Fix
+
+Removed `disconnect()` from the `finally` block. The `transaction()` context
+manager now yields `self`, commits on clean exit, and rolls back on exception,
+without touching connection lifecycle.
+
+### Files Changed
+
+- `src/pgmonkey/connections/postgres/normal_connection.py` — Removed
+  `disconnect()` from `transaction()` finally block.
+
+---
+
+## Issue #8: Pool `test_connection()` False Positive
+
+**Status:** Fixed
+**Severity:** Medium
+**Affected versions:** All prior versions
+**Affected types:** `pool`
+
+### Problem
+
+`test_connection()` acquired connections inside sequential `with` blocks,
+which returned each connection to the pool before the next iteration. The
+test only proved the pool could serve one connection at a time, not that
+it could handle concurrent connections.
+
+### Fix
+
+Now uses `contextlib.ExitStack` to hold all connections concurrently before
+releasing them, properly validating pool capacity.
+
+### Files Changed
+
+- `src/pgmonkey/connections/postgres/pool_connection.py` — Rewrote
+  `test_connection()` using `ExitStack`.
+
+---
+
+## Issue #9: `async_settings` Not Applied to `async_pool` Connections
+
+**Status:** Fixed
+**Severity:** Medium
+**Affected versions:** All prior versions
+**Affected types:** `async_pool`
+
+### Problem
+
+`PGAsyncConnection` applied GUC settings (`statement_timeout`, etc.) via
+`_apply_async_settings()` after connect. `PGAsyncPoolConnection` did not
+apply any session-level settings. Users expecting `statement_timeout` to
+work in async pool mode would find it silently ignored.
+
+### Fix
+
+`async_settings` are now passed through the connection factory to
+`PGAsyncPoolConnection`, which installs a psycopg_pool `configure` callback
+that applies GUC settings via `SET` commands to each connection.
+
+### Files Changed
+
+- `src/pgmonkey/connections/postgres/async_pool_connection.py` — Added
+  `async_settings` parameter and `configure` callback.
+- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` — Passes
+  `async_settings` to async pool connections.
+
+---
+
+## Issue #10: All Observability Used `print()` Instead of `logging`
+
+**Status:** Fixed
+**Severity:** Medium
+**Affected versions:** All prior versions
+**Affected types:** All
+
+### Problem
+
+Every connection class used `print()` for diagnostics. Libraries should
+never print to stdout — they should use `logging.getLogger(__name__)`.
+
+### Fix
+
+Replaced all `print()` calls in connection classes and the connection manager
+with `logging.getLogger(__name__)` calls. CLI code continues to use `print()`
+where appropriate.
+
+### Files Changed
+
+- `src/pgmonkey/connections/postgres/normal_connection.py`
+- `src/pgmonkey/connections/postgres/async_connection.py`
+- `src/pgmonkey/connections/postgres/pool_connection.py`
+- `src/pgmonkey/connections/postgres/async_pool_connection.py`
+- `src/pgmonkey/managers/pgconnection_manager.py`
+
+---
+
+## Issue #11: No Config Validation
+
+**Status:** Fixed
+**Severity:** Medium
+**Affected versions:** All prior versions
+**Affected types:** All
+
+### Problem
+
+`_filter_config()` silently dropped unknown connection setting keys. A typo
+like `hosst` instead of `host` was ignored, leading to cryptic connection
+failures. Pool settings were not validated for logical consistency.
+
+### Fix
+
+- Unknown keys in `connection_settings` now produce a warning log message
+  listing the unrecognized keys and the valid keys.
+- Pool settings are validated: `min_size > max_size` raises `ValueError`.
+
+### Files Changed
+
+- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` — Added
+  unknown key warnings and `_validate_pool_settings()`.

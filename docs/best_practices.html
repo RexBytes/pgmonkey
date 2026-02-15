@@ -201,7 +201,9 @@ footer .legal { font-size: 0.8em; color: #64748b; max-width: 700px; margin: 12px
         <li><strong>Connection caching</strong> &mdash; Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance instead of creating a new one. This prevents "pool storms" where each call opens a brand-new pool.</li>
         <li><strong>Async pool lifecycle</strong> &mdash; When you use <code>async with pool_conn:</code>, pgmonkey borrows a connection from the pool and returns it when the block exits. The pool itself stays open for reuse. Commits on clean exit, rolls back on exception.</li>
         <li><strong>atexit cleanup</strong> &mdash; All cached connections and pools are automatically closed when the process exits, via an <code>atexit</code> handler.</li>
-        <li><strong>Thread-safe caching</strong> &mdash; The connection cache is protected by a threading lock, safe for multi-threaded sync applications.</li>
+        <li><strong>Thread-safe caching</strong> &mdash; The connection cache is protected by a threading lock with double-check locking, safe for multi-threaded sync applications.</li>
+        <li><strong>Config validation</strong> &mdash; Unknown connection setting keys produce a warning log. Pool settings are validated (e.g. <code>min_size</code> &le; <code>max_size</code>).</li>
+        <li><strong>Health checks</strong> &mdash; Enable <code>check_on_checkout: true</code> in pool settings to validate connections with <code>SELECT 1</code> before each use.</li>
     </ul>
 
     <!-- Recipe 1: Normal -->
