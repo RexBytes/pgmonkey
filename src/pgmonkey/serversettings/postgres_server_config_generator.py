@@ -45,7 +45,7 @@ class PostgresServerConfigGenerator:
             entry = f"hostssl all     all   {address}    md5     clientcert={clientcert}"
             entries.append(entry)
         elif sslmode != 'disable':
-            entry = f"host    all     all   {address}    reject"
+            entry = f"hostssl all     all   {address}    md5"
             entries.append(entry)
         return entries
 
