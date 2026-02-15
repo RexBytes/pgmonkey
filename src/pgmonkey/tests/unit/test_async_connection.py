@@ -1,3 +1,4 @@
+import logging
 import pytest
 from unittest.mock import patch, AsyncMock
 
@@ -57,15 +58,16 @@ class TestPGAsyncConnectionApplySettings:
 
     @pytest.mark.asyncio
     @patch('pgmonkey.connections.postgres.async_connection.AsyncConnection')
-    async def test_warns_on_bad_setting(self, mock_cls, capsys):
+    async def test_warns_on_bad_setting(self, mock_cls, caplog):
         mock_pg = AsyncMock(closed=False)
         mock_pg.execute = AsyncMock(side_effect=Exception("bad setting"))
         mock_cls.connect = AsyncMock(return_value=mock_pg)
 
         conn = PGAsyncConnection({'host': 'localhost'}, {'bad_setting': 'value'})
-        await conn.connect()
+        with caplog.at_level(logging.WARNING):
+            await conn.connect()
 
-        assert "Warning" in capsys.readouterr().out
+        assert "Could not apply setting" in caplog.text
 
 
 class TestPGAsyncConnectionDisconnect:

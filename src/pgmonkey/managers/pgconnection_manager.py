@@ -3,9 +3,12 @@ import json
 import hashlib
 import atexit
 import asyncio
+import logging
 import threading
 import warnings
 from pgmonkey.connections.postgres.postgres_connection_factory import PostgresConnectionFactory
+
+logger = logging.getLogger(__name__)
 
 VALID_CONNECTION_TYPES = ('normal', 'pool', 'async', 'async_pool')
 
@@ -154,7 +157,10 @@ class PGConnectionManager:
         self._register_atexit()
 
         if is_async:
-            return self._create_async_connection(config_data_dictionary, resolved_type, cache_key, old_connection)
+            return self._create_async_connection(
+                config_data_dictionary, resolved_type, cache_key,
+                old_connection, force_reload,
+            )
         else:
             # Disconnect the old cached connection if force_reload
             if old_connection:
@@ -164,7 +170,17 @@ class PGConnectionManager:
                     pass
 
             connection = self._get_postgresql_connection_sync(config_data_dictionary, resolved_type)
+
+            # Double-check: another thread may have cached a connection while
+            # we were creating ours (race between concurrent cache misses).
             with self._cache_lock:
+                if cache_key in self._cache and not force_reload:
+                    # Another thread beat us — discard ours, use theirs.
+                    try:
+                        connection.disconnect()
+                    except Exception:
+                        pass
+                    return self._cache[cache_key]
                 self._cache[cache_key] = connection
             return connection
 
@@ -173,7 +189,8 @@ class PGConnectionManager:
         """Wrap a cached connection in a coroutine so the caller can still await it."""
         return connection
 
-    async def _create_async_connection(self, config_data_dictionary, connection_type, cache_key, old_connection=None):
+    async def _create_async_connection(self, config_data_dictionary, connection_type,
+                                       cache_key, old_connection=None, force_reload=False):
         """Create an async connection, optionally disconnecting the old one and caching the new one."""
         if old_connection:
             try:
@@ -185,8 +202,23 @@ class PGConnectionManager:
                 pass
 
         connection = await self._get_postgresql_connection_async(config_data_dictionary, connection_type)
+
+        # Double-check: another coroutine may have cached a connection while
+        # we were creating ours (race between concurrent cache misses).
+        discard = None
         with self._cache_lock:
-            self._cache[cache_key] = connection
+            if cache_key in self._cache and not force_reload:
+                discard = connection
+                connection = self._cache[cache_key]
+            else:
+                self._cache[cache_key] = connection
+
+        if discard is not None:
+            try:
+                await discard.disconnect()
+            except Exception:
+                pass
+
         return connection
 
     def _get_postgresql_connection_sync(self, config_data_dictionary, connection_type):

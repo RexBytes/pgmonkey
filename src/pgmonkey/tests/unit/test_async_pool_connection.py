@@ -12,11 +12,21 @@ class TestPGAsyncPoolConnectionInit:
         conn = PGAsyncPoolConnection({'host': 'localhost'}, {'min_size': 2, 'max_size': 10})
         assert conn.config == {'host': 'localhost'}
         assert conn.async_pool_settings == {'min_size': 2, 'max_size': 10}
+        assert conn.async_settings == {}
         assert conn.pool is None
+
+    def test_stores_async_settings(self):
+        conn = PGAsyncPoolConnection(
+            {'host': 'localhost'},
+            {'min_size': 2},
+            {'statement_timeout': '30000'},
+        )
+        assert conn.async_settings == {'statement_timeout': '30000'}
 
     def test_default_settings_empty(self):
         conn = PGAsyncPoolConnection({'host': 'localhost'})
         assert conn.async_pool_settings == {}
+        assert conn.async_settings == {}
 
 
 class TestPGAsyncPoolConnectionConnect:

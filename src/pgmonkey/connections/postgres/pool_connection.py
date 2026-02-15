@@ -1,7 +1,10 @@
-from contextlib import contextmanager
+import logging
+from contextlib import contextmanager, ExitStack
 from psycopg_pool import ConnectionPool
 from psycopg import OperationalError, conninfo as psycopg_conninfo
 from .base_connection import PostgresBaseConnection
+
+logger = logging.getLogger(__name__)
 
 
 class PGPoolConnection(PostgresBaseConnection):
@@ -19,9 +22,15 @@ class PGPoolConnection(PostgresBaseConnection):
     def connect(self):
         """Initialize the connection pool."""
         if self.pool is None:
+            kwargs = dict(self.pool_settings)
+            check_on_checkout = kwargs.pop('check_on_checkout', False)
+            if check_on_checkout:
+                def _check(conn):
+                    conn.execute("SELECT 1")
+                kwargs['check'] = _check
             self.pool = ConnectionPool(
                 conninfo=self.construct_conninfo(self.config),
-                **self.pool_settings,
+                **kwargs,
             )
 
     def test_connection(self):
@@ -31,29 +40,28 @@ class PGPoolConnection(PostgresBaseConnection):
                 with conn.cursor() as cur:
                     cur.execute('SELECT 1;')
                     result = cur.fetchone()
-                    print("Pool connection successful: ", result)
+                    logger.info("Pool connection successful: %s", result)
         except OperationalError as e:
-            print(f"Single connection test failed: {e}")
+            logger.error("Single connection test failed: %s", e)
             return
 
         pool_min_size = self.pool_settings.get('min_size', 1)
         pool_max_size = self.pool_settings.get('max_size', 10)
         num_connections_to_test = min(pool_max_size, pool_min_size + 1)
 
-        connections = []
         try:
-            for _ in range(num_connections_to_test):
-                with self.pool.connection() as conn:
-                    connections.append(conn)
-
-            print(f"Pooling test successful: Acquired {len(connections)} connections out of a possible {pool_max_size}")
+            with ExitStack() as stack:
+                connections = [
+                    stack.enter_context(self.pool.connection())
+                    for _ in range(num_connections_to_test)
+                ]
+                logger.info(
+                    "Pooling test successful: Held %d connections concurrently "
+                    "out of a possible %d",
+                    len(connections), pool_max_size,
+                )
         except OperationalError as e:
-            print(f"Pooling test failed: {e}")
-
-        if len(connections) == num_connections_to_test:
-            print(f"Pooling tested successfully with {len(connections)} concurrent connections.")
-        else:
-            print(f"Pooling test did not pass, only {len(connections)} connections acquired.")
+            logger.error("Pooling test failed: %s", e)
 
     def disconnect(self):
         """Closes all connections in the pool."""

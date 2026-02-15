@@ -1,7 +1,10 @@
+import logging
 from psycopg import AsyncConnection, OperationalError
 from .base_connection import PostgresBaseConnection
 from contextlib import asynccontextmanager
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 class PGAsyncConnection(PostgresBaseConnection):
@@ -22,7 +25,7 @@ class PGAsyncConnection(PostgresBaseConnection):
             try:
                 await self.connection.execute(f"SET {setting} = %s", (str(value),))
             except Exception as e:
-                print(f"Warning: Could not apply setting '{setting}': {e}")
+                logger.warning("Could not apply setting '%s': %s", setting, e)
 
     async def test_connection(self):
         """Tests the asynchronous database connection."""
@@ -30,11 +33,11 @@ class PGAsyncConnection(PostgresBaseConnection):
             async with self.cursor() as cur:
                 await cur.execute('SELECT 1;')
                 result = await cur.fetchone()
-                print("Async connection successful: ", result)
+                logger.info("Async connection successful: %s", result)
         except OperationalError as e:
-            print(f"Connection failed: {e}")
+            logger.error("Connection failed: %s", e)
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            logger.error("An unexpected error occurred: %s", e)
 
     async def disconnect(self):
         """Closes the asynchronous database connection."""

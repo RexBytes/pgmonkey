@@ -26,8 +26,10 @@ postgresql:
   pool_settings:
     min_size: 5
     max_size: 20
+    timeout: 30  # Seconds to wait for a connection from the pool before raising an error
     max_idle: 300  # Seconds a connection can remain idle before being closed
     max_lifetime: 3600  # Seconds a connection can be reused
+    check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
 
   # Settings for 'async' connection type (applied via SET commands on connection)
   async_settings:
@@ -40,5 +42,7 @@ postgresql:
   async_pool_settings:
     min_size: 5
     max_size: 20
+    timeout: 30  # Seconds to wait for a connection from the pool before raising an error
     max_idle: 300
     max_lifetime: 3600
+    check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller

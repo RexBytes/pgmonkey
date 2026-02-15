@@ -87,6 +87,32 @@ class TestPGPoolConnectionCursorCommitRollback:
         mock_conn.rollback.assert_called_once()
 
 
+class TestPGPoolConnectionCheckOnCheckout:
+
+    @patch('pgmonkey.connections.postgres.pool_connection.psycopg_conninfo')
+    @patch('pgmonkey.connections.postgres.pool_connection.ConnectionPool')
+    def test_check_on_checkout_sets_check_callback(self, mock_pool_cls, mock_conninfo):
+        mock_conninfo.make_conninfo.return_value = 'host=localhost'
+        conn = PGPoolConnection({'host': 'localhost'}, {'min_size': 2, 'check_on_checkout': True})
+        conn.connect()
+
+        call_kwargs = mock_pool_cls.call_args[1]
+        assert 'check' in call_kwargs
+        assert callable(call_kwargs['check'])
+        assert 'check_on_checkout' not in call_kwargs
+
+    @patch('pgmonkey.connections.postgres.pool_connection.psycopg_conninfo')
+    @patch('pgmonkey.connections.postgres.pool_connection.ConnectionPool')
+    def test_check_on_checkout_false_no_callback(self, mock_pool_cls, mock_conninfo):
+        mock_conninfo.make_conninfo.return_value = 'host=localhost'
+        conn = PGPoolConnection({'host': 'localhost'}, {'min_size': 2, 'check_on_checkout': False})
+        conn.connect()
+
+        call_kwargs = mock_pool_cls.call_args[1]
+        assert 'check' not in call_kwargs
+        assert 'check_on_checkout' not in call_kwargs
+
+
 class TestPGPoolConnectionConninfo:
 
     @patch('pgmonkey.connections.postgres.pool_connection.psycopg_conninfo')

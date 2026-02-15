@@ -1,3 +1,4 @@
+import logging
 import pytest
 from unittest.mock import patch, MagicMock
 from pgmonkey.connections.postgres.normal_connection import PGNormalConnection
@@ -129,10 +130,43 @@ class TestPGNormalConnectionContextManager:
         mock_pg_conn.commit.assert_not_called()
 
 
+class TestPGNormalConnectionTransaction:
+
+    @patch('pgmonkey.connections.postgres.normal_connection.connect')
+    def test_transaction_does_not_disconnect(self, mock_connect):
+        """transaction() should not close the connection — lifecycle is managed externally."""
+        mock_pg_conn = MagicMock(closed=False)
+        mock_connect.return_value = mock_pg_conn
+
+        conn = PGNormalConnection({'host': 'localhost'})
+        conn.connect()
+        with conn.transaction():
+            pass
+
+        mock_pg_conn.commit.assert_called_once()
+        mock_pg_conn.close.assert_not_called()
+        assert conn.connection is mock_pg_conn
+
+    @patch('pgmonkey.connections.postgres.normal_connection.connect')
+    def test_transaction_rollbacks_on_error(self, mock_connect):
+        mock_pg_conn = MagicMock(closed=False)
+        mock_connect.return_value = mock_pg_conn
+
+        conn = PGNormalConnection({'host': 'localhost'})
+        conn.connect()
+        with pytest.raises(ValueError):
+            with conn.transaction():
+                raise ValueError("test")
+
+        mock_pg_conn.rollback.assert_called_once()
+        mock_pg_conn.commit.assert_not_called()
+        mock_pg_conn.close.assert_not_called()
+
+
 class TestPGNormalConnectionTestConnection:
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')
-    def test_prints_success(self, mock_connect, capsys):
+    def test_logs_success(self, mock_connect, caplog):
         mock_cursor = MagicMock()
         mock_cursor.fetchone.return_value = (1,)
         mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
@@ -143,6 +177,7 @@ class TestPGNormalConnectionTestConnection:
 
         conn = PGNormalConnection({'host': 'localhost'})
         conn.connect()
-        conn.test_connection()
+        with caplog.at_level(logging.INFO):
+            conn.test_connection()
 
-        assert "Connection successful" in capsys.readouterr().out
+        assert "Connection successful" in caplog.text
