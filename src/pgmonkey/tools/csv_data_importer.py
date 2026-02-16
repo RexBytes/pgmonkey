@@ -9,6 +9,7 @@ from pgmonkey import PGConnectionManager
 from pathlib import Path
 from tqdm import tqdm
 from pgmonkey.common.utils.configutils import normalize_config
+from pgmonkey.common.exceptions import ConfigFileCreatedError
 
 
 class CSVDataImporter:
@@ -19,7 +20,7 @@ class CSVDataImporter:
 
         # Handle schema and table name
         if '.' in table_name:
-            self.schema_name, self.table_name = table_name.split('.')
+            self.schema_name, self.table_name = table_name.split('.', 1)
         else:
             self.schema_name = 'public'
             self.table_name = table_name
@@ -177,8 +178,10 @@ class CSVDataImporter:
         print(f"Import configuration file '{self.import_config_file}' has been created.")
         print("Please review the file and adjust settings if necessary before running the import process again.")
 
-        # Exit the process to allow the user to review the file
-        sys.exit(0)
+        raise ConfigFileCreatedError(
+            f"Import configuration file '{self.import_config_file}' has been created. "
+            "Please review the file and adjust settings if necessary before running the import process again."
+        )
 
     def _format_column_names(self, headers):
         """Formats column names by lowercasing and replacing spaces with underscores."""
@@ -229,8 +232,6 @@ class CSVDataImporter:
     def _sync_ingest(self, connection):
         """Handles synchronous CSV ingestion using COPY for bulk insert, properly counting non-empty rows."""
         # Increase the CSV field size limit
-        import csv
-        import sys
         max_int = sys.maxsize
         while True:
             try:

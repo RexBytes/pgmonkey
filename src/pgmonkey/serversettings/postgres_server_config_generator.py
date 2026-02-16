@@ -44,10 +44,10 @@ class PostgresServerConfigGenerator:
 
         if sslmode in ['verify-ca', 'verify-full']:
             clientcert = 'verify-full' if sslmode == 'verify-full' else 'verify-ca'
-            entry = f"hostssl all     all   {address}    md5     clientcert={clientcert}"
+            entry = f"hostssl all     all   {address}    scram-sha-256     clientcert={clientcert}"
             entries.append(entry)
         elif sslmode != 'disable':
-            entry = f"hostssl all     all   {address}    md5"
+            entry = f"hostssl all     all   {address}    scram-sha-256"
             entries.append(entry)
         return entries
 

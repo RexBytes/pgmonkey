@@ -30,7 +30,7 @@ with the `postgresql:` key are auto-detected and unwrapped with a DeprecationWar
 
 ## Test Commands
 ```bash
-python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (229 tests)
+python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (257 tests)
 python -m pytest src/pgmonkey/tests/unit/ -v -x     # stop on first failure
 ```
 
@@ -174,3 +174,58 @@ trying to make.
 **Fix:** Changed to `hostssl all all {address} md5` which correctly recommends allowing
 SSL-only connections with password authentication. The `hostssl` type ensures only encrypted
 connections are permitted, matching the intent of using a non-disable SSL mode.
+
+## Bug Fixes Applied (2026-02-16 v3.1.0 review)
+
+### Fix: normal_connection.cursor() crashes with AttributeError when no connection
+**File:** `connections/postgres/normal_connection.py`
+**Problem:** `cursor()` called `self.connection.cursor()` without checking if `self.connection`
+is None. If called before `connect()` or after `disconnect()`, this raised an unhelpful
+`AttributeError: 'NoneType' object has no attribute 'cursor'`. The other three connection
+types (pool, async, async_pool) all had proper None guards with clear error messages.
+**Fix:** Added `if self.connection:` guard matching the pattern used by pool_connection and
+async_connection. Raises `Exception("No active connection available to create a cursor")`
+when connection is None.
+
+### Fix: pg_hba recommendations use deprecated md5 authentication
+**File:** `serversettings/postgres_server_config_generator.py`
+**Problem:** `generate_pg_hba_entry()` hardcoded `md5` as the authentication method in all
+generated pg_hba.conf entries. MD5 authentication is deprecated in PostgreSQL 14+ and the
+default has been `scram-sha-256` since PostgreSQL 10. Recommending `md5` could lead users
+to configure weaker authentication or fail on newer PostgreSQL versions.
+**Fix:** Changed all `md5` references to `scram-sha-256` in generated pg_hba.conf entries,
+including both the verify-ca/verify-full entries (with clientcert) and the non-verify SSL
+mode entries (hostssl without clientcert).
+
+### Fix: sys.exit(0) in CSV importer/exporter library code
+**Files:** `tools/csv_data_importer.py`, `tools/csv_data_exporter.py`,
+`cli/cli_import_subparser.py`, `cli/cli_export_subparser.py`
+**Problem:** Both `_prepopulate_import_config()` and `_prepopulate_export_config()` called
+`sys.exit(0)` after auto-generating config files. This terminated the entire Python process,
+which is hostile to anyone using pgmonkey as a library. It also bypassed context manager
+cleanup (the exporter opens a database connection before hitting `sys.exit`, leaking it).
+**Fix:** Created `ConfigFileCreatedError` exception in `common/exceptions.py`. The CSV tools
+now raise this exception instead of calling `sys.exit()`. The CLI handlers catch it and
+print the message cleanly. Library users can catch `ConfigFileCreatedError` to handle
+config-file creation gracefully in their own code.
+
+### Fix: table_name.split('.') crashes on multi-dot names
+**Files:** `tools/csv_data_importer.py`, `tools/csv_data_exporter.py`
+**Problem:** Both CSV tools used `table_name.split('.')` to separate schema from table name.
+If a table name contained more than one dot (e.g. `catalog.schema.table`), this raised
+`ValueError: too many values to unpack`.
+**Fix:** Changed to `table_name.split('.', 1)` to only split on the first dot. The schema
+portion gets the part before the first dot; the table portion gets everything after.
+
+### Fix: Shadowed imports in csv_data_importer._sync_ingest
+**File:** `tools/csv_data_importer.py`
+**Problem:** `_sync_ingest()` contained `import csv` and `import sys` at lines 232-233 that
+shadowed the module-level imports of the same modules. While functionally harmless, this
+was confusing and unnecessary.
+**Fix:** Removed the redundant local imports.
+
+### Fix: Stale version in PROJECTSCOPE.md
+**File:** `PROJECTSCOPE.md`
+**Problem:** The Version & Compatibility section still listed `Current version: 2.2.0`,
+which was two major versions behind.
+**Fix:** Updated to `3.1.0`.

@@ -153,6 +153,12 @@ class TestPGNormalConnectionCursor:
         conn.connect()
         assert conn.cursor() is mock_cursor
 
+    def test_raises_when_no_connection(self):
+        """cursor() should raise a clear error when connection is None."""
+        conn = PGNormalConnection({'host': 'localhost'})
+        with pytest.raises(Exception, match="No active connection"):
+            conn.cursor()
+
 
 class TestPGNormalConnectionContextManager:
 

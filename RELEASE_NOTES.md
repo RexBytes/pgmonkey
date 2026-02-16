@@ -1,3 +1,93 @@
+# pgmonkey v3.1.0 Release Notes
+
+## Quality, Safety, and Library Hygiene
+
+pgmonkey v3.1.0 is a focused quality release that addresses issues found during a thorough
+post-v3.0.0 review. It hardens the CSV tools for library usage, modernizes authentication
+recommendations, and closes consistency gaps across the connection layer.
+
+## Highlights
+
+### Library-Friendly CSV Tools
+
+The CSV importer and exporter no longer call `sys.exit(0)` when auto-generating config files.
+Instead, they raise `ConfigFileCreatedError` - a proper exception that CLI handlers catch
+cleanly and library users can handle programmatically. No more surprise process termination
+when using pgmonkey as a dependency.
+
+### Modern Authentication Recommendations
+
+Server audit pg_hba.conf recommendations now use `scram-sha-256` instead of the deprecated
+`md5` authentication method. This aligns with PostgreSQL 14+ defaults and ensures users get
+modern, secure authentication guidance out of the box.
+
+### Connection Safety
+
+- **cursor() None guard** - `PGNormalConnection.cursor()` now raises a clear error when called
+  without an active connection, matching the behavior of pool, async, and async_pool connections.
+  Previously it raised an unhelpful `AttributeError`.
+
+### CSV Tool Fixes
+
+- **Multi-dot table names** - Table names like `catalog.schema.table` no longer crash. The
+  schema/table split now correctly handles names with multiple dots.
+- **Removed shadowed imports** - Redundant local `import csv` and `import sys` statements
+  inside `_sync_ingest()` have been cleaned up.
+
+### New Test Coverage
+
+28 new unit tests covering CSV import/export functionality:
+- BOM detection (UTF-8-sig, UTF-16-LE/BE, UTF-32-LE/BE, no BOM)
+- UTF-32 vs UTF-16 BOM detection priority
+- Schema/table name splitting (default schema, dotted names, multi-dot names)
+- Config file auto-creation with `ConfigFileCreatedError`
+- Column name formatting and validation
+- Connection type resolution for import/export operations
+- Tab delimiter unescaping
+
+## Compatibility
+
+No breaking API changes for normal usage. The only behavioral change is that CSV
+import/export operations now raise `ConfigFileCreatedError` instead of calling `sys.exit(0)`
+when a config file is auto-generated. Code that called these tools programmatically and
+relied on `SystemExit` should catch `ConfigFileCreatedError` from
+`pgmonkey.common.exceptions` instead.
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | 3.10, 3.11, 3.12, 3.13 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+| chardet | >= 5.2.0, < 6.0.0 |
+| tqdm | >= 4.64.0, < 5.0.0 |
+
+## Test Suite
+
+257 unit tests (up from 229 in v3.0.0), all passing. New tests cover CSV importer BOM
+detection, column formatting, schema/table splitting, config auto-creation, and CSV exporter
+initialization and connection type resolution.
+
+## Files Changed
+
+- `pyproject.toml` - Version bump to 3.1.0
+- `src/pgmonkey/common/exceptions.py` - New: `ConfigFileCreatedError` exception
+- `src/pgmonkey/connections/postgres/normal_connection.py` - cursor() None guard
+- `src/pgmonkey/serversettings/postgres_server_config_generator.py` - md5 to scram-sha-256
+- `src/pgmonkey/tools/csv_data_importer.py` - ConfigFileCreatedError, split fix, import cleanup
+- `src/pgmonkey/tools/csv_data_exporter.py` - ConfigFileCreatedError, split fix
+- `src/pgmonkey/cli/cli_import_subparser.py` - Catch ConfigFileCreatedError
+- `src/pgmonkey/cli/cli_export_subparser.py` - Catch ConfigFileCreatedError
+- `src/pgmonkey/tests/unit/test_csv_data_importer.py` - New: 21 tests
+- `src/pgmonkey/tests/unit/test_csv_data_exporter.py` - New: 7 tests
+- `src/pgmonkey/tests/unit/test_normal_connection.py` - New: cursor None guard test
+- `src/pgmonkey/tests/unit/test_server_config_generator.py` - Updated: md5 to scram-sha-256
+- `PROJECTSCOPE.md` - Version update
+- `CLAUDE.md` - Bug fix documentation
+- `RELEASE_NOTES.md` - This release notes entry
+
+---
+
 # pgmonkey v3.0.0 Release Notes
 
 ## A Simpler, Safer, Stronger pgmonkey
