@@ -485,7 +485,7 @@ async_pool_settings:
 
 <h4>Key Points</h4>
 <ul>
-    <li>Transactions ensure atomicity &mdash; a series of operations either all succeed or all fail together.</li>
+    <li>Transactions ensure atomicity - a series of operations either all succeed or all fail together.</li>
     <li>Automatic commit/rollback within a <code>transaction()</code> context eliminates manual commit management.</li>
     <li><code>cursor()</code> works seamlessly with both synchronous and asynchronous operations.</li>
 </ul>
@@ -634,7 +634,7 @@ Connection test completed successfully.</code></pre>
 <p>On PostgreSQL 15+, the audit also queries <code>pg_hba_file_rules</code> to display current HBA rules alongside recommendations.</p>
 
 <h4>Permission Handling</h4>
-<p>If the connected role lacks permission to query <code>pg_settings</code>, the audit fails gracefully with a clear message and falls back to showing recommendations only. No server settings are ever modified &mdash; the audit is entirely read-only.</p>
+<p>If the connected role lacks permission to query <code>pg_settings</code>, the audit fails gracefully with a clear message and falls back to showing recommendations only. No server settings are ever modified - the audit is entirely read-only.</p>
 
 <!-- ============================================================ -->
 <h2>Importing and Exporting Data</h2>

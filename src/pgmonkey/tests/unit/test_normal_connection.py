@@ -222,7 +222,7 @@ class TestPGNormalConnectionTransaction:
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')
     def test_transaction_does_not_disconnect(self, mock_connect):
-        """transaction() should not close the connection — lifecycle is managed externally."""
+        """transaction() should not close the connection - lifecycle is managed externally."""
         mock_pg_conn = MagicMock(closed=False)
         mock_connect.return_value = mock_pg_conn
 

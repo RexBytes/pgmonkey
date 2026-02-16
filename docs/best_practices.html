@@ -198,12 +198,12 @@ footer .legal { font-size: 0.8em; color: #64748b; max-width: 700px; margin: 12px
     <h2>What pgmonkey Does Behind the Scenes</h2>
     <p>Before diving into recipes, here is what pgmonkey handles automatically so you do not have to:</p>
     <ul>
-        <li><strong>Connection caching</strong> &mdash; Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance instead of creating a new one. This prevents "pool storms" where each call opens a brand-new pool.</li>
-        <li><strong>Async pool lifecycle</strong> &mdash; When you use <code>async with pool_conn:</code>, pgmonkey borrows a connection from the pool and returns it when the block exits. The pool itself stays open for reuse. Commits on clean exit, rolls back on exception.</li>
-        <li><strong>atexit cleanup</strong> &mdash; All cached connections and pools are automatically closed when the process exits, via an <code>atexit</code> handler.</li>
-        <li><strong>Thread-safe caching</strong> &mdash; The connection cache is protected by a threading lock with double-check locking, safe for multi-threaded sync applications.</li>
-        <li><strong>Config validation</strong> &mdash; Unknown connection setting keys produce a warning log. Pool settings are validated (e.g. <code>min_size</code> &le; <code>max_size</code>).</li>
-        <li><strong>Health checks</strong> &mdash; Enable <code>check_on_checkout: true</code> in pool settings to validate connections with <code>SELECT 1</code> before each use.</li>
+        <li><strong>Connection caching</strong> - Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance instead of creating a new one. This prevents "pool storms" where each call opens a brand-new pool.</li>
+        <li><strong>Async pool lifecycle</strong> - When you use <code>async with pool_conn:</code>, pgmonkey borrows a connection from the pool and returns it when the block exits. The pool itself stays open for reuse. Commits on clean exit, rolls back on exception.</li>
+        <li><strong>atexit cleanup</strong> - All cached connections and pools are automatically closed when the process exits, via an <code>atexit</code> handler.</li>
+        <li><strong>Thread-safe caching</strong> - The connection cache is protected by a threading lock with double-check locking, safe for multi-threaded sync applications.</li>
+        <li><strong>Config validation</strong> - Unknown connection setting keys produce a warning log. Pool settings are validated (e.g. <code>min_size</code> &le; <code>max_size</code>).</li>
+        <li><strong>Health checks</strong> - Enable <code>check_on_checkout: true</code> in pool settings to validate connections with <code>SELECT 1</code> before each use.</li>
     </ul>
 
     <!-- Recipe 1: Normal -->
@@ -224,7 +224,7 @@ connection = manager.get_database_connection(<span class="string">'config.yaml'<
         cur.execute(<span class="string">'SELECT version();'</span>)
         print(cur.fetchone())
 
-<span class="comment"># Connection is cached — calling again returns the same instance</span>
+<span class="comment"># Connection is cached - calling again returns the same instance</span>
 same_conn = manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'normal'</span>)
 <span class="keyword">assert</span> same_conn <span class="keyword">is</span> connection</code></pre>
         <p><strong>pgmonkey handles:</strong> Caching (same config = same connection), atexit cleanup.</p>
@@ -246,7 +246,7 @@ pool = manager.get_database_connection(<span class="string">'config.yaml'</span>
         cur.execute(<span class="string">'SELECT count(*) FROM users;'</span>)
         print(cur.fetchone())
 
-<span class="comment"># Pool stays open — next 'with' block borrows another connection</span>
+<span class="comment"># Pool stays open - next 'with' block borrows another connection</span>
 <span class="keyword">with</span> pool <span class="keyword">as</span> conn:
     <span class="keyword">with</span> conn.cursor() <span class="keyword">as</span> cur:
         cur.execute(<span class="string">'SELECT now();'</span>)
@@ -275,7 +275,7 @@ same_pool = manager.get_database_connection(<span class="string">'config.yaml'</
             <span class="keyword">await</span> cur.execute(<span class="string">'SELECT version();'</span>)
             print(<span class="keyword">await</span> cur.fetchone())
 
-    <span class="comment"># Connection is cached — awaiting again returns the same instance</span>
+    <span class="comment"># Connection is cached - awaiting again returns the same instance</span>
     same_conn = <span class="keyword">await</span> manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'async'</span>)
     <span class="keyword">assert</span> same_conn <span class="keyword">is</span> connection
 
@@ -302,13 +302,13 @@ same_pool = manager.get_database_connection(<span class="string">'config.yaml'</
             <span class="keyword">await</span> cur.execute(<span class="string">'SELECT count(*) FROM orders;'</span>)
             print(<span class="keyword">await</span> cur.fetchone())
 
-    <span class="comment"># Pool stays open — reuse it</span>
+    <span class="comment"># Pool stays open - reuse it</span>
     <span class="keyword">async with</span> pool <span class="keyword">as</span> conn:
         <span class="keyword">async with</span> conn.cursor() <span class="keyword">as</span> cur:
             <span class="keyword">await</span> cur.execute(<span class="string">'SELECT now();'</span>)
             print(<span class="keyword">await</span> cur.fetchone())
 
-    <span class="comment"># Pool is cached — awaiting again returns the SAME pool</span>
+    <span class="comment"># Pool is cached - awaiting again returns the SAME pool</span>
     same_pool = <span class="keyword">await</span> manager.get_database_connection(<span class="string">'config.yaml'</span>, <span class="string">'async_pool'</span>)
     <span class="keyword">assert</span> same_pool <span class="keyword">is</span> pool
 
