@@ -130,3 +130,12 @@ class TestResolveConnectionType:
 
     def test_async_pool_type_becomes_normal(self):
         assert CSVDataExporter._resolve_export_connection_type({'connection_type': 'async_pool'}) == 'normal'
+
+
+class TestRunIsSync:
+    """run() should be a regular sync method, not async."""
+
+    def test_run_is_not_coroutine(self):
+        """run() should not be a coroutine function."""
+        import inspect
+        assert not inspect.iscoroutinefunction(CSVDataExporter.run)

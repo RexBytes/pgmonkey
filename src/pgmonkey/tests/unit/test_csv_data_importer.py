@@ -191,3 +191,121 @@ class TestResolveConnectionType:
 
     def test_async_pool_type_becomes_normal(self):
         assert CSVDataImporter._resolve_import_connection_type({'connection_type': 'async_pool'}) == 'normal'
+
+
+class _PastSamplingPhase(Exception):
+    """Sentinel exception to prove we got past phase 1 sampling."""
+
+
+class TestSmallFileSampling:
+    """Phase 1 sampling must not crash on CSV files with fewer than 5 rows."""
+
+    def _make_importer(self, tmp_path, csv_content):
+        csv_file = tmp_path / "data.csv"
+        csv_file.write_text(csv_content)
+        config_file = tmp_path / "data.yaml"
+        config_file.write_text(yaml.dump({
+            'has_headers': True, 'auto_create_table': True,
+            'enforce_lowercase': True, 'delimiter': ',',
+            'quotechar': '"', 'encoding': 'utf-8',
+        }))
+        return CSVDataImporter(
+            str(tmp_path / "conn.yaml"), str(csv_file),
+            "mytable", str(config_file),
+        )
+
+    @patch('pgmonkey.tools.csv_data_importer.CSVDataImporter._check_table_exists_sync',
+           side_effect=_PastSamplingPhase("reached table check"))
+    def test_single_row_csv_does_not_crash(self, mock_check, tmp_path):
+        """A CSV with only a header row (1 line) must not raise StopIteration."""
+        importer = self._make_importer(tmp_path, "col1,col2\n")
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cursor
+        # If we get _PastSamplingPhase, sampling succeeded. StopIteration = bug.
+        with pytest.raises(_PastSamplingPhase):
+            importer._sync_ingest(mock_conn)
+
+    @patch('pgmonkey.tools.csv_data_importer.CSVDataImporter._check_table_exists_sync',
+           side_effect=_PastSamplingPhase("reached table check"))
+    def test_two_row_csv_does_not_crash(self, mock_check, tmp_path):
+        """A CSV with a header and one data row (2 lines) must not crash."""
+        importer = self._make_importer(tmp_path, "col1,col2\na,b\n")
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cursor
+        with pytest.raises(_PastSamplingPhase):
+            importer._sync_ingest(mock_conn)
+
+    @patch('pgmonkey.tools.csv_data_importer.CSVDataImporter._check_table_exists_sync',
+           side_effect=_PastSamplingPhase("reached table check"))
+    def test_three_row_csv_does_not_crash(self, mock_check, tmp_path):
+        """A CSV with 3 lines must not crash in phase 1 sampling."""
+        importer = self._make_importer(tmp_path, "col1,col2\na,b\nc,d\n")
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cursor
+        with pytest.raises(_PastSamplingPhase):
+            importer._sync_ingest(mock_conn)
+
+
+class TestAutoCreateTable:
+    """auto_create_table=False should prevent table creation and raise ValueError."""
+
+    def _make_importer(self, tmp_path, auto_create=True):
+        csv_file = tmp_path / "data.csv"
+        csv_file.write_text("col1,col2\na,b\n")
+        config_file = tmp_path / "data.yaml"
+        config_file.write_text(yaml.dump({
+            'has_headers': True, 'auto_create_table': auto_create,
+            'enforce_lowercase': True, 'delimiter': ',',
+            'quotechar': '"', 'encoding': 'utf-8',
+        }))
+        return CSVDataImporter(
+            str(tmp_path / "conn.yaml"), str(csv_file),
+            "mytable", str(config_file),
+        )
+
+    @patch('pgmonkey.tools.csv_data_importer.CSVDataImporter._check_table_exists_sync', return_value=False)
+    def test_auto_create_disabled_raises_when_table_missing(self, mock_check, tmp_path):
+        """When auto_create_table is False and table doesn't exist, should raise ValueError."""
+        importer = self._make_importer(tmp_path, auto_create=False)
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cursor
+
+        with pytest.raises(ValueError, match="auto_create_table is disabled"):
+            importer._sync_ingest(mock_conn)
+
+    @patch('pgmonkey.tools.csv_data_importer.CSVDataImporter._create_table_sync',
+           side_effect=_PastSamplingPhase("table created"))
+    @patch('pgmonkey.tools.csv_data_importer.CSVDataImporter._check_table_exists_sync', return_value=False)
+    def test_auto_create_enabled_creates_table(self, mock_check, mock_create, tmp_path):
+        """When auto_create_table is True and table doesn't exist, should call _create_table_sync."""
+        importer = self._make_importer(tmp_path, auto_create=True)
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cursor
+
+        with pytest.raises(_PastSamplingPhase):
+            importer._sync_ingest(mock_conn)
+        mock_create.assert_called_once()
+
+
+class TestRunIsSync:
+    """run() should be a regular sync method, not async."""
+
+    def test_run_is_not_coroutine(self):
+        """run() should not be a coroutine function."""
+        import inspect
+        assert not inspect.iscoroutinefunction(CSVDataImporter.run)

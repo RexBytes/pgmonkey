@@ -229,3 +229,30 @@ was confusing and unnecessary.
 **Problem:** The Version & Compatibility section still listed `Current version: 2.2.0`,
 which was two major versions behind.
 **Fix:** Updated to `3.1.0`.
+
+## Bug Fixes Applied (2026-02-16 review feedback)
+
+### Fix: StopIteration crash on small CSV files
+**File:** `tools/csv_data_importer.py`
+**Problem:** Phase 1 sampling in `_sync_ingest()` used
+`[next(file).strip() for _ in range(5)]` which raises `StopIteration` if the CSV has
+fewer than 5 lines. Any small CSV (e.g. header-only, or 2-3 rows) would crash the import.
+**Fix:** Replaced with `for _, line in zip(range(5), file)` which safely stops at EOF.
+
+### Fix: auto_create_table config setting ignored
+**File:** `tools/csv_data_importer.py`
+**Problem:** `auto_create_table` was loaded from import config into `self.auto_create_table`
+but never checked. The code unconditionally created the table when it didn't exist, making
+the config option a no-op.
+**Fix:** Added a guard that raises `ValueError` when the table doesn't exist and
+`auto_create_table` is `False`, before calling `_create_table_sync`.
+
+### Fix: Unnecessary asyncio.run() wrapping purely sync code
+**Files:** `tools/csv_data_importer.py`, `tools/csv_data_exporter.py`,
+`managers/pgimport_manager.py`, `managers/pgexport_manager.py`
+**Problem:** `CSVDataImporter.run()` and `CSVDataExporter.run()` were `async def` methods
+containing zero `await` calls - they only performed sync operations. The managers then
+called them via `asyncio.run()`, adding pointless overhead and crashing when called from
+within an existing event loop (e.g. Jupyter notebooks, async frameworks).
+**Fix:** Changed `run()` to regular `def` methods. Removed `asyncio` import from both
+managers and changed `asyncio.run(importer.run())` to `importer.run()`.

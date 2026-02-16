@@ -1,4 +1,3 @@
-import asyncio
 from pgmonkey.tools.csv_data_exporter import CSVDataExporter
 from pathlib import Path
 
@@ -22,5 +21,5 @@ class PGExportManager:
         exporter = CSVDataExporter(str(connection_config), table_name, str(csv_file), str(export_config_file))
 
         # Run the export process
-        asyncio.run(exporter.run())
+        exporter.run()
 
