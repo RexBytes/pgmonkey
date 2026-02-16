@@ -1,4 +1,5 @@
 from pgmonkey.managers.pgimport_manager import PGImportManager
+from pgmonkey.common.exceptions import ConfigFileCreatedError
 from pathlib import Path
 
 def cli_pgimport_subparser(subparsers):
@@ -39,6 +40,9 @@ def pgimport_handler(args):
 
     # Proceed with importing the file (the settings file is automatically derived)
     # print(f"Starting import for file: {import_file} into table: {table_name}")
-    pgimport_manager.import_file(import_file, table_name, connection_config)
-    print("Import complete.")
+    try:
+        pgimport_manager.import_file(import_file, table_name, connection_config)
+        print("Import complete.")
+    except ConfigFileCreatedError as e:
+        print(e)
 

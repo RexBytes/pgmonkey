@@ -1,12 +1,12 @@
 import csv
 import os
 import yaml
-import sys
 from psycopg import sql
 from pathlib import Path
 from tqdm import tqdm
 from pgmonkey import PGConnectionManager
 from pgmonkey.common.utils.configutils import normalize_config
+from pgmonkey.common.exceptions import ConfigFileCreatedError
 
 
 class CSVDataExporter:
@@ -16,7 +16,7 @@ class CSVDataExporter:
 
         # Handle schema and table name
         if '.' in table_name:
-            self.schema_name, self.table_name = table_name.split('.')
+            self.schema_name, self.table_name = table_name.split('.', 1)
         else:
             self.schema_name = 'public'
             self.table_name = table_name
@@ -137,8 +137,10 @@ class CSVDataExporter:
         print(f"Export configuration file '{self.export_config_file}' has been created.")
         print("Please review the file and adjust settings if necessary before running the export process again.")
 
-        # Exit the process to allow the user to review the file
-        sys.exit(0)
+        raise ConfigFileCreatedError(
+            f"Export configuration file '{self.export_config_file}' has been created. "
+            "Please review the file and adjust settings if necessary before running the export process again."
+        )
 
     def _sync_export(self, connection):
         """Handles synchronous export of the table data to CSV using COPY TO with a progress bar."""

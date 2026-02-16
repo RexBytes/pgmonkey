@@ -51,7 +51,9 @@ class PGNormalConnection(PostgresBaseConnection):
             self.connection.rollback()
 
     def cursor(self):
-        return self.connection.cursor()
+        if self.connection:
+            return self.connection.cursor()
+        raise Exception("No active connection available to create a cursor")
 
     @contextmanager
     def transaction(self):

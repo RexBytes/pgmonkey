@@ -64,7 +64,7 @@ class TestPgHbaEntry:
 
         assert len(entries) == 2
         assert 'hostssl' in entries[1]
-        assert 'md5' in entries[1]
+        assert 'scram-sha-256' in entries[1]
         assert '192.168.1.0/24' in entries[1]
         # Should NOT have clientcert option (that's only for verify-ca/verify-full)
         assert 'clientcert' not in entries[1]
@@ -77,7 +77,7 @@ class TestPgHbaEntry:
 
         assert len(entries) == 2
         assert 'hostssl' in entries[1]
-        assert 'md5' in entries[1]
+        assert 'scram-sha-256' in entries[1]
         assert 'clientcert' not in entries[1]
 
     def test_disable_generates_no_entry(self, sample_config, tmp_path):

@@ -1,4 +1,5 @@
 from pgmonkey.managers.pgexport_manager import PGExportManager
+from pgmonkey.common.exceptions import ConfigFileCreatedError
 from pathlib import Path
 
 
@@ -41,5 +42,8 @@ def pgexport_handler(args):
 
     # Proceed with exporting the table data to CSV (the export settings file is automatically derived)
     # print(f"Starting export of table: {table_name} to CSV file: {export_file if export_file else 'default based on table name'}")
-    pgexport_manager.export_table(table_name, connection_config, export_file)
-    print("Export complete.")
+    try:
+        pgexport_manager.export_table(table_name, connection_config, export_file)
+        print("Export complete.")
+    except ConfigFileCreatedError as e:
+        print(e)
