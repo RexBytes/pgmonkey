@@ -1,4 +1,3 @@
-import asyncio
 from pgmonkey.tools.csv_data_importer import CSVDataImporter
 from pathlib import Path
 
@@ -19,4 +18,4 @@ class PGImportManager:
         importer = CSVDataImporter(str(connection_config), str(csv_file), table_name, str(import_config_file))
 
         # Run the import process
-        asyncio.run(importer.run())
+        importer.run()

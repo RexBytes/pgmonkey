@@ -179,7 +179,7 @@ class CSVDataExporter:
                 # Restore the original client encoding
                 self._restore_client_encoding(cur, original_encoding)
 
-    async def run(self):
+    def run(self):
         """Main method to start the export using a normal sync connection for best COPY TO performance."""
         with open(self.config_file, 'r') as f:
             connection_config = yaml.safe_load(f)

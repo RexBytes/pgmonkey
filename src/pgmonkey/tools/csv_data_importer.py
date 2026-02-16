@@ -249,7 +249,9 @@ class CSVDataImporter:
         with connection.cursor() as cur:
             # Phase 1: Detect column structure from a small sample
             with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
-                sample_rows = [next(file).strip() for _ in range(5)]  # Read first 5 rows
+                sample_rows = []
+                for _, line in zip(range(5), file):
+                    sample_rows.append(line.strip())
                 sample_splits = [row.split(self.delimiter) for row in sample_rows]
                 column_counts = [len(split) for split in sample_splits if any(split)]  # Ignore empty lines
 
@@ -312,6 +314,11 @@ class CSVDataImporter:
             print(f"\nStarting import for file: {self.csv_file} into table: {self.schema_name}.{self.table_name}")
 
             if not self._check_table_exists_sync(connection):
+                if not self.auto_create_table:
+                    raise ValueError(
+                        f"Table {self.schema_name}.{self.table_name} does not exist and "
+                        "auto_create_table is disabled in the import configuration."
+                    )
                 self._create_table_sync(connection, formatted_headers)
                 print(f"\nTable {self.schema_name}.{self.table_name} created successfully.")
             else:
@@ -389,7 +396,7 @@ class CSVDataImporter:
             )
             return cur.fetchone()[0]
 
-    async def run(self):
+    def run(self):
         """Main method to start the ingestion using a normal sync connection for best COPY performance."""
         with open(self.config_file, 'r') as f:
             connection_config = yaml.safe_load(f)
