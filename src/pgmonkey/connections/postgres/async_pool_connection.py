@@ -8,8 +8,6 @@ from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, module='psycopg_pool')
-
 
 class PGAsyncPoolConnection(PostgresBaseConnection):
     def __init__(self, config, async_pool_settings=None, async_settings=None):
@@ -47,7 +45,12 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
                             logger.warning("Could not apply setting '%s': %s", setting, e)
                 kwargs['configure'] = _configure
 
-            self.pool = AsyncConnectionPool(conninfo=conninfo, **kwargs)
+            # Suppress RuntimeWarnings that psycopg_pool may emit during
+            # pool construction. Scoped to construction only so that
+            # warnings during normal pool operation remain visible.
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=RuntimeWarning, module='psycopg_pool')
+                self.pool = AsyncConnectionPool(conninfo=conninfo, **kwargs)
             await self.pool.open()
 
     async def test_connection(self):

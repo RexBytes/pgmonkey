@@ -178,7 +178,7 @@ class PGConnectionManager:
             # we were creating ours (race between concurrent cache misses).
             with self._cache_lock:
                 if cache_key in self._cache and not force_reload:
-                    # Another thread beat us — discard ours, use theirs.
+                    # Another thread beat us - discard ours, use theirs.
                     try:
                         connection.disconnect()
                     except Exception:

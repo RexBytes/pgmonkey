@@ -209,7 +209,7 @@ parsing and print output. Business logic lives in `managers/` and `tools/`.
 
 ## Version & Compatibility
 
-- **Current version:** 3.1.0
+- **Current version:** 3.2.0
 - **Python:** 3.10+
 - **psycopg:** >=3.1.20, <4.0.0
 - **psycopg_pool:** >=3.1.9, <4.0.0

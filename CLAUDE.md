@@ -26,7 +26,7 @@ with the `postgresql:` key are auto-detected and unwrapped with a DeprecationWar
 `common/utils/configutils.py:normalize_config()`.
 
 ## Style Guide
-- Never use em dashes (the `—` character) in documentation or code comments. Use a regular hyphen-minus (`-`) instead.
+- Never use em dashes in documentation or code comments. Use a regular hyphen-minus (`-`) instead. This includes the literal Unicode character (`—`, U+2014) and HTML entity equivalents (`&mdash;`, `&#8212;`, `&#x2014;`).
 
 ## Test Commands
 ```bash
