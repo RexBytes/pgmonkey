@@ -229,6 +229,12 @@ class CSVDataImporter:
             )
             cur.execute(query)
 
+    def _make_reader(self, file):
+        """Create a csv.reader with the current delimiter and quote settings."""
+        if self.delimiter:
+            return csv.reader(file, delimiter=self.delimiter, quotechar=self.quotechar)
+        return csv.reader(file, quotechar=self.quotechar)
+
     def _sync_ingest(self, connection):
         """Handles synchronous CSV ingestion using COPY for bulk insert, properly counting non-empty rows."""
         # Increase the CSV field size limit
@@ -241,8 +247,7 @@ class CSVDataImporter:
                 max_int = int(max_int / 10)
 
         with connection.cursor() as cur:
-            # Open the CSV file to prepare for ingestion
-            # Open file and read first few lines to detect column count
+            # Phase 1: Detect column structure from a small sample
             with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
                 sample_rows = [next(file).strip() for _ in range(5)]  # Read first 5 rows
                 sample_splits = [row.split(self.delimiter) for row in sample_rows]
@@ -252,19 +257,18 @@ class CSVDataImporter:
                 is_single_column = all(count == 1 for count in column_counts)
                 print(f"Detected column structure: {column_counts}. Single-column file? {is_single_column}")
 
-            # Step 2: Override delimiter if it's a single-column file
             if is_single_column:
                 print("Single-column CSV detected. Ignoring delimiter.")
                 self.delimiter = None  # Disable delimiter-based parsing
 
-            print(f"Using delimiter: {repr(self.delimiter)}")  # Debugging log
+            print(f"Using delimiter: {repr(self.delimiter)}")
 
-            # Step 3: Open file again with adjusted delimiter setting
+            # Phase 2: Read header, validate columns, and count data rows.
+            # Each phase uses its own file handle and reader to avoid
+            # mixing file.seek() with csv.reader iteration (unreliable per
+            # Python docs for text-mode files).
             with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
-                if self.delimiter:
-                    reader = csv.reader(file, delimiter=self.delimiter, quotechar=self.quotechar)
-                else:
-                    reader = csv.reader(file, quotechar=self.quotechar)  # No delimiter for single-column files
+                reader = self._make_reader(file)
 
                 # Skip leading blank lines to find the header or first row
                 header = None
@@ -276,7 +280,6 @@ class CSVDataImporter:
                 if header is None:
                     raise ValueError("The CSV file does not contain any non-empty rows.")
 
-                # Initialize valid_indexes before using it
                 valid_indexes = []
 
                 if self.has_headers:
@@ -293,44 +296,50 @@ class CSVDataImporter:
                     print(header)
                     print("\nFormatted Headers for DB:")
                     print(formatted_headers)
+
+                    # Count remaining data rows (reader is positioned past the header)
+                    total_lines = sum(1 for row in reader if any(row))
                 else:
                     num_columns = len(header)
-                    formatted_headers = self._generate_column_names(num_columns)  # Generate column_1, column_2, etc.
-                    file.seek(0)  # Reset file to the start
-
+                    formatted_headers = self._generate_column_names(num_columns)
                     valid_indexes = list(range(num_columns))
 
-                # Include the schema name in the output
-                print(f"\nStarting import for file: {self.csv_file} into table: {self.schema_name}.{self.table_name}")
+                    # The first non-empty row was consumed to detect columns;
+                    # count it plus all remaining non-empty rows.
+                    total_lines = 1 + sum(1 for row in reader if any(row))
 
-                if not self._check_table_exists_sync(connection):
-                    # If no table exists, create it based on the headers
-                    self._create_table_sync(connection, formatted_headers)
-                    print(f"\nTable {self.schema_name}.{self.table_name} created successfully.")
-                else:
-                    cur.execute(
-                        "SELECT column_name FROM information_schema.columns "
-                        "WHERE table_schema = %s AND table_name = %s "
-                        "ORDER BY ordinal_position",
-                        (self.schema_name, self.table_name),
+            # Table check/creation (between file phases, no file handle needed)
+            print(f"\nStarting import for file: {self.csv_file} into table: {self.schema_name}.{self.table_name}")
+
+            if not self._check_table_exists_sync(connection):
+                self._create_table_sync(connection, formatted_headers)
+                print(f"\nTable {self.schema_name}.{self.table_name} created successfully.")
+            else:
+                cur.execute(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema = %s AND table_name = %s "
+                    "ORDER BY ordinal_position",
+                    (self.schema_name, self.table_name),
+                )
+                existing_columns = [row[0] for row in cur.fetchall()]
+                if formatted_headers != existing_columns:
+                    raise ValueError(
+                        f"CSV headers do not match the existing table columns.\n"
+                        f"Expected columns: {existing_columns}\n"
+                        f"CSV headers: {formatted_headers}"
                     )
-                    existing_columns = [row[0] for row in cur.fetchall()]
-                    if formatted_headers != existing_columns:
-                        raise ValueError(
-                            f"CSV headers do not match the existing table columns.\n"
-                            f"Expected columns: {existing_columns}\n"
-                            f"CSV headers: {formatted_headers}"
-                        )
 
-                # Count non-empty rows for progress bar
-                total_lines = sum(1 for row in reader if any(row))
-                file.seek(0)
-                # Skip leading blank lines again
-                for row in reader:
-                    if any(row):
-                        break
+            # Phase 3: Fresh file handle and reader for the COPY operation.
+            with open(self.csv_file, 'r', encoding=self.encoding, newline='') as file:
+                reader = self._make_reader(file)
 
-                # Create Copy Command using safe SQL composition
+                # Skip leading blank lines and header row when applicable
+                if self.has_headers:
+                    for row in reader:
+                        if any(row):
+                            break  # This was the header row; skip it
+
+                # Build COPY command using safe SQL composition
                 col_ids = sql.SQL(", ").join(
                     sql.Identifier(col) for col in formatted_headers
                 )
