@@ -1,3 +1,128 @@
+# pgmonkey v3.0.0 Release Notes
+
+## A Simpler, Safer, Stronger pgmonkey
+
+pgmonkey v3.0.0 is here — and it's our biggest release yet! This version brings a cleaner
+config format, a hardened connection layer, and dozens of fixes that make pgmonkey more
+reliable than ever. Whether you're running a quick script or powering a production service,
+v3.0.0 has something great for you.
+
+## Highlights
+
+### Simplified YAML Configuration
+
+Say goodbye to the extra `postgresql:` wrapper! Your config files are now cleaner and easier
+to read. Settings live at the root level — no more unnecessary nesting.
+
+**Before (v2.x):**
+```yaml
+postgresql:
+  connection_type: 'normal'
+  connection_settings:
+    host: 'localhost'
+    dbname: 'mydb'
+```
+
+**Now (v3.0.0):**
+```yaml
+connection_type: 'normal'
+connection_settings:
+  host: 'localhost'
+  dbname: 'mydb'
+```
+
+Already have v2.x config files? No problem — pgmonkey auto-detects the old format and
+handles it seamlessly with a friendly deprecation notice guiding you to update at your pace.
+
+### Rock-Solid Connection Safety
+
+We took a hard look at every connection path and made sure nothing slips through the cracks:
+
+- **Pool connections done right** — The sync pool context manager now correctly returns
+  connections to the pool on exit, fixing a double-commit bug and preventing connection leaks.
+  Thread safety is guaranteed with per-thread context tracking via `threading.local`.
+
+- **No more connection leaks** — Normal and async connections now use `try/finally` in their
+  exit handlers, so `disconnect()` always runs — even if commit or rollback throws an exception.
+
+- **Async pool isolation** — Each `PGAsyncPoolConnection` instance now has its own
+  `ContextVar` storage, so nested `async with` blocks on different pool instances never
+  interfere with each other.
+
+- **Smarter caching** — The connection cache key now includes the connection type, so
+  requesting the same config as `'normal'` vs `'pool'` correctly returns different cached
+  connections.
+
+### SQL Injection Protection for GUC Settings
+
+All four connection types (normal, pool, async, async_pool) now use psycopg's safe SQL
+composition (`sql.SQL` / `sql.Identifier`) for `SET` commands. The generated code templates
+teach the same safe pattern, so your team builds good habits from day one.
+
+### Bulletproof Config Handling
+
+- Empty passwords (`password: ''`) and zero values (`keepalives: 0`) are no longer silently
+  dropped. The config filter now uses `is not None` to preserve every valid value you set.
+- `max_size` in pool settings gracefully handles string values from YAML (`"10"` with quotes)
+  by casting to `int`.
+- File paths with special characters (like `o'brien`) are properly escaped in generated code
+  via `repr()`.
+
+### CSV Import/Export Improvements
+
+- **BOM detection fixed** — UTF-32 BOMs are now correctly detected before UTF-16 BOMs,
+  preventing misidentification of UTF-32 encoded files.
+- **Accurate progress bars** — The CSV exporter now counts actual rows instead of byte chunks,
+  giving you a truthful progress bar during large exports.
+
+### Server Audit Fixes
+
+- **No more NULL crashes** — If `pg_settings` returns NULL for a setting value, the audit
+  gracefully reports `UNKNOWN` status instead of crashing.
+- **Correct HBA recommendations** — For SSL-enabled connections, the audit now recommends
+  `hostssl ... md5` instead of the incorrectly blocking `host ... reject` rule.
+
+## New Dependencies
+
+| Dependency | Version | Purpose |
+|---|---|---|
+| `chardet` | >= 5.2.0, < 6.0.0 | Character encoding detection for CSV imports |
+| `tqdm` | >= 4.64.0, < 5.0.0 | Progress bars for CSV import/export operations |
+
+## Backward Compatibility
+
+The simplified YAML config is the only breaking change — and it's handled gracefully.
+Old-format configs with the `postgresql:` wrapper key are auto-detected and unwrapped at
+runtime with a `DeprecationWarning`. Your existing configs will keep working while you
+transition to the new format.
+
+All Python APIs remain unchanged. No code changes needed in your application.
+
+## Compatibility
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | 3.10, 3.11, 3.12, 3.13 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+| chardet | >= 5.2.0, < 6.0.0 |
+| tqdm | >= 4.64.0, < 5.0.0 |
+
+## Test Suite
+
+229 unit tests (up from 180 in v2.3.0), all passing. New tests cover thread safety, async
+context isolation, SQL composition safety, config edge cases, BOM detection ordering, and
+export progress accuracy.
+
+## Thank You
+
+This release reflects a thorough, multi-round security and reliability review. Every
+connection type, every edge case, every generated code template was scrutinized and
+strengthened. pgmonkey v3.0.0 is the most robust version we've ever shipped — enjoy!
+
+---
+
 # pgmonkey v2.3.0 Release Notes
 
 ## Overview
