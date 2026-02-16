@@ -19,47 +19,45 @@ def pytest_collection_modifyitems(config, items):
 def sample_config():
     """Returns a full pgmonkey configuration dictionary for testing."""
     return {
-        'postgresql': {
-            'connection_type': 'normal',
-            'connection_settings': {
-                'user': 'testuser',
-                'password': 'testpass',
-                'host': 'localhost',
-                'port': '5432',
-                'dbname': 'testdb',
-                'sslmode': 'prefer',
-                'sslcert': '',
-                'sslkey': '',
-                'sslrootcert': '',
-                'connect_timeout': '10',
-                'application_name': 'pgmonkey_test',
-                'keepalives': '1',
-                'keepalives_idle': '60',
-                'keepalives_interval': '15',
-                'keepalives_count': '5',
-            },
-            'sync_settings': {
-                'statement_timeout': '30000',
-                'lock_timeout': '10000',
-            },
-            'pool_settings': {
-                'min_size': 2,
-                'max_size': 10,
-                'max_idle': 300,
-                'max_lifetime': 3600,
-            },
-            'async_settings': {
-                'idle_in_transaction_session_timeout': '5000',
-                'statement_timeout': '30000',
-                'lock_timeout': '10000',
-            },
-            'async_pool_settings': {
-                'min_size': 2,
-                'max_size': 10,
-                'max_idle': 300,
-                'max_lifetime': 3600,
-            },
-        }
+        'connection_type': 'normal',
+        'connection_settings': {
+            'user': 'testuser',
+            'password': 'testpass',
+            'host': 'localhost',
+            'port': '5432',
+            'dbname': 'testdb',
+            'sslmode': 'prefer',
+            'sslcert': '',
+            'sslkey': '',
+            'sslrootcert': '',
+            'connect_timeout': '10',
+            'application_name': 'pgmonkey_test',
+            'keepalives': '1',
+            'keepalives_idle': '60',
+            'keepalives_interval': '15',
+            'keepalives_count': '5',
+        },
+        'sync_settings': {
+            'statement_timeout': '30000',
+            'lock_timeout': '10000',
+        },
+        'pool_settings': {
+            'min_size': 2,
+            'max_size': 10,
+            'max_idle': 300,
+            'max_lifetime': 3600,
+        },
+        'async_settings': {
+            'idle_in_transaction_session_timeout': '5000',
+            'statement_timeout': '30000',
+            'lock_timeout': '10000',
+        },
+        'async_pool_settings': {
+            'min_size': 2,
+            'max_size': 10,
+            'max_idle': 300,
+            'max_lifetime': 3600,
+        },
     }
 
 
@@ -98,10 +96,11 @@ def filtered_connection_settings():
 def ssl_config(sample_config):
     """Returns config with verify-full SSL mode and cert paths set."""
     config = sample_config.copy()
-    config['postgresql']['connection_settings']['sslmode'] = 'verify-full'
-    config['postgresql']['connection_settings']['sslcert'] = '/path/to/client.crt'
-    config['postgresql']['connection_settings']['sslkey'] = '/path/to/client.key'
-    config['postgresql']['connection_settings']['sslrootcert'] = '/path/to/ca.crt'
+    config['connection_settings'] = sample_config['connection_settings'].copy()
+    config['connection_settings']['sslmode'] = 'verify-full'
+    config['connection_settings']['sslcert'] = '/path/to/client.crt'
+    config['connection_settings']['sslkey'] = '/path/to/client.key'
+    config['connection_settings']['sslrootcert'] = '/path/to/ca.crt'
     return config
 
 

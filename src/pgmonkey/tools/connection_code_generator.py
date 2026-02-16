@@ -1,4 +1,5 @@
 import yaml
+from pgmonkey.common.utils.configutils import normalize_config
 
 
 class ConnectionCodeGenerator:
@@ -17,7 +18,8 @@ class ConnectionCodeGenerator:
             with open(config_file_path, 'r') as file:
                 config = yaml.safe_load(file)
 
-            resolved_type = connection_type or config['postgresql'].get('connection_type', 'normal')
+            config = normalize_config(config)
+            resolved_type = connection_type or config.get('connection_type', 'normal')
 
             if library == 'psycopg':
                 self._generate_psycopg(config_file_path, resolved_type)
@@ -177,7 +179,7 @@ def main():
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
 
-    conn_settings = config['postgresql']['connection_settings']
+    conn_settings = config['connection_settings']
     # Filter out empty values (e.g. blank SSL cert paths)
     conn_params = {{k: v for k, v in conn_settings.items() if v is not None}}
 
@@ -207,9 +209,9 @@ def main():
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
 
-    conn_settings = config['postgresql']['connection_settings']
+    conn_settings = config['connection_settings']
     conn_params = {{k: v for k, v in conn_settings.items() if v is not None}}
-    pool_settings = config['postgresql'].get('pool_settings', {{}})
+    pool_settings = config.get('pool_settings', {{}})
 
     # Remove pgmonkey-specific keys that psycopg_pool does not accept
     pool_settings.pop('check_on_checkout', None)
@@ -246,9 +248,9 @@ async def main():
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
 
-    conn_settings = config['postgresql']['connection_settings']
+    conn_settings = config['connection_settings']
     conn_params = {{k: v for k, v in conn_settings.items() if v is not None}}
-    async_settings = config['postgresql'].get('async_settings', {{}})
+    async_settings = config.get('async_settings', {{}})
 
     async with await AsyncConnection.connect(**conn_params) as conn:
         # Apply GUC settings (statement_timeout, lock_timeout, etc.)
@@ -282,10 +284,10 @@ async def main():
     with open(config_file_path, 'r') as f:
         config = yaml.safe_load(f)
 
-    conn_settings = config['postgresql']['connection_settings']
+    conn_settings = config['connection_settings']
     conn_params = {{k: v for k, v in conn_settings.items() if v is not None}}
-    pool_settings = config['postgresql'].get('async_pool_settings', {{}})
-    async_settings = config['postgresql'].get('async_settings', {{}})
+    pool_settings = config.get('async_pool_settings', {{}})
+    async_settings = config.get('async_settings', {{}})
 
     # Remove pgmonkey-specific keys that psycopg_pool does not accept
     pool_settings.pop('check_on_checkout', None)

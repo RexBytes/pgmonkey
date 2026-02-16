@@ -6,6 +6,7 @@ from psycopg import sql
 from pathlib import Path
 from tqdm import tqdm
 from pgmonkey import PGConnectionManager
+from pgmonkey.common.utils.configutils import normalize_config
 
 
 class CSVDataExporter:
@@ -56,7 +57,7 @@ class CSVDataExporter:
 
         Export uses 'normal' sync connections for best performance with COPY TO.
         """
-        current_type = connection_config['postgresql'].get('connection_type', 'normal')
+        current_type = connection_config.get('connection_type', 'normal')
         if current_type in ('async', 'async_pool'):
             print(f"Detected connection type: {current_type}.")
             print("For export operations, switching to 'normal' connection for better performance.")
@@ -181,6 +182,7 @@ class CSVDataExporter:
         with open(self.config_file, 'r') as f:
             connection_config = yaml.safe_load(f)
 
+        connection_config = normalize_config(connection_config)
         conn_type = self._resolve_export_connection_type(connection_config)
         connection = self.connection_manager.get_database_connection_from_dict(connection_config, conn_type)
 

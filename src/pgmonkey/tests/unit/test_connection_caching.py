@@ -15,33 +15,29 @@ from pgmonkey.connections.postgres.async_pool_connection import PGAsyncPoolConne
 
 def _sync_config(conn_type='pool'):
     return {
-        'postgresql': {
-            'connection_type': conn_type,
-            'connection_settings': {
-                'user': 'test',
-                'password': 'test',
-                'host': 'localhost',
-                'port': 5432,
-                'dbname': 'testdb',
-            },
-            'pool_settings': {'min_size': 1, 'max_size': 5},
-        }
+        'connection_type': conn_type,
+        'connection_settings': {
+            'user': 'test',
+            'password': 'test',
+            'host': 'localhost',
+            'port': 5432,
+            'dbname': 'testdb',
+        },
+        'pool_settings': {'min_size': 1, 'max_size': 5},
     }
 
 
 def _async_config(conn_type='async_pool'):
     return {
-        'postgresql': {
-            'connection_type': conn_type,
-            'connection_settings': {
-                'user': 'test',
-                'password': 'test',
-                'host': 'localhost',
-                'port': 5432,
-                'dbname': 'testdb',
-            },
-            'async_pool_settings': {'min_size': 1, 'max_size': 5},
-        }
+        'connection_type': conn_type,
+        'connection_settings': {
+            'user': 'test',
+            'password': 'test',
+            'host': 'localhost',
+            'port': 5432,
+            'dbname': 'testdb',
+        },
+        'async_pool_settings': {'min_size': 1, 'max_size': 5},
     }
 
 
@@ -277,8 +273,8 @@ class TestConfigHash:
         assert h1 != h2
 
     def test_key_order_does_not_matter(self):
-        config_a = {'postgresql': {'connection_type': 'pool', 'connection_settings': {'host': 'a', 'port': 5432}}}
-        config_b = {'postgresql': {'connection_settings': {'port': 5432, 'host': 'a'}, 'connection_type': 'pool'}}
+        config_a = {'connection_type': 'pool', 'connection_settings': {'host': 'a', 'port': 5432}}
+        config_b = {'connection_settings': {'port': 5432, 'host': 'a'}, 'connection_type': 'pool'}
         assert PGConnectionManager._config_hash(config_a) == PGConnectionManager._config_hash(config_b)
 
 

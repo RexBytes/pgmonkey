@@ -1,6 +1,7 @@
 import ipaddress
 import yaml
 from pgmonkey.serversettings.postgres_server_settings_inspector import PostgresServerSettingsInspector
+from pgmonkey.common.utils.configutils import normalize_config
 
 
 class PostgresServerConfigGenerator:
@@ -12,7 +13,8 @@ class PostgresServerConfigGenerator:
         """Reads the YAML configuration file."""
         try:
             with open(self.yaml_file_path, 'r') as file:
-                return yaml.safe_load(file)
+                data = yaml.safe_load(file)
+            return normalize_config(data)
         except FileNotFoundError:
             print(f"Error: File not found - {self.yaml_file_path}")
         except yaml.YAMLError as e:
@@ -32,8 +34,8 @@ class PostgresServerConfigGenerator:
 
     def generate_pg_hba_entry(self):
         """Generates entries for pg_hba.conf based on the SSL settings."""
-        host = self.config['postgresql']['connection_settings']['host']
-        sslmode = self.config['postgresql']['connection_settings'].get('sslmode', 'prefer')
+        host = self.config['connection_settings']['host']
+        sslmode = self.config['connection_settings'].get('sslmode', 'prefer')
         entries = []
         header = "TYPE  DATABASE  USER  ADDRESS          METHOD  OPTIONS"
         entries.append(header)
@@ -52,7 +54,7 @@ class PostgresServerConfigGenerator:
     def generate_postgresql_conf(self):
         """Generates minimal entries for postgresql.conf based on connection settings."""
         settings = []
-        pg_config = self.config['postgresql']
+        pg_config = self.config
 
         # Check both pool_settings and async_pool_settings for max_size
         pool_settings = pg_config.get('pool_settings', {})
@@ -75,7 +77,7 @@ class PostgresServerConfigGenerator:
     def _generate_ssl_settings(self):
         """Generates SSL configuration entries for postgresql.conf based on client settings."""
         ssl_settings = []
-        sslmode = self.config['postgresql']['connection_settings'].get('sslmode', 'disable')
+        sslmode = self.config['connection_settings'].get('sslmode', 'disable')
         if sslmode != 'disable':
             ssl_settings.append("ssl = on")
             ssl_settings.append("ssl_cert_file = 'server.crt'")

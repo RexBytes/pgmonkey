@@ -254,7 +254,7 @@ footer p { margin-bottom: 8px; }
 <!-- ============================================================ -->
 <h2>One Config File, All Connection Types</h2>
 
-<p>In pgmonkey v2.0.0, a <strong>single YAML configuration file</strong> serves all connection types. Specify the connection type when calling the API, or let it default to the value in the config file.</p>
+<p>In pgmonkey, a <strong>single YAML configuration file</strong> serves all connection types. Specify the connection type when calling the API, or let it default to the value in the config file.</p>
 
 <pre><code><span class="kw">from</span> pgmonkey <span class="kw">import</span> PGConnectionManager
 
@@ -271,55 +271,54 @@ conn = <span class="kw">await</span> manager.<span class="fn">get_database_conne
 
 <h3>Full YAML Configuration</h3>
 
-<pre><code><span class="cm">postgresql:</span>
-  <span class="cm"># Default connection type when none is specified in the API call.</span>
-  <span class="cm"># Options: 'normal', 'pool', 'async', 'async_pool'</span>
-  <span class="cm"># You can override this per-call:</span>
-  <span class="cm">#   manager.get_database_connection('config.yaml', 'pool')</span>
-  connection_type: <span class="st">'normal'</span>
+<pre><code><span class="cm"># Default connection type when none is specified in the API call.</span>
+<span class="cm"># Options: 'normal', 'pool', 'async', 'async_pool'</span>
+<span class="cm"># You can override this per-call:</span>
+<span class="cm">#   manager.get_database_connection('config.yaml', 'pool')</span>
+connection_type: <span class="st">'normal'</span>
 
-  connection_settings:
-    user: <span class="st">'postgres'</span>
-    password: <span class="st">'password'</span>
-    host: <span class="st">'localhost'</span>
-    port: <span class="st">'5432'</span>
-    dbname: <span class="st">'mydatabase'</span>
-    sslmode: <span class="st">'prefer'</span>       <span class="cm"># Options: disable, allow, prefer, require, verify-ca, verify-full</span>
-    sslcert: <span class="st">''</span>             <span class="cm"># Path to the client SSL certificate</span>
-    sslkey: <span class="st">''</span>              <span class="cm"># Path to the client SSL key</span>
-    sslrootcert: <span class="st">''</span>         <span class="cm"># Path to the root SSL certificate</span>
-    connect_timeout: <span class="st">'10'</span>   <span class="cm"># Maximum wait for connection, in seconds</span>
-    application_name: <span class="st">'myapp'</span>
-    keepalives: <span class="st">'1'</span>         <span class="cm"># Enable TCP keepalives (1=on, 0=off)</span>
-    keepalives_idle: <span class="st">'60'</span>   <span class="cm"># Seconds before sending a keepalive probe</span>
-    keepalives_interval: <span class="st">'15'</span>
-    keepalives_count: <span class="st">'5'</span>
+connection_settings:
+  user: <span class="st">'postgres'</span>
+  password: <span class="st">'password'</span>
+  host: <span class="st">'localhost'</span>
+  port: <span class="st">'5432'</span>
+  dbname: <span class="st">'mydatabase'</span>
+  sslmode: <span class="st">'prefer'</span>       <span class="cm"># Options: disable, allow, prefer, require, verify-ca, verify-full</span>
+  sslcert: <span class="st">''</span>             <span class="cm"># Path to the client SSL certificate</span>
+  sslkey: <span class="st">''</span>              <span class="cm"># Path to the client SSL key</span>
+  sslrootcert: <span class="st">''</span>         <span class="cm"># Path to the root SSL certificate</span>
+  connect_timeout: <span class="st">'10'</span>   <span class="cm"># Maximum wait for connection, in seconds</span>
+  application_name: <span class="st">'myapp'</span>
+  keepalives: <span class="st">'1'</span>         <span class="cm"># Enable TCP keepalives (1=on, 0=off)</span>
+  keepalives_idle: <span class="st">'60'</span>   <span class="cm"># Seconds before sending a keepalive probe</span>
+  keepalives_interval: <span class="st">'15'</span>
+  keepalives_count: <span class="st">'5'</span>
 
-  <span class="cm"># Settings for 'pool' connection type</span>
-  pool_settings:
-    min_size: <span class="op">5</span>
-    max_size: <span class="op">20</span>
-    timeout: <span class="op">30</span>            <span class="cm"># Seconds to wait for a connection from the pool</span>
-    max_idle: <span class="op">300</span>          <span class="cm"># Seconds idle before closed</span>
-    max_lifetime: <span class="op">3600</span>     <span class="cm"># Seconds before reuse expires</span>
-    check_on_checkout: <span class="op">false</span>  <span class="cm"># Validate connections with SELECT 1 before use</span>
+<span class="cm"># Settings for 'pool' connection type</span>
+pool_settings:
+  min_size: <span class="op">5</span>
+  max_size: <span class="op">20</span>
+  timeout: <span class="op">30</span>            <span class="cm"># Seconds to wait for a connection from the pool</span>
+  max_idle: <span class="op">300</span>          <span class="cm"># Seconds idle before closed</span>
+  max_lifetime: <span class="op">3600</span>     <span class="cm"># Seconds before reuse expires</span>
+  check_on_checkout: <span class="op">false</span>  <span class="cm"># Validate connections with SELECT 1 before use</span>
 
-  <span class="cm"># Settings for 'async' and 'async_pool' connection types (applied via SET commands)</span>
-  <span class="cm"># For async_pool, these are applied to each connection via a configure callback.</span>
-  async_settings:
-    idle_in_transaction_session_timeout: <span class="st">'5000'</span>   <span class="cm"># ms</span>
-    statement_timeout: <span class="st">'30000'</span>                     <span class="cm"># ms</span>
-    lock_timeout: <span class="st">'10000'</span>                          <span class="cm"># ms</span>
-    <span class="cm"># work_mem: '256MB'</span>
+<span class="cm"># Settings for 'async' and 'async_pool' connection types (applied via SET commands)</span>
+<span class="cm"># For async_pool, these are applied to each connection via a configure callback.</span>
+async_settings:
+  idle_in_transaction_session_timeout: <span class="st">'5000'</span>   <span class="cm"># ms</span>
+  statement_timeout: <span class="st">'30000'</span>                     <span class="cm"># ms</span>
+  lock_timeout: <span class="st">'10000'</span>                          <span class="cm"># ms</span>
+  <span class="cm"># work_mem: '256MB'</span>
 
-  <span class="cm"># Settings for 'async_pool' connection type</span>
-  async_pool_settings:
-    min_size: <span class="op">5</span>
-    max_size: <span class="op">20</span>
-    timeout: <span class="op">30</span>            <span class="cm"># Seconds to wait for a connection from the pool</span>
-    max_idle: <span class="op">300</span>
-    max_lifetime: <span class="op">3600</span>
-    check_on_checkout: <span class="op">false</span>  <span class="cm"># Validate connections with SELECT 1 before use</span></code></pre>
+<span class="cm"># Settings for 'async_pool' connection type</span>
+async_pool_settings:
+  min_size: <span class="op">5</span>
+  max_size: <span class="op">20</span>
+  timeout: <span class="op">30</span>            <span class="cm"># Seconds to wait for a connection from the pool</span>
+  max_idle: <span class="op">300</span>
+  max_lifetime: <span class="op">3600</span>
+  check_on_checkout: <span class="op">false</span>  <span class="cm"># Validate connections with SELECT 1 before use</span></code></pre>
 
 <h3>Configuration Parameter Reference</h3>
 
@@ -328,7 +327,7 @@ conn = <span class="kw">await</span> manager.<span class="fn">get_database_conne
         <tr><th>Parameter</th><th>Description</th><th>Example</th></tr>
     </thead>
     <tbody>
-        <tr><td>postgresql.connection_type</td><td>Default connection type. Can be overridden per API call.</td><td><code>'normal'</code></td></tr>
+        <tr><td>connection_type</td><td>Default connection type. Can be overridden per API call.</td><td><code>'normal'</code></td></tr>
         <tr><td>connection_settings.user</td><td>Username for the PostgreSQL database.</td><td><code>'postgres'</code></td></tr>
         <tr><td>connection_settings.password</td><td>Password for the database user.</td><td><code>'your password'</code></td></tr>
         <tr><td>connection_settings.host</td><td>Database server host address.</td><td><code>'localhost'</code></td></tr>
@@ -804,7 +803,7 @@ Connection test completed successfully.</code></pre>
     <span class="kw">with</span> <span class="nb">open</span>(config_file_path, <span class="st">'r'</span>) <span class="kw">as</span> f:
         config = yaml.<span class="fn">safe_load</span>(f)
 
-    conn_settings = config[<span class="st">'postgresql'</span>][<span class="st">'connection_settings'</span>]
+    conn_settings = config[<span class="st">'connection_settings'</span>]
     <span class="cm"># Filter out empty values (e.g. blank SSL cert paths)</span>
     conn_params = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> conn_settings.<span class="fn">items</span>() <span class="kw">if</span> v}
 
@@ -835,9 +834,9 @@ Connection test completed successfully.</code></pre>
     <span class="kw">with</span> <span class="nb">open</span>(config_file_path, <span class="st">'r'</span>) <span class="kw">as</span> f:
         config = yaml.<span class="fn">safe_load</span>(f)
 
-    conn_settings = config[<span class="st">'postgresql'</span>][<span class="st">'connection_settings'</span>]
+    conn_settings = config[<span class="st">'connection_settings'</span>]
     conn_params = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> conn_settings.<span class="fn">items</span>() <span class="kw">if</span> v}
-    pool_settings = config[<span class="st">'postgresql'</span>].<span class="fn">get</span>(<span class="st">'pool_settings'</span>, {})
+    pool_settings = config.<span class="fn">get</span>(<span class="st">'pool_settings'</span>, {})
 
     <span class="cm"># Remove pgmonkey-specific keys that psycopg_pool does not accept</span>
     pool_settings.<span class="fn">pop</span>(<span class="st">'check_on_checkout'</span>, <span class="kw">None</span>)
@@ -875,9 +874,9 @@ Connection test completed successfully.</code></pre>
     <span class="kw">with</span> <span class="nb">open</span>(config_file_path, <span class="st">'r'</span>) <span class="kw">as</span> f:
         config = yaml.<span class="fn">safe_load</span>(f)
 
-    conn_settings = config[<span class="st">'postgresql'</span>][<span class="st">'connection_settings'</span>]
+    conn_settings = config[<span class="st">'connection_settings'</span>]
     conn_params = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> conn_settings.<span class="fn">items</span>() <span class="kw">if</span> v}
-    async_settings = config[<span class="st">'postgresql'</span>].<span class="fn">get</span>(<span class="st">'async_settings'</span>, {})
+    async_settings = config.<span class="fn">get</span>(<span class="st">'async_settings'</span>, {})
 
     <span class="kw">async with await</span> AsyncConnection.<span class="fn">connect</span>(**conn_params) <span class="kw">as</span> conn:
         <span class="cm"># Apply GUC settings (statement_timeout, lock_timeout, etc.)</span>
@@ -912,10 +911,10 @@ Connection test completed successfully.</code></pre>
     <span class="kw">with</span> <span class="nb">open</span>(config_file_path, <span class="st">'r'</span>) <span class="kw">as</span> f:
         config = yaml.<span class="fn">safe_load</span>(f)
 
-    conn_settings = config[<span class="st">'postgresql'</span>][<span class="st">'connection_settings'</span>]
+    conn_settings = config[<span class="st">'connection_settings'</span>]
     conn_params = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> conn_settings.<span class="fn">items</span>() <span class="kw">if</span> v}
-    pool_settings = config[<span class="st">'postgresql'</span>].<span class="fn">get</span>(<span class="st">'async_pool_settings'</span>, {})
-    async_settings = config[<span class="st">'postgresql'</span>].<span class="fn">get</span>(<span class="st">'async_settings'</span>, {})
+    pool_settings = config.<span class="fn">get</span>(<span class="st">'async_pool_settings'</span>, {})
+    async_settings = config.<span class="fn">get</span>(<span class="st">'async_settings'</span>, {})
 
     <span class="cm"># Remove pgmonkey-specific keys that psycopg_pool does not accept</span>
     pool_settings.<span class="fn">pop</span>(<span class="st">'check_on_checkout'</span>, <span class="kw">None</span>)
@@ -979,7 +978,7 @@ Connection test completed successfully.</code></pre>
 <pre><code>pip3 install pgmonkey</code></pre>
 
 <h3>Supported Raspberry Pi OS Versions</h3>
-<p>pgmonkey v2.0.0 requires Python 3.10+. Recommended Raspberry Pi OS:</p>
+<p>pgmonkey v3.0.0 requires Python 3.10+. Recommended Raspberry Pi OS:</p>
 <ul>
     <li><strong>Bookworm</strong> (Python 3.11)</li>
 </ul>
@@ -995,7 +994,7 @@ Connection test completed successfully.</code></pre>
 </div>
 
 <footer>
-    <p>&copy; 2025 pgmonkey by <a href="https://github.com/RexBytes">RexBytes</a> &nbsp;|&nbsp; <a href="https://github.com/RexBytes/pgmonkey">GitHub</a> &nbsp;|&nbsp; <a href="https://pypi.org/project/pgmonkey/">PyPI</a></p>
+    <p>&copy; 2025&ndash;2026 pgmonkey by <a href="https://github.com/RexBytes">RexBytes</a> &nbsp;|&nbsp; <a href="https://github.com/RexBytes/pgmonkey">GitHub</a> &nbsp;|&nbsp; <a href="https://pypi.org/project/pgmonkey/">PyPI</a></p>
 </footer>
 
 </body>

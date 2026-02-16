@@ -38,8 +38,8 @@ class TestPgHbaEntry:
         return PostgresServerConfigGenerator(str(config_file))
 
     def test_verify_full_generates_hostssl(self, sample_config, tmp_path):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'verify-full'
-        sample_config['postgresql']['connection_settings']['host'] = '192.168.1.50'
+        sample_config['connection_settings']['sslmode'] = 'verify-full'
+        sample_config['connection_settings']['host'] = '192.168.1.50'
         gen = self._make_generator(tmp_path, sample_config)
         entries = gen.generate_pg_hba_entry()
 
@@ -49,16 +49,16 @@ class TestPgHbaEntry:
         assert '192.168.1.0/24' in entries[1]
 
     def test_verify_ca_generates_hostssl(self, sample_config, tmp_path):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'verify-ca'
-        sample_config['postgresql']['connection_settings']['host'] = '10.0.0.5'
+        sample_config['connection_settings']['sslmode'] = 'verify-ca'
+        sample_config['connection_settings']['host'] = '10.0.0.5'
         gen = self._make_generator(tmp_path, sample_config)
         entries = gen.generate_pg_hba_entry()
 
         assert 'clientcert=verify-ca' in entries[1]
 
     def test_prefer_generates_hostssl(self, sample_config, tmp_path):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'prefer'
-        sample_config['postgresql']['connection_settings']['host'] = '192.168.1.50'
+        sample_config['connection_settings']['sslmode'] = 'prefer'
+        sample_config['connection_settings']['host'] = '192.168.1.50'
         gen = self._make_generator(tmp_path, sample_config)
         entries = gen.generate_pg_hba_entry()
 
@@ -70,8 +70,8 @@ class TestPgHbaEntry:
         assert 'clientcert' not in entries[1]
 
     def test_require_generates_hostssl(self, sample_config, tmp_path):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'require'
-        sample_config['postgresql']['connection_settings']['host'] = '10.0.0.5'
+        sample_config['connection_settings']['sslmode'] = 'require'
+        sample_config['connection_settings']['host'] = '10.0.0.5'
         gen = self._make_generator(tmp_path, sample_config)
         entries = gen.generate_pg_hba_entry()
 
@@ -81,15 +81,15 @@ class TestPgHbaEntry:
         assert 'clientcert' not in entries[1]
 
     def test_disable_generates_no_entry(self, sample_config, tmp_path):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'disable'
+        sample_config['connection_settings']['sslmode'] = 'disable'
         gen = self._make_generator(tmp_path, sample_config)
         entries = gen.generate_pg_hba_entry()
 
         assert len(entries) == 1  # Only header
 
     def test_localhost_host_handled(self, sample_config, tmp_path):
-        sample_config['postgresql']['connection_settings']['host'] = 'localhost'
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'require'
+        sample_config['connection_settings']['host'] = 'localhost'
+        sample_config['connection_settings']['sslmode'] = 'require'
         gen = self._make_generator(tmp_path, sample_config)
         entries = gen.generate_pg_hba_entry()
 
@@ -106,16 +106,16 @@ class TestPostgresqlConf:
 
     def test_pool_max_connections(self, sample_config, tmp_path):
         """max_connections should be 1.1x the larger of pool_settings or async_pool_settings max_size."""
-        sample_config['postgresql']['pool_settings']['max_size'] = 20
-        sample_config['postgresql']['async_pool_settings']['max_size'] = 10
+        sample_config['pool_settings']['max_size'] = 20
+        sample_config['async_pool_settings']['max_size'] = 10
         gen = self._make_generator(tmp_path, sample_config)
         settings = gen.generate_postgresql_conf()
 
         assert 'max_connections = 22' in settings  # int(20 * 1.1)
 
     def test_async_pool_larger_max_connections(self, sample_config, tmp_path):
-        sample_config['postgresql']['pool_settings']['max_size'] = 5
-        sample_config['postgresql']['async_pool_settings']['max_size'] = 50
+        sample_config['pool_settings']['max_size'] = 5
+        sample_config['async_pool_settings']['max_size'] = 50
         gen = self._make_generator(tmp_path, sample_config)
         settings = gen.generate_postgresql_conf()
 
@@ -123,23 +123,23 @@ class TestPostgresqlConf:
 
     def test_string_max_size_handled(self, sample_config, tmp_path):
         """max_size as a quoted string in YAML should not crash."""
-        sample_config['postgresql']['pool_settings']['max_size'] = '20'
-        sample_config['postgresql']['async_pool_settings']['max_size'] = '10'
+        sample_config['pool_settings']['max_size'] = '20'
+        sample_config['async_pool_settings']['max_size'] = '10'
         gen = self._make_generator(tmp_path, sample_config)
         settings = gen.generate_postgresql_conf()
 
         assert 'max_connections = 22' in settings  # int(20 * 1.1)
 
     def test_no_pool_settings_defaults_to_20(self, sample_config, tmp_path):
-        del sample_config['postgresql']['pool_settings']
-        del sample_config['postgresql']['async_pool_settings']
+        del sample_config['pool_settings']
+        del sample_config['async_pool_settings']
         gen = self._make_generator(tmp_path, sample_config)
         settings = gen.generate_postgresql_conf()
 
         assert 'max_connections = 20' in settings
 
     def test_ssl_enabled_generates_ssl_settings(self, sample_config, tmp_path):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'require'
+        sample_config['connection_settings']['sslmode'] = 'require'
         gen = self._make_generator(tmp_path, sample_config)
         settings = gen.generate_postgresql_conf()
 
@@ -147,7 +147,7 @@ class TestPostgresqlConf:
         assert "ssl_cert_file = 'server.crt'" in settings
 
     def test_ssl_disabled_no_ssl_settings(self, sample_config, tmp_path):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'disable'
+        sample_config['connection_settings']['sslmode'] = 'disable'
         gen = self._make_generator(tmp_path, sample_config)
         settings = gen.generate_postgresql_conf()
 
@@ -210,7 +210,7 @@ class TestPrintConfigurationsWithAudit:
         return conn
 
     def test_audit_shows_comparison_table(self, sample_config, tmp_path, capsys):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'require'
+        sample_config['connection_settings']['sslmode'] = 'require'
         gen = self._make_generator(tmp_path, sample_config)
 
         conn = self._make_mock_connection(
@@ -234,7 +234,7 @@ class TestPrintConfigurationsWithAudit:
         assert 'OK' in output
 
     def test_audit_shows_mismatch(self, sample_config, tmp_path, capsys):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'require'
+        sample_config['connection_settings']['sslmode'] = 'require'
         gen = self._make_generator(tmp_path, sample_config)
 
         conn = self._make_mock_connection(
@@ -274,7 +274,7 @@ class TestPrintConfigurationsWithAudit:
         assert 'Configuration data is not available' in output
 
     def test_audit_shows_hba_rules(self, sample_config, tmp_path, capsys):
-        sample_config['postgresql']['connection_settings']['sslmode'] = 'require'
+        sample_config['connection_settings']['sslmode'] = 'require'
         gen = self._make_generator(tmp_path, sample_config)
 
         conn = self._make_mock_connection(

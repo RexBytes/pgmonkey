@@ -34,7 +34,7 @@ class TestPGConnectionManager:
 
     def test_get_connection_defaults_to_normal_when_missing(self):
         """When connection_type is absent from config and not passed, default to 'normal'."""
-        config = {'postgresql': {'connection_settings': {'user': 'test', 'host': 'localhost', 'dbname': 'db'}}}
+        config = {'connection_settings': {'user': 'test', 'host': 'localhost', 'dbname': 'db'}}
 
         manager = PGConnectionManager()
         with patch('pgmonkey.managers.pgconnection_manager.PostgresConnectionFactory') as mock_factory_cls:

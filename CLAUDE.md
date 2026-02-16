@@ -19,9 +19,15 @@ connection testing, and code generation.
 - Config filter uses `is not None` (not truthiness) to preserve valid falsy values like empty passwords, keepalives=0
 - SET statements for GUC settings use `psycopg.sql.SQL`/`sql.Identifier` for safe identifier quoting
 
+## Config Format (v3.0.0+)
+The YAML config no longer uses a top-level `postgresql:` wrapper key. Settings are at the
+root level: `connection_type`, `connection_settings`, `pool_settings`, etc. Old-format configs
+with the `postgresql:` key are auto-detected and unwrapped with a DeprecationWarning via
+`common/utils/configutils.py:normalize_config()`.
+
 ## Test Commands
 ```bash
-python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (192 tests)
+python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (229 tests)
 python -m pytest src/pgmonkey/tests/unit/ -v -x     # stop on first failure
 ```
 

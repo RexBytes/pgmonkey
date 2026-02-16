@@ -2,6 +2,7 @@ import yaml
 from pgmonkey.tools.connection_code_generator import ConnectionCodeGenerator
 from .settings_manager import SettingsManager
 from pgmonkey.common.utils.pathutils import PathUtils
+from pgmonkey.common.utils.configutils import normalize_config
 
 
 class PGCodegenManager:
@@ -20,13 +21,10 @@ class PGCodegenManager:
         """
         with open(config_file_path, 'r') as file:
             config_data = yaml.safe_load(file)
-        database_type = next(iter(config_data))
+        normalize_config(config_data)  # validates format, warns if old style
 
-        print(f"{database_type} database config file has been detected...")
+        print("postgresql database config file has been detected...")
 
-        if database_type == 'postgresql':
-            self.connection_code_generator.generate_connection_code(
-                config_file_path, connection_type, library=library,
-            )
-        else:
-            print(f"Unsupported database type: {database_type}")
+        self.connection_code_generator.generate_connection_code(
+            config_file_path, connection_type, library=library,
+        )

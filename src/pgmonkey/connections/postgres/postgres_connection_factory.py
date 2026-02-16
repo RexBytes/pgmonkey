@@ -18,12 +18,12 @@ class PostgresConnectionFactory:
 
     def __init__(self, config, connection_type):
         self.connection_type = connection_type
-        self.config = self._filter_config(config['postgresql']['connection_settings'])
+        self.config = self._filter_config(config['connection_settings'])
         self.autocommit = self.config.pop('autocommit', None)
-        self.pool_settings = config['postgresql'].get('pool_settings', {}) or {}
-        self.sync_settings = config['postgresql'].get('sync_settings', {}) or {}
-        self.async_settings = config['postgresql'].get('async_settings', {}) or {}
-        self.async_pool_settings = config['postgresql'].get('async_pool_settings', {}) or {}
+        self.pool_settings = config.get('pool_settings', {}) or {}
+        self.sync_settings = config.get('sync_settings', {}) or {}
+        self.async_settings = config.get('async_settings', {}) or {}
+        self.async_pool_settings = config.get('async_pool_settings', {}) or {}
         self._validate_pool_settings()
 
     def _filter_config(self, config):

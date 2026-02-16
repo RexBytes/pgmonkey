@@ -4,6 +4,7 @@ from importlib import resources
 from pgmonkey.tools.database_connection_tester import DatabaseConnectionTester
 from .settings_manager import SettingsManager
 from pgmonkey.common.utils.pathutils import PathUtils
+from pgmonkey.common.utils.configutils import normalize_config
 
 
 class PGConfigManager:
@@ -59,12 +60,8 @@ class PGConfigManager:
         """
         with open(config_file_path, 'r') as config_file:
             config_data = yaml.safe_load(config_file)
-        database_type = next(iter(config_data))
-        print(f"{database_type} database config file has been detected...")
+        normalize_config(config_data)  # validates format, warns if old style
+        print("postgresql database config file has been detected...")
 
         integration_tester = DatabaseConnectionTester()
-
-        if database_type == 'postgresql':
-            asyncio.run(integration_tester.test_postgresql_connection(config_file_path, connection_type))
-        else:
-            print(f"Unsupported database type: {database_type}")
+        asyncio.run(integration_tester.test_postgresql_connection(config_file_path, connection_type))
