@@ -19,7 +19,7 @@ class TestPGConfigManagerGetTemplate:
         manager = PGConfigManager()
         template = manager.get_config_template('pg')
         assert isinstance(template, dict)
-        assert 'postgresql' in template
+        assert 'connection_settings' in template
 
     def test_get_template_invalid_type_raises(self):
         manager = PGConfigManager()
@@ -33,7 +33,7 @@ class TestPGConfigManagerGetTemplateText:
         manager = PGConfigManager()
         text = manager.get_config_template_text('pg')
         assert isinstance(text, str)
-        assert 'postgresql' in text
+        assert 'connection_type' in text
         assert 'connection_settings' in text
 
     def test_preserves_comments(self):
@@ -47,7 +47,7 @@ class TestPGConfigManagerWriteTemplate:
     def test_writes_yaml_file(self, tmp_path):
         manager = PGConfigManager()
         filepath = tmp_path / "test_config.yaml"
-        config = {'postgresql': {'connection_type': 'normal'}}
+        config = {'connection_type': 'normal'}
         manager.write_config_template(filepath, config)
 
         assert filepath.exists()
@@ -58,7 +58,7 @@ class TestPGConfigManagerWriteTemplate:
     def test_creates_parent_dirs(self, tmp_path):
         manager = PGConfigManager()
         filepath = tmp_path / "subdir" / "deep" / "config.yaml"
-        config = {'postgresql': {'connection_type': 'normal'}}
+        config = {'connection_type': 'normal'}
         manager.write_config_template(filepath, config)
         assert filepath.exists()
 
@@ -68,7 +68,7 @@ class TestPGConfigManagerWriteTemplateText:
     def test_writes_text_file(self, tmp_path):
         manager = PGConfigManager()
         filepath = tmp_path / "test_config.yaml"
-        text = "postgresql:\n  connection_type: 'normal'\n"
+        text = "connection_type: 'normal'\n"
         manager.write_config_template_text(filepath, text)
 
         assert filepath.exists()

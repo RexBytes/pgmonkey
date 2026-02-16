@@ -1,4 +1,4 @@
-# pgmonkey — Project Scope
+# pgmonkey - Project Scope
 
 > **One job: get Python code connected to PostgreSQL, cleanly.**
 
@@ -58,7 +58,7 @@ migration runners. Use Alembic, Flyway, or pg_dump/pg_restore.
 Passwords live in the YAML file (or are injected by the caller before passing
 the config dict). pgmonkey does not read environment variables, integrate with
 vaults, or do config interpolation. Solve this with `os.environ`,
-`pydantic-settings`, SOPS, or whatever your stack uses — then hand the resolved
+`pydantic-settings`, SOPS, or whatever your stack uses - then hand the resolved
 dict to `get_database_connection_from_dict()`.
 
 ### No Multi-Host / Failover / Replica Routing
@@ -97,7 +97,7 @@ The name says it. MySQL, SQLite, Oracle, etc. are out of scope.
 These guide day-to-day decisions:
 
 1. **Thin wrapper, not an abstraction layer.** psycopg is excellent. pgmonkey
-   adds config-driven setup, caching, and lifecycle management — not a new API
+   adds config-driven setup, caching, and lifecycle management - not a new API
    on top of cursors.
 
 2. **YAML is the interface.** Users should be able to switch from `normal` to
@@ -167,13 +167,13 @@ pgmonkey delegates to this.
 
 | Command | Purpose | Boundary |
 |---|---|---|
-| `pgconfig create` | Generate a YAML template | Template only — doesn't write credentials |
-| `pgconfig test` | Validate a connection works | SELECT 1 — doesn't inspect schema |
-| `pgconfig generate-code` | Print Python example | Starter code — not a code generator framework |
-| `pgserverconfig` | Suggest server-side settings | Recommendations — not an installer |
-| `pgserverconfig --audit` | Compare live server settings against recommendations | Read-only queries — never modifies server settings |
-| `pgimport` | Load CSV into a table | Bulk insert — no transforms, joins, or upserts |
-| `pgexport` | Dump a table to CSV | Full table — no WHERE clauses or joins |
+| `pgconfig create` | Generate a YAML template | Template only - doesn't write credentials |
+| `pgconfig test` | Validate a connection works | SELECT 1 - doesn't inspect schema |
+| `pgconfig generate-code` | Print Python example | Starter code - not a code generator framework |
+| `pgserverconfig` | Suggest server-side settings | Recommendations - not an installer |
+| `pgserverconfig --audit` | Compare live server settings against recommendations | Read-only queries - never modifies server settings |
+| `pgimport` | Load CSV into a table | Bulk insert - no transforms, joins, or upserts |
+| `pgexport` | Dump a table to CSV | Full table - no WHERE clauses or joins |
 
 CLI commands are thin wrappers around manager classes. They handle argument
 parsing and print output. Business logic lives in `managers/` and `tools/`.

@@ -1,4 +1,4 @@
-# pgmonkey — Internal Issue Tracker
+# pgmonkey - Internal Issue Tracker
 
 This file tracks structural issues identified in pgmonkey, their fixes, and rationale.
 It is for maintainer reference only and is not published on the website.
@@ -17,7 +17,7 @@ It is for maintainer reference only and is not published on the website.
 `PGConnectionManager` created a brand-new connection or pool on every call to
 `get_database_connection()` / `get_database_connection_from_dict()`. For pooled
 connection types, this meant each call opened an entirely new pool instead of
-reusing the existing one — a classic "pool storm" that could exhaust database
+reusing the existing one - a classic "pool storm" that could exhaust database
 server connections.
 
 ### Fix
@@ -32,10 +32,10 @@ process exit.
 
 ### Files Changed
 
-- `src/pgmonkey/managers/pgconnection_manager.py` — Added `_cache`, `_cache_lock`,
+- `src/pgmonkey/managers/pgconnection_manager.py` - Added `_cache`, `_cache_lock`,
   `_config_hash()`, `_register_atexit()`, `_cleanup_at_exit()`, `cache_info`,
   `clear_cache()`, `clear_cache_async()`.
-- `src/pgmonkey/tests/unit/test_connection_caching.py` — New test file covering
+- `src/pgmonkey/tests/unit/test_connection_caching.py` - New test file covering
   sync caching, async caching, force reload, atexit cleanup, config hashing.
 
 ---
@@ -55,7 +55,7 @@ block, the pool was destroyed and could not be reused. Users who followed the
 standard context-manager pattern (`async with pool_conn:`) would unknowingly
 kill their pool on every use.
 
-The sync pool (`PGPoolConnection`) did not have this problem — its `__exit__`
+The sync pool (`PGPoolConnection`) did not have this problem - its `__exit__`
 correctly borrows and returns a connection from the pool.
 
 ### Fix
@@ -75,9 +75,9 @@ Also made `cursor()` and `transaction()` dual-mode:
 
 ### Files Changed
 
-- `src/pgmonkey/connections/postgres/async_pool_connection.py` — Rewrote
+- `src/pgmonkey/connections/postgres/async_pool_connection.py` - Rewrote
   `__aenter__`, `__aexit__`, `cursor()`, `transaction()`, `commit()`, `rollback()`.
-- `src/pgmonkey/tests/unit/test_connection_caching.py` — Added
+- `src/pgmonkey/tests/unit/test_connection_caching.py` - Added
   `TestAsyncPoolContextManager` with 4 tests.
 
 ---
@@ -91,7 +91,7 @@ Also made `cursor()` and `transaction()` dual-mode:
 ### Observation
 
 `PGPoolConnection.__exit__()` calls `self._conn.close()` to return the
-borrowed connection to the pool — this is correct. However, the pool itself
+borrowed connection to the pool - this is correct. However, the pool itself
 is never explicitly closed unless `disconnect()` is called or the atexit
 handler runs.
 
@@ -99,7 +99,7 @@ With always-on caching and the atexit handler, this is handled correctly.
 The pool lives in the cache for the lifetime of the process and is cleaned
 up at exit.
 
-No code change needed — this is working as intended. Noting it here so
+No code change needed - this is working as intended. Noting it here so
 future maintainers understand the lifecycle.
 
 ---
@@ -124,12 +124,12 @@ during `__aexit__`. Inside a context manager block, `commit()` and
 `rollback()` correctly operate on the acquired connection.
 
 Outside a context manager, they remain no-ops (there is no connection to
-commit/rollback), which is the correct behavior — callers should use
+commit/rollback), which is the correct behavior - callers should use
 `async with` or the `cursor()` / `transaction()` context managers.
 
 ---
 
-## Issue #5: Documentation Gaps — No Best Practice Recipes
+## Issue #5: Documentation Gaps - No Best Practice Recipes
 
 **Status:** Fixed
 **Severity:** Medium
@@ -144,7 +144,7 @@ lifecycle management) protect users from common pitfalls.
 ### Fix
 
 Added:
-- `docs/best_practices.html` — Styled documentation page with complete
+- `docs/best_practices.html` - Styled documentation page with complete
   code recipes for all 4 connection types, plus app-level design patterns
   (Flask sync, FastAPI async).
 - README section "Best Practice Recipes" with the same content.
@@ -175,7 +175,7 @@ thread stored a connection in the meantime, the newly created one is discarded
 
 ### Files Changed
 
-- `src/pgmonkey/managers/pgconnection_manager.py` — Double-check locking for
+- `src/pgmonkey/managers/pgconnection_manager.py` - Double-check locking for
   both sync and async paths.
 
 ---
@@ -201,7 +201,7 @@ without touching connection lifecycle.
 
 ### Files Changed
 
-- `src/pgmonkey/connections/postgres/normal_connection.py` — Removed
+- `src/pgmonkey/connections/postgres/normal_connection.py` - Removed
   `disconnect()` from `transaction()` finally block.
 
 ---
@@ -227,7 +227,7 @@ releasing them, properly validating pool capacity.
 
 ### Files Changed
 
-- `src/pgmonkey/connections/postgres/pool_connection.py` — Rewrote
+- `src/pgmonkey/connections/postgres/pool_connection.py` - Rewrote
   `test_connection()` using `ExitStack`.
 
 ---
@@ -254,9 +254,9 @@ that applies GUC settings via `SET` commands to each connection.
 
 ### Files Changed
 
-- `src/pgmonkey/connections/postgres/async_pool_connection.py` — Added
+- `src/pgmonkey/connections/postgres/async_pool_connection.py` - Added
   `async_settings` parameter and `configure` callback.
-- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` — Passes
+- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` - Passes
   `async_settings` to async pool connections.
 
 ---
@@ -271,7 +271,7 @@ that applies GUC settings via `SET` commands to each connection.
 ### Problem
 
 Every connection class used `print()` for diagnostics. Libraries should
-never print to stdout — they should use `logging.getLogger(__name__)`.
+never print to stdout - they should use `logging.getLogger(__name__)`.
 
 ### Fix
 
@@ -310,5 +310,5 @@ failures. Pool settings were not validated for logical consistency.
 
 ### Files Changed
 
-- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` — Added
+- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` - Added
   unknown key warnings and `_validate_pool_settings()`.

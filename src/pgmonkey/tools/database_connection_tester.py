@@ -1,4 +1,5 @@
 from pgmonkey.managers.pgconnection_manager import PGConnectionManager
+from pgmonkey.common.utils.configutils import normalize_config
 
 
 class DatabaseConnectionTester:
@@ -32,7 +33,8 @@ class DatabaseConnectionTester:
                 import yaml
                 with open(config_file_path, 'r') as file:
                     config = yaml.safe_load(file)
-                connection_type = config['postgresql'].get('connection_type', 'normal')
+                config = normalize_config(config)
+                connection_type = config.get('connection_type', 'normal')
 
             if connection_type in ('async', 'async_pool'):
                 await self.test_async_postgresql_connection(config_file_path, connection_type)

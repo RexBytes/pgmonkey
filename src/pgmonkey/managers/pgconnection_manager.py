@@ -7,6 +7,7 @@ import logging
 import threading
 import warnings
 from pgmonkey.connections.postgres.postgres_connection_factory import PostgresConnectionFactory
+from pgmonkey.common.utils.configutils import normalize_config
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,7 @@ class PGConnectionManager:
         with open(config_file_path, 'r') as f:
             config_data_dictionary = yaml.safe_load(f)
 
+        config_data_dictionary = normalize_config(config_data_dictionary)
         return self._get_connection(config_data_dictionary, connection_type, force_reload=force_reload)
 
     def get_database_connection_from_dict(self, config_data_dictionary, connection_type=None, force_reload=False):
@@ -126,13 +128,14 @@ class PGConnectionManager:
         Returns:
             A connection object (sync types) or a coroutine (async types - must be awaited).
         """
+        config_data_dictionary = normalize_config(config_data_dictionary)
         return self._get_connection(config_data_dictionary, connection_type, force_reload=force_reload)
 
     # -- Internal routing -------------------------------------------------------
 
     def _get_connection(self, config_data_dictionary, connection_type=None, force_reload=False):
         """Route to sync or async connection creation, with caching."""
-        resolved_type = connection_type or config_data_dictionary['postgresql'].get('connection_type', 'normal')
+        resolved_type = connection_type or config_data_dictionary.get('connection_type', 'normal')
 
         if resolved_type not in VALID_CONNECTION_TYPES:
             raise ValueError(

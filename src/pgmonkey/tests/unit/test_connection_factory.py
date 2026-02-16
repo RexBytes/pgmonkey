@@ -18,7 +18,7 @@ class TestPostgresConnectionFactory:
 
     def test_filter_config_strips_none_values(self, sample_config):
         """None values should be stripped from filtered config."""
-        sample_config['postgresql']['connection_settings']['password'] = None
+        sample_config['connection_settings']['password'] = None
         factory = PostgresConnectionFactory(sample_config, 'normal')
         assert 'password' not in factory.config
 
@@ -29,13 +29,13 @@ class TestPostgresConnectionFactory:
 
     def test_filter_config_ignores_unknown_keys(self, sample_config):
         """Keys not in VALID_CONNECTION_KEYS should be stripped."""
-        sample_config['postgresql']['connection_settings']['unknown_key'] = 'value'
+        sample_config['connection_settings']['unknown_key'] = 'value'
         factory = PostgresConnectionFactory(sample_config, 'normal')
         assert 'unknown_key' not in factory.config
 
     def test_filter_config_warns_on_unknown_keys(self, sample_config, caplog):
         """Unknown keys should produce a warning log."""
-        sample_config['postgresql']['connection_settings']['hosst'] = 'localhost'
+        sample_config['connection_settings']['hosst'] = 'localhost'
         with caplog.at_level(logging.WARNING):
             factory = PostgresConnectionFactory(sample_config, 'normal')
         assert 'hosst' in caplog.text
@@ -44,13 +44,13 @@ class TestPostgresConnectionFactory:
     def test_filter_config_preserves_none_but_not_empty_string(self, sample_config):
         """None values should be kept (is not None check), empty strings should be stripped."""
         # None values are preserved by the `is not None` check
-        sample_config['postgresql']['connection_settings']['keepalives'] = None
+        sample_config['connection_settings']['keepalives'] = None
         factory = PostgresConnectionFactory(sample_config, 'normal')
         assert 'keepalives' not in factory.config
 
     def test_filter_config_preserves_zero_values(self, sample_config):
         """Zero values like keepalives=0 should NOT be silently dropped."""
-        sample_config['postgresql']['connection_settings']['keepalives'] = 0
+        sample_config['connection_settings']['keepalives'] = 0
         factory = PostgresConnectionFactory(sample_config, 'normal')
         assert factory.config['keepalives'] == 0
 
@@ -71,12 +71,12 @@ class TestPostgresConnectionFactory:
         assert factory.async_pool_settings == {'min_size': 2, 'max_size': 10, 'max_idle': 300, 'max_lifetime': 3600}
 
     def test_missing_pool_settings_defaults_to_empty(self, sample_config):
-        del sample_config['postgresql']['pool_settings']
+        del sample_config['pool_settings']
         factory = PostgresConnectionFactory(sample_config, 'pool')
         assert factory.pool_settings == {}
 
     def test_missing_sync_settings_defaults_to_empty(self, sample_config):
-        del sample_config['postgresql']['sync_settings']
+        del sample_config['sync_settings']
         factory = PostgresConnectionFactory(sample_config, 'normal')
         assert factory.sync_settings == {}
 
@@ -89,7 +89,7 @@ class TestPostgresConnectionFactory:
     def test_get_connection_normal_receives_sync_settings(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'normal')
         conn = factory.get_connection()
-        assert conn.sync_settings == sample_config['postgresql']['sync_settings']
+        assert conn.sync_settings == sample_config['sync_settings']
 
     def test_get_connection_pool(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'pool')
@@ -100,7 +100,7 @@ class TestPostgresConnectionFactory:
     def test_get_connection_pool_receives_sync_settings(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'pool')
         conn = factory.get_connection()
-        assert conn.sync_settings == sample_config['postgresql']['sync_settings']
+        assert conn.sync_settings == sample_config['sync_settings']
 
     def test_get_connection_async(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'async')
@@ -118,7 +118,7 @@ class TestPostgresConnectionFactory:
         """async_pool connections should receive async_settings for GUC configuration."""
         factory = PostgresConnectionFactory(sample_config, 'async_pool')
         conn = factory.get_connection()
-        assert conn.async_settings == sample_config['postgresql']['async_settings']
+        assert conn.async_settings == sample_config['async_settings']
 
     def test_get_connection_invalid_type_raises(self, sample_config):
         factory = PostgresConnectionFactory(sample_config, 'invalid')
@@ -133,22 +133,22 @@ class TestPostgresConnectionFactory:
 class TestPoolSettingsValidation:
 
     def test_min_size_greater_than_max_size_raises(self, sample_config):
-        sample_config['postgresql']['pool_settings'] = {'min_size': 20, 'max_size': 5}
+        sample_config['pool_settings'] = {'min_size': 20, 'max_size': 5}
         with pytest.raises(ValueError, match="min_size .* cannot be greater than max_size"):
             PostgresConnectionFactory(sample_config, 'pool')
 
     def test_async_pool_min_greater_than_max_raises(self, sample_config):
-        sample_config['postgresql']['async_pool_settings'] = {'min_size': 20, 'max_size': 5}
+        sample_config['async_pool_settings'] = {'min_size': 20, 'max_size': 5}
         with pytest.raises(ValueError, match="min_size .* cannot be greater than max_size"):
             PostgresConnectionFactory(sample_config, 'async_pool')
 
     def test_valid_pool_settings_pass(self, sample_config):
-        sample_config['postgresql']['pool_settings'] = {'min_size': 2, 'max_size': 10}
+        sample_config['pool_settings'] = {'min_size': 2, 'max_size': 10}
         factory = PostgresConnectionFactory(sample_config, 'pool')
         assert factory.pool_settings == {'min_size': 2, 'max_size': 10}
 
     def test_equal_min_max_passes(self, sample_config):
-        sample_config['postgresql']['pool_settings'] = {'min_size': 5, 'max_size': 5}
+        sample_config['pool_settings'] = {'min_size': 5, 'max_size': 5}
         factory = PostgresConnectionFactory(sample_config, 'pool')
         assert factory.pool_settings['min_size'] == factory.pool_settings['max_size']
 
@@ -156,13 +156,13 @@ class TestPoolSettingsValidation:
 class TestAutocommitConfig:
 
     def test_autocommit_true_set_on_connection(self, sample_config):
-        sample_config['postgresql']['connection_settings']['autocommit'] = True
+        sample_config['connection_settings']['autocommit'] = True
         factory = PostgresConnectionFactory(sample_config, 'normal')
         conn = factory.get_connection()
         assert conn.autocommit is True
 
     def test_autocommit_false_set_on_connection(self, sample_config):
-        sample_config['postgresql']['connection_settings']['autocommit'] = False
+        sample_config['connection_settings']['autocommit'] = False
         factory = PostgresConnectionFactory(sample_config, 'normal')
         conn = factory.get_connection()
         assert conn.autocommit is False
@@ -174,6 +174,6 @@ class TestAutocommitConfig:
 
     def test_autocommit_removed_from_connection_config(self, sample_config):
         """autocommit should not be passed as a psycopg connection parameter."""
-        sample_config['postgresql']['connection_settings']['autocommit'] = True
+        sample_config['connection_settings']['autocommit'] = True
         factory = PostgresConnectionFactory(sample_config, 'normal')
         assert 'autocommit' not in factory.config

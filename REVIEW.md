@@ -1,4 +1,4 @@
-# pgmonkey Code Review — Pool Abstraction and Best Practices
+# pgmonkey Code Review - Pool Abstraction and Best Practices
 
 ## Overview
 
@@ -40,7 +40,7 @@ connection for a given cache key.
 **File:** `src/pgmonkey/connections/postgres/normal_connection.py:42-52`
 
 The `finally` block calls `self.disconnect()`, which means every `transaction()`
-call destroys the connection. For cached connections, this is surprising — the
+call destroys the connection. For cached connections, this is surprising - the
 user gets back a dead connection from the cache on next use.
 
 **Fix:** Remove `disconnect()` from the `finally` block in `transaction()`.
@@ -53,7 +53,7 @@ Let the connection lifecycle be managed by the context manager or explicit
 
 Connections are acquired inside `with` blocks and appended to a list, but each
 `with` block returns the connection to the pool before the next iteration.
-The `len(connections)` check doesn't validate concurrent pool capacity — it only
+The `len(connections)` check doesn't validate concurrent pool capacity - it only
 tests that the loop completed N times sequentially.
 
 ### 4. `async_settings` not applied for `async_pool` connections
@@ -69,26 +69,26 @@ pool mode, it silently won't.
 ### 5. All observability uses `print()` instead of `logging`
 
 Every connection type uses `print()` for diagnostics. Libraries should never
-print to stdout — they should use `logging.getLogger(__name__)` so users can
+print to stdout - they should use `logging.getLogger(__name__)` so users can
 control output via standard logging configuration.
 
 ---
 
 ## Assessment of the External Review
 
-### Agree — High value, fits pgmonkey's scope
+### Agree - High value, fits pgmonkey's scope
 
 - **Config validation/linting:** Highest-impact, lowest-effort improvement.
   `_filter_config()` silently drops unknown keys. A typo like `hosst` is
   ignored with a cryptic connection failure later. Add unknown-key warnings
   and range checks (e.g., `min_size > max_size`). Skip opinionated warnings
-  about sslmode — pgmonkey shouldn't judge deployment topology.
+  about sslmode - pgmonkey shouldn't judge deployment topology.
 
 - **Pre-ping / stale connection recovery:** Valid, but psycopg_pool already
   has a `check` parameter on `ConnectionPool` and `AsyncConnectionPool`.
   Just expose it in the YAML config. No custom implementation needed.
 
-### Partially agree — Valid need, scope should be smaller
+### Partially agree - Valid need, scope should be smaller
 
 - **Retry policy:** pgmonkey manages connections, not query execution. Adding
   retry means wrapping `cursor.execute()`, changing the architecture from
@@ -104,7 +104,7 @@ control output via standard logging configuration.
   a `timeout` parameter. pgmonkey doesn't expose it. Just surface it in the
   config.
 
-### Disagree — Out of scope
+### Disagree - Out of scope
 
 - **Secrets abstraction:** General configuration concern, not PostgreSQL-specific.
   Users solve this with `os.environ`, `pydantic-settings`, `sops`, etc. before
@@ -126,15 +126,15 @@ control output via standard logging configuration.
 
 | Priority | Item | Effort | Impact |
 |----------|------|--------|--------|
-| 1 | Replace `print()` with `logging` | Low | High — production-blocking |
-| 2 | Fix race condition in caching | Low | High — correctness |
-| 3 | Config validation (unknown keys, range checks) | Low | High — DX |
-| 4 | Expose `check` param for pool health checks | Low | Medium — operational |
-| 5 | Expose pool `timeout` param in config | Low | Medium — operational |
-| 6 | Fix `NormalConnection.transaction()` disconnect | Low | Medium — correctness |
-| 7 | Apply `async_settings` to async_pool connections | Medium | Medium — consistency |
-| 8 | Lifecycle event callbacks | Medium | Medium — extensibility |
-| 9 | Importable retry decorator (separate utility) | Medium | Medium — convenience |
+| 1 | Replace `print()` with `logging` | Low | High - production-blocking |
+| 2 | Fix race condition in caching | Low | High - correctness |
+| 3 | Config validation (unknown keys, range checks) | Low | High - DX |
+| 4 | Expose `check` param for pool health checks | Low | Medium - operational |
+| 5 | Expose pool `timeout` param in config | Low | Medium - operational |
+| 6 | Fix `NormalConnection.transaction()` disconnect | Low | Medium - correctness |
+| 7 | Apply `async_settings` to async_pool connections | Medium | Medium - consistency |
+| 8 | Lifecycle event callbacks | Medium | Medium - extensibility |
+| 9 | Importable retry decorator (separate utility) | Medium | Medium - convenience |
 
 Items 1-6 are small changes that fix real problems.
 Items 7-9 are modest features that extend the existing architecture naturally.
@@ -146,7 +146,7 @@ Items 7-9 are modest features that extend the existing architecture naturally.
 The external review correctly identifies what problems exist but oversizes
 several solutions. Secrets management, replica routing, and a full observability
 stack would turn pgmonkey from a focused connection library into database
-middleware — a different product.
+middleware - a different product.
 
 The concrete bugs (race condition, transaction disconnect, async_settings gap)
 should be fixed before adding any new abstractions. Fixing correctness issues

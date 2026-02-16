@@ -58,7 +58,7 @@ pip install pgmonkey[test]
 
 ## One Config File, All Connection Types
 
-In v2.0.0, pgmonkey uses a **single YAML configuration file** for all connection types. Instead of maintaining separate config files for normal, pool, async, and async_pool connections, you define everything in one file and specify the connection type when you call the API:
+pgmonkey uses a **single YAML configuration file** for all connection types. Instead of maintaining separate config files for normal, pool, async, and async_pool connections, you define everything in one file and specify the connection type when you call the API:
 
 ```python
 from pgmonkey import PGConnectionManager
@@ -79,55 +79,54 @@ The `connection_type` parameter is optional. If omitted, pgmonkey uses the `conn
 Here is the full configuration template. You only need to fill in the sections relevant to the connection types you plan to use.
 
 ```yaml
-postgresql:
-  # Default connection type when none is specified in the API call.
-  # Options: 'normal', 'pool', 'async', 'async_pool'
-  # You can override this per-call:
-  #   manager.get_database_connection('config.yaml', 'pool')
-  connection_type: 'normal'
+# Default connection type when none is specified in the API call.
+# Options: 'normal', 'pool', 'async', 'async_pool'
+# You can override this per-call:
+#   manager.get_database_connection('config.yaml', 'pool')
+connection_type: 'normal'
 
-  connection_settings:
-    user: 'postgres'
-    password: 'password'
-    host: 'localhost'
-    port: '5432'
-    dbname: 'mydatabase'
-    sslmode: 'prefer'  # Options: disable, allow, prefer, require, verify-ca, verify-full
-    sslcert: ''  # Path to the client SSL certificate, if needed
-    sslkey: ''  # Path to the client SSL key, if needed
-    sslrootcert: ''  # Path to the root SSL certificate, if needed
-    connect_timeout: '10'  # Maximum wait for connection, in seconds
-    application_name: 'myapp'
-    keepalives: '1'  # Enable TCP keepalives (1=on, 0=off)
-    keepalives_idle: '60'  # Seconds before sending a keepalive probe
-    keepalives_interval: '15'  # Seconds between keepalive probes
-    keepalives_count: '5'  # Max keepalive probes before closing the connection
+connection_settings:
+  user: 'postgres'
+  password: 'password'
+  host: 'localhost'
+  port: '5432'
+  dbname: 'mydatabase'
+  sslmode: 'prefer'  # Options: disable, allow, prefer, require, verify-ca, verify-full
+  sslcert: ''  # Path to the client SSL certificate, if needed
+  sslkey: ''  # Path to the client SSL key, if needed
+  sslrootcert: ''  # Path to the root SSL certificate, if needed
+  connect_timeout: '10'  # Maximum wait for connection, in seconds
+  application_name: 'myapp'
+  keepalives: '1'  # Enable TCP keepalives (1=on, 0=off)
+  keepalives_idle: '60'  # Seconds before sending a keepalive probe
+  keepalives_interval: '15'  # Seconds between keepalive probes
+  keepalives_count: '5'  # Max keepalive probes before closing the connection
 
-  # Settings for 'pool' connection type
-  pool_settings:
-    min_size: 5
-    max_size: 20
-    timeout: 30  # Seconds to wait for a connection from the pool before raising an error
-    max_idle: 300  # Seconds a connection can remain idle before being closed
-    max_lifetime: 3600  # Seconds a connection can be reused
-    check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
+# Settings for 'pool' connection type
+pool_settings:
+  min_size: 5
+  max_size: 20
+  timeout: 30  # Seconds to wait for a connection from the pool before raising an error
+  max_idle: 300  # Seconds a connection can remain idle before being closed
+  max_lifetime: 3600  # Seconds a connection can be reused
+  check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
 
-  # Settings for 'async' connection type (applied via SET commands on connection)
-  # These settings are also applied to 'async_pool' connections via a configure callback.
-  async_settings:
-    idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction (ms)
-    statement_timeout: '30000'  # Cancel statements exceeding this time (ms)
-    lock_timeout: '10000'  # Timeout for acquiring locks (ms)
-    # work_mem: '256MB'  # Memory for sort operations and more
+# Settings for 'async' connection type (applied via SET commands on connection)
+# These settings are also applied to 'async_pool' connections via a configure callback.
+async_settings:
+  idle_in_transaction_session_timeout: '5000'  # Timeout for idle in transaction (ms)
+  statement_timeout: '30000'  # Cancel statements exceeding this time (ms)
+  lock_timeout: '10000'  # Timeout for acquiring locks (ms)
+  # work_mem: '256MB'  # Memory for sort operations and more
 
-  # Settings for 'async_pool' connection type
-  async_pool_settings:
-    min_size: 5
-    max_size: 20
-    timeout: 30  # Seconds to wait for a connection from the pool before raising an error
-    max_idle: 300
-    max_lifetime: 3600
-    check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
+# Settings for 'async_pool' connection type
+async_pool_settings:
+  min_size: 5
+  max_size: 20
+  timeout: 30  # Seconds to wait for a connection from the pool before raising an error
+  max_idle: 300
+  max_lifetime: 3600
+  check_on_checkout: false  # Validate connections with SELECT 1 before handing to caller
 ```
 
 ### Connection Settings
@@ -194,13 +193,12 @@ Used by `async_pool` connection type. Same parameters as pool settings. The `asy
 The most common method. Credentials are sent to the PostgreSQL server for validation.
 
 ```yaml
-postgresql:
-  connection_type: 'normal'
-  connection_settings:
-    user: 'your_user'
-    password: 'your_password'
-    host: 'localhost'
-    dbname: 'your_database'
+connection_type: 'normal'
+connection_settings:
+  user: 'your_user'
+  password: 'your_password'
+  host: 'localhost'
+  dbname: 'your_database'
 ```
 
 ### SSL/TLS Encryption
@@ -215,15 +213,14 @@ SSL/TLS encrypts the connection between your application and the PostgreSQL serv
 - `verify-full`: Require SSL, verify certificate, and ensure the hostname matches.
 
 ```yaml
-postgresql:
-  connection_type: 'normal'
-  connection_settings:
-    user: 'your_user'
-    password: 'your_password'
-    host: 'localhost'
-    dbname: 'your_database'
-    sslmode: 'require'
-    sslrootcert: '/path/to/ca.crt'
+connection_type: 'normal'
+connection_settings:
+  user: 'your_user'
+  password: 'your_password'
+  host: 'localhost'
+  dbname: 'your_database'
+  sslmode: 'require'
+  sslrootcert: '/path/to/ca.crt'
 ```
 
 ### Certificate-Based Authentication
@@ -231,17 +228,16 @@ postgresql:
 Uses SSL client certificates for authentication. Highly secure and often used in enterprise environments.
 
 ```yaml
-postgresql:
-  connection_type: 'normal'
-  connection_settings:
-    user: 'your_user'
-    password: 'your_password'
-    host: 'localhost'
-    dbname: 'your_database'
-    sslmode: 'verify-full'
-    sslcert: '/path/to/client.crt'
-    sslkey: '/path/to/client.key'
-    sslrootcert: '/path/to/ca.crt'
+connection_type: 'normal'
+connection_settings:
+  user: 'your_user'
+  password: 'your_password'
+  host: 'localhost'
+  dbname: 'your_database'
+  sslmode: 'verify-full'
+  sslcert: '/path/to/client.crt'
+  sslkey: '/path/to/client.key'
+  sslrootcert: '/path/to/ca.crt'
 ```
 
 ## Using the CLI
@@ -294,8 +290,8 @@ pgmonkey pgconfig generate-code --filepath /path/to/config.yaml --connection-typ
 
 The `--library` flag controls which library the generated code targets:
 
-- `pgmonkey` (default) — generates code using pgmonkey's `PGConnectionManager`.
-- `psycopg` — generates code using `psycopg` and `psycopg_pool` directly, reading connection settings from the same YAML config file.
+- `pgmonkey` (default) - generates code using pgmonkey's `PGConnectionManager`.
+- `psycopg` - generates code using `psycopg` and `psycopg_pool` directly, reading connection settings from the same YAML config file.
 
 ### Server Configuration Recommendations
 
@@ -354,7 +350,7 @@ This queries the server's `pg_settings` (read-only) and displays a comparison ta
 
 The audit also inspects `pg_hba_file_rules` (PostgreSQL 15+) when available, showing current HBA rules alongside recommendations.
 
-If the connected role lacks permission to query `pg_settings`, the audit fails gracefully with a message and falls back to showing recommendations only. No server settings are ever modified — the audit is entirely read-only.
+If the connected role lacks permission to query `pg_settings`, the audit fails gracefully with a message and falls back to showing recommendations only. No server settings are ever modified - the audit is entirely read-only.
 
 ### Importing and Exporting Data
 
@@ -506,11 +502,11 @@ except Exception as e:
 
 pgmonkey handles several production concerns behind the scenes so you don't have to:
 
-- **Connection caching** — Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance, preventing "pool storms" where each call opens a new pool.
-- **Async pool lifecycle** — `async with pool_conn:` borrows a connection from the pool and returns it when the block exits. The pool stays open for reuse. Auto-commits on clean exit, rolls back on exception.
-- **atexit cleanup** — All cached connections are automatically closed when the process exits.
-- **Thread-safe caching** — The connection cache is protected by a threading lock with double-check locking to prevent race conditions.
-- **Config validation** — Unknown connection setting keys produce a warning log message. Pool settings are validated (e.g., `min_size` cannot exceed `max_size`).
+- **Connection caching** - Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance, preventing "pool storms" where each call opens a new pool.
+- **Async pool lifecycle** - `async with pool_conn:` borrows a connection from the pool and returns it when the block exits. The pool stays open for reuse. Auto-commits on clean exit, rolls back on exception.
+- **atexit cleanup** - All cached connections are automatically closed when the process exits.
+- **Thread-safe caching** - The connection cache is protected by a threading lock with double-check locking to prevent race conditions.
+- **Config validation** - Unknown connection setting keys produce a warning log message. Pool settings are validated (e.g., `min_size` cannot exceed `max_size`).
 
 ### App-Level Pattern: Sync Database Class (Flask)
 
