@@ -1,3 +1,75 @@
+# pgmonkey v3.2.0 Release Notes
+
+## Data Safety and Reliability
+
+pgmonkey v3.2.0 is a focused maintenance release that closes a data exposure risk in the CSV
+importer, fixes unreliable file handling during bulk imports, and widens Python version
+compatibility for future releases.
+
+## Highlights
+
+### CSV Data Exposure Fix
+
+The CSV importer's `_sync_ingest()` contained a leftover debug `print()` statement that
+output the first row of CSV data to stdout during every import operation. For datasets
+containing PII, credentials, or other sensitive information, this silently leaked data to
+logs and terminal output. The debug print and its associated fragile `file.seek(0)` call
+have been removed.
+
+### Reliable CSV File Handling
+
+The CSV importer previously used `file.seek(0)` to rewind a text-mode file with an active
+`csv.reader` iterator - a pattern the Python documentation warns is unreliable. The reader
+maintains internal buffers that are not reset by `seek()`, which could silently produce
+incorrect row counts or skip data depending on buffer boundaries. The importer now uses
+separate file opens for each phase (header detection, row counting, COPY ingestion),
+eliminating the unreliable seek/reader interaction entirely.
+
+### Scoped Warning Suppression
+
+The async pool connection module had a blanket `warnings.filterwarnings('ignore',
+category=RuntimeWarning)` at module level that suppressed all `RuntimeWarning`s from
+`psycopg_pool` for the entire process lifetime. This could hide legitimate warnings about
+pool health or configuration problems during normal operation. The suppression is now scoped
+to pool construction only via `warnings.catch_warnings()`, so warnings during normal pool
+operation remain visible.
+
+### Wider Python Compatibility
+
+The `requires-python` bound has been widened from `<3.14` to `<4.0`. The previous upper
+bound would have required a release just to support Python 3.14 when it ships. The new
+bound follows the same convention used by the project's other dependencies (psycopg, PyYAML,
+etc.) and avoids needlessly excluding future Python releases.
+
+## Compatibility
+
+No breaking API changes. All existing code continues to work as before.
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | >= 3.10, < 4.0 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+| chardet | >= 5.2.0, < 6.0.0 |
+| tqdm | >= 4.64.0, < 5.0.0 |
+
+## Test Suite
+
+257 unit tests (unchanged from v3.1.0), all passing.
+
+## Files Changed
+
+- `pyproject.toml` - Version bump to 3.2.0, Python upper bound widened to < 4.0
+- `src/pgmonkey/tools/csv_data_importer.py` - Removed debug print, replaced file.seek(0)
+  with separate file opens, extracted `_make_reader()` helper
+- `src/pgmonkey/connections/postgres/async_pool_connection.py` - Scoped RuntimeWarning
+  suppression to pool construction
+- `PROJECTSCOPE.md` - Version update
+- `RELEASE_NOTES.md` - This release notes entry
+
+---
+
 # pgmonkey v3.1.0 Release Notes
 
 ## Quality, Safety, and Library Hygiene
