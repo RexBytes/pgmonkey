@@ -1,3 +1,82 @@
+# pgmonkey v3.3.0 Release Notes
+
+## Correctness and Library Usability
+
+pgmonkey v3.3.0 fixes three bugs surfaced during an external review: a crash when importing
+small CSV files, a config option that was silently ignored, and an unnecessary asyncio
+dependency that blocked library usage from within existing event loops.
+
+## Highlights
+
+### CSV Import No Longer Crashes on Small Files
+
+The CSV importer's phase-1 column sampling used `next(file)` in a loop that assumed at least
+5 lines existed. Any CSV with fewer than 5 rows - a header-only file, a small lookup table,
+a test fixture - would crash with `StopIteration` before the import even started. The sampling
+now stops gracefully at end-of-file regardless of row count.
+
+### auto_create_table Config Setting Now Works
+
+The `auto_create_table` setting in import config files was loaded and stored but never actually
+checked. The importer unconditionally created missing tables, making the setting a no-op.
+Setting `auto_create_table: False` now correctly raises a `ValueError` with a clear message
+when the target table does not exist, giving users control over whether the importer should
+create tables or only import into pre-existing ones.
+
+### Import/Export Managers Work Inside Async Contexts
+
+`CSVDataImporter.run()` and `CSVDataExporter.run()` were declared as `async def` despite
+containing zero `await` calls - they perform entirely synchronous database operations using
+psycopg's sync COPY interface. The managers wrapped them in `asyncio.run()`, which:
+
+- Added unnecessary event loop overhead for purely sync work
+- Crashed with `RuntimeError` when called from Jupyter notebooks, async web frameworks,
+  or any environment with an already-running event loop
+
+Both `run()` methods are now regular synchronous functions. The managers call them directly
+without `asyncio.run()`. This is fully backward-compatible - the methods were never truly
+async, so no existing `await` calls need updating.
+
+## Compatibility
+
+No breaking API changes. `CSVDataImporter.run()` and `CSVDataExporter.run()` changed from
+`async def` to `def`, but since they contained no `await` expressions, any code calling them
+via `asyncio.run(importer.run())` can simply change to `importer.run()`. Code using the
+higher-level `PGImportManager` and `PGExportManager` requires no changes at all.
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | >= 3.10, < 4.0 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+| chardet | >= 5.2.0, < 6.0.0 |
+| tqdm | >= 4.64.0, < 5.0.0 |
+
+## Test Suite
+
+264 unit tests (up from 257 in v3.2.0), all passing. New tests cover:
+
+- Small CSV sampling (1-row, 2-row, 3-row files survive phase-1 without StopIteration)
+- `auto_create_table: False` raises ValueError when table is missing
+- `auto_create_table: True` proceeds to create the table
+- `run()` is not a coroutine function (both importer and exporter)
+
+## Files Changed
+
+- `pyproject.toml` - Version bump to 3.3.0
+- `src/pgmonkey/tools/csv_data_importer.py` - Safe sampling loop, auto_create_table guard,
+  async def to def
+- `src/pgmonkey/tools/csv_data_exporter.py` - async def to def
+- `src/pgmonkey/managers/pgimport_manager.py` - Removed asyncio.run(), direct call
+- `src/pgmonkey/managers/pgexport_manager.py` - Removed asyncio.run(), direct call
+- `src/pgmonkey/tests/unit/test_csv_data_importer.py` - 7 new tests
+- `src/pgmonkey/tests/unit/test_csv_data_exporter.py` - 1 new test
+- `CLAUDE.md` - Bug fix documentation
+- `RELEASE_NOTES.md` - This release notes entry
+
+---
+
 # pgmonkey v3.2.0 Release Notes
 
 ## Data Safety and Reliability
