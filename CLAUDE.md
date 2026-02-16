@@ -6,11 +6,11 @@ connection types. Includes CLI tools for config generation, server settings audi
 connection testing, and code generation.
 
 ## Architecture
-- `connections/postgres/` — Connection implementations (normal, pool, async, async_pool)
-- `managers/` — High-level managers (PGConnectionManager with caching, config, codegen, audit)
-- `serversettings/` — Server audit: inspector queries pg_settings/pg_hba_file_rules, generator prints comparisons
-- `tools/` — Code generator, CSV import/export, connection tester
-- `cli/` — Argparse-based CLI subcommands
+- `connections/postgres/` - Connection implementations (normal, pool, async, async_pool)
+- `managers/` - High-level managers (PGConnectionManager with caching, config, codegen, audit)
+- `serversettings/` - Server audit: inspector queries pg_settings/pg_hba_file_rules, generator prints comparisons
+- `tools/` - Code generator, CSV import/export, connection tester
+- `cli/` - Argparse-based CLI subcommands
 
 ## Key Design Decisions
 - Connections are cached by config content hash in PGConnectionManager with thread-safe locking
@@ -25,6 +25,9 @@ root level: `connection_type`, `connection_settings`, `pool_settings`, etc. Old-
 with the `postgresql:` key are auto-detected and unwrapped with a DeprecationWarning via
 `common/utils/configutils.py:normalize_config()`.
 
+## Style Guide
+- Never use em dashes (the `—` character) in documentation or code comments. Use a regular hyphen-minus (`-`) instead.
+
 ## Test Commands
 ```bash
 python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (229 tests)
@@ -37,7 +40,7 @@ python -m pytest src/pgmonkey/tests/unit/ -v -x     # stop on first failure
 **Files:** `connections/postgres/pool_connection.py`
 **Problem:** `__enter__` did `self._conn = self.pool.connection().__enter__()` which discarded
 the pool context manager. `__exit__` then called `self._conn.__exit__()` which invoked the raw
-psycopg Connection's __exit__ — this double-committed transactions AND closed the underlying
+psycopg Connection's __exit__ - this double-committed transactions AND closed the underlying
 connection instead of returning it to the pool.
 **Fix:** Added `_pool_conn_ctx` field (mirroring async_pool_connection.py). `__enter__` stores
 the pool CM, `__exit__` delegates to the pool CM for proper return-to-pool behavior.
@@ -61,7 +64,7 @@ psycopg/libpq treats empty strings as "use default" for most parameters.
 **Files:** `connections/postgres/normal_connection.py`, `connections/postgres/pool_connection.py`,
 `connections/postgres/async_connection.py`, `connections/postgres/async_pool_connection.py`,
 `tools/connection_code_generator.py`
-**Problem:** GUC SET statements used `f"SET {setting} = %s"` — the setting name (an SQL identifier)
+**Problem:** GUC SET statements used `f"SET {setting} = %s"` - the setting name (an SQL identifier)
 was interpolated via f-string. While the values come from the user's own config, this is bad
 practice and the generated example code taught users unsafe patterns.
 **Fix:** Changed to `sql.SQL("SET {} = %s").format(sql.Identifier(setting))` using psycopg's
@@ -87,7 +90,7 @@ on every connection, so `getattr(conn, 'connection_type', 'unknown')` in cache_i
 ### Fix: normal_connection + async_connection __exit__ connection leak
 **Files:** `connections/postgres/normal_connection.py`, `connections/postgres/async_connection.py`
 **Problem:** `__exit__`/`__aexit__` called commit/rollback then disconnect sequentially. If
-commit() or rollback() raised (e.g. network error), disconnect() was never called — the connection
+commit() or rollback() raised (e.g. network error), disconnect() was never called - the connection
 leaked. Pool connections already had try/finally from the first fix round; normal and async did not.
 **Fix:** Wrapped commit/rollback in try/finally to guarantee disconnect() is always called.
 
@@ -110,7 +113,7 @@ literals regardless of quote characters in the path.
 **Files:** `connections/postgres/normal_connection.py`, `connections/postgres/pool_connection.py`
 **Problem:** Fix #6 was only applied to async_connection.py and async_pool_connection.py.
 The sync counterparts (normal_connection.py and pool_connection.py) still used
-`f"SET {setting} = %s"` for GUC settings — the same unsafe f-string interpolation pattern.
+`f"SET {setting} = %s"` for GUC settings - the same unsafe f-string interpolation pattern.
 **Fix:** Added `sql` import from psycopg and changed to
 `sql.SQL("SET {} = %s").format(sql.Identifier(setting))` in both files, matching the async
 implementations. Updated corresponding test assertions.
@@ -138,7 +141,7 @@ rows within each chunk for accurate progress tracking.
 **Problem:** `_pool_conn_ctx` was stored as a regular instance attribute, but pool connections
 are designed for multi-threaded use (the borrowed connection was already in `threading.local`).
 When two threads called `__enter__`/`__exit__` concurrently on the same PGPoolConnection, they
-overwrote each other's pool context manager — one thread would exit another thread's CM,
+overwrote each other's pool context manager - one thread would exit another thread's CM,
 causing connection leaks and double-exits.
 **Fix:** Moved `_pool_conn_ctx` into `self._local` (the existing `threading.local` instance),
 making it per-thread just like the borrowed connection. Added a thread-safety test.
@@ -148,7 +151,7 @@ making it per-thread just like the borrowed connection. Added a thread-safety te
 **Problem:** `_config_hash()` only hashed the config dictionary. The resolved `connection_type`
 was not included in the cache key. Calling `get_database_connection` with the same config but
 different `connection_type` overrides (e.g. `'normal'` vs `'pool'`) returned the wrong cached
-connection — whichever type was created first would be returned for all subsequent calls.
+connection - whichever type was created first would be returned for all subsequent calls.
 **Fix:** Appended `':' + resolved_type` to the cache key so each connection type gets its own
 cache entry.
 
@@ -165,7 +168,7 @@ async-task-local state. Added a test verifying nested instances don't interfere.
 ### Fix: pg_hba recommendation generated `host ... reject` for SSL modes
 **File:** `serversettings/postgres_server_config_generator.py`
 **Problem:** For non-verify SSL modes (prefer/require/allow), `generate_pg_hba_entry()` produced
-`host all all {address} reject` — a `host` rule with `reject` method blocks ALL connections
+`host all all {address} reject` - a `host` rule with `reject` method blocks ALL connections
 (both SSL and non-SSL) from the subnet, which would prevent the very connection the user is
 trying to make.
 **Fix:** Changed to `hostssl all all {address} md5` which correctly recommends allowing

@@ -2,7 +2,7 @@
 
 ## A Simpler, Safer, Stronger pgmonkey
 
-pgmonkey v3.0.0 is here — and it's our biggest release yet! This version brings a cleaner
+pgmonkey v3.0.0 is here - and it's our biggest release yet! This version brings a cleaner
 config format, a hardened connection layer, and dozens of fixes that make pgmonkey more
 reliable than ever. Whether you're running a quick script or powering a production service,
 v3.0.0 has something great for you.
@@ -12,7 +12,7 @@ v3.0.0 has something great for you.
 ### Simplified YAML Configuration
 
 Say goodbye to the extra `postgresql:` wrapper! Your config files are now cleaner and easier
-to read. Settings live at the root level — no more unnecessary nesting.
+to read. Settings live at the root level - no more unnecessary nesting.
 
 **Before (v2.x):**
 ```yaml
@@ -31,25 +31,25 @@ connection_settings:
   dbname: 'mydb'
 ```
 
-Already have v2.x config files? No problem — pgmonkey auto-detects the old format and
+Already have v2.x config files? No problem - pgmonkey auto-detects the old format and
 handles it seamlessly with a friendly deprecation notice guiding you to update at your pace.
 
 ### Rock-Solid Connection Safety
 
 We took a hard look at every connection path and made sure nothing slips through the cracks:
 
-- **Pool connections done right** — The sync pool context manager now correctly returns
+- **Pool connections done right** - The sync pool context manager now correctly returns
   connections to the pool on exit, fixing a double-commit bug and preventing connection leaks.
   Thread safety is guaranteed with per-thread context tracking via `threading.local`.
 
-- **No more connection leaks** — Normal and async connections now use `try/finally` in their
-  exit handlers, so `disconnect()` always runs — even if commit or rollback throws an exception.
+- **No more connection leaks** - Normal and async connections now use `try/finally` in their
+  exit handlers, so `disconnect()` always runs - even if commit or rollback throws an exception.
 
-- **Async pool isolation** — Each `PGAsyncPoolConnection` instance now has its own
+- **Async pool isolation** - Each `PGAsyncPoolConnection` instance now has its own
   `ContextVar` storage, so nested `async with` blocks on different pool instances never
   interfere with each other.
 
-- **Smarter caching** — The connection cache key now includes the connection type, so
+- **Smarter caching** - The connection cache key now includes the connection type, so
   requesting the same config as `'normal'` vs `'pool'` correctly returns different cached
   connections.
 
@@ -70,16 +70,16 @@ teach the same safe pattern, so your team builds good habits from day one.
 
 ### CSV Import/Export Improvements
 
-- **BOM detection fixed** — UTF-32 BOMs are now correctly detected before UTF-16 BOMs,
+- **BOM detection fixed** - UTF-32 BOMs are now correctly detected before UTF-16 BOMs,
   preventing misidentification of UTF-32 encoded files.
-- **Accurate progress bars** — The CSV exporter now counts actual rows instead of byte chunks,
+- **Accurate progress bars** - The CSV exporter now counts actual rows instead of byte chunks,
   giving you a truthful progress bar during large exports.
 
 ### Server Audit Fixes
 
-- **No more NULL crashes** — If `pg_settings` returns NULL for a setting value, the audit
+- **No more NULL crashes** - If `pg_settings` returns NULL for a setting value, the audit
   gracefully reports `UNKNOWN` status instead of crashing.
-- **Correct HBA recommendations** — For SSL-enabled connections, the audit now recommends
+- **Correct HBA recommendations** - For SSL-enabled connections, the audit now recommends
   `hostssl ... md5` instead of the incorrectly blocking `host ... reject` rule.
 
 ## New Dependencies
@@ -91,7 +91,7 @@ teach the same safe pattern, so your team builds good habits from day one.
 
 ## Backward Compatibility
 
-The simplified YAML config is the only breaking change — and it's handled gracefully.
+The simplified YAML config is the only breaking change - and it's handled gracefully.
 Old-format configs with the `postgresql:` wrapper key are auto-detected and unwrapped at
 runtime with a `DeprecationWarning`. Your existing configs will keep working while you
 transition to the new format.
@@ -119,7 +119,7 @@ export progress accuracy.
 
 This release reflects a thorough, multi-round security and reliability review. Every
 connection type, every edge case, every generated code template was scrutinized and
-strengthened. pgmonkey v3.0.0 is the most robust version we've ever shipped — enjoy!
+strengthened. pgmonkey v3.0.0 is the most robust version we've ever shipped - enjoy!
 
 ---
 
@@ -142,8 +142,8 @@ pgmonkey pgserverconfig --filepath config.yaml --audit
 - Queries `pg_settings` for `max_connections`, `ssl`, `ssl_cert_file`, `ssl_key_file`, `ssl_ca_file`
 - Displays a comparison table: Setting, Recommended, Current, Source, Status (OK / MISMATCH / REVIEW / UNKNOWN)
 - Inspects `pg_hba_file_rules` (PostgreSQL 15+) when available
-- Gracefully handles permission errors — falls back to recommendations only
-- Entirely read-only — no server settings are modified
+- Gracefully handles permission errors - falls back to recommendations only
+- Entirely read-only - no server settings are modified
 
 Without `--audit`, the command works exactly as before.
 
@@ -167,14 +167,14 @@ No breaking API changes. All existing code continues to work as before.
 
 ## Files Changed
 
-- `src/pgmonkey/cli/cli_pg_server_config_subparser.py` — `--audit` CLI argument
-- `src/pgmonkey/serversettings/postgres_server_settings_inspector.py` — New: queries live server pg_settings and pg_hba_file_rules
-- `src/pgmonkey/serversettings/postgres_server_config_generator.py` — Audit comparison output
-- `src/pgmonkey/managers/pg_server_config_manager.py` — Audit connection and fallback logic
-- `src/pgmonkey/tests/unit/test_server_settings_inspector.py` — 26 new tests
-- `src/pgmonkey/tests/unit/test_server_config_generator.py` — 5 new audit tests
-- `README.md` — Documentation updates
-- `docs/` — Website documentation updates
+- `src/pgmonkey/cli/cli_pg_server_config_subparser.py` - `--audit` CLI argument
+- `src/pgmonkey/serversettings/postgres_server_settings_inspector.py` - New: queries live server pg_settings and pg_hba_file_rules
+- `src/pgmonkey/serversettings/postgres_server_config_generator.py` - Audit comparison output
+- `src/pgmonkey/managers/pg_server_config_manager.py` - Audit connection and fallback logic
+- `src/pgmonkey/tests/unit/test_server_settings_inspector.py` - 26 new tests
+- `src/pgmonkey/tests/unit/test_server_config_generator.py` - 5 new audit tests
+- `README.md` - Documentation updates
+- `docs/` - Website documentation updates
 
 ---
 
@@ -190,8 +190,8 @@ pgmonkey v2.2.0 improves robustness with bug fixes across connection management,
 
 The `generate-code` CLI command now supports a `--library` flag with two choices:
 
-- `pgmonkey` (default) — generates code using pgmonkey's `PGConnectionManager`.
-- `psycopg` — generates code using `psycopg` and `psycopg_pool` directly, reading connection settings from the same YAML config file.
+- `pgmonkey` (default) - generates code using pgmonkey's `PGConnectionManager`.
+- `psycopg` - generates code using `psycopg` and `psycopg_pool` directly, reading connection settings from the same YAML config file.
 
 All four connection types (`normal`, `pool`, `async`, `async_pool`) have native psycopg templates.
 
@@ -202,14 +202,14 @@ pgmonkey pgconfig generate-code --filepath config.yaml --connection-type pool --
 
 ### Bug Fixes
 
-- **Race condition in connection caching** — Fixed with double-check locking pattern. Two threads hitting the same config simultaneously no longer both create connections (one leaking).
-- **`NormalConnection.transaction()` disconnect** — Removed `disconnect()` from the `finally` block. Connection lifecycle is now managed externally, consistent with pool connections.
-- **Pool `test_connection()` false positive** — Now uses `ExitStack` to hold connections concurrently, properly validating pool capacity instead of sequentially acquiring and returning.
-- **`async_settings` not applied to `async_pool`** — GUC settings (`statement_timeout`, `lock_timeout`, etc.) are now applied to every async pool connection via psycopg_pool's `configure` callback.
+- **Race condition in connection caching** - Fixed with double-check locking pattern. Two threads hitting the same config simultaneously no longer both create connections (one leaking).
+- **`NormalConnection.transaction()` disconnect** - Removed `disconnect()` from the `finally` block. Connection lifecycle is now managed externally, consistent with pool connections.
+- **Pool `test_connection()` false positive** - Now uses `ExitStack` to hold connections concurrently, properly validating pool capacity instead of sequentially acquiring and returning.
+- **`async_settings` not applied to `async_pool`** - GUC settings (`statement_timeout`, `lock_timeout`, etc.) are now applied to every async pool connection via psycopg_pool's `configure` callback.
 
 ### Logging Instead of `print()`
 
-All connection classes now use `logging.getLogger(__name__)` instead of `print()`. This follows Python library best practices — users can control output via standard logging configuration. CLI output still uses `print()` where appropriate.
+All connection classes now use `logging.getLogger(__name__)` instead of `print()`. This follows Python library best practices - users can control output via standard logging configuration. CLI output still uses `print()` where appropriate.
 
 ### Config Validation
 
@@ -254,20 +254,20 @@ No breaking API changes. All existing code continues to work as before.
 
 ## Files Changed
 
-- `src/pgmonkey/connections/postgres/normal_connection.py` — Logging, transaction fix
-- `src/pgmonkey/connections/postgres/async_connection.py` — Logging
-- `src/pgmonkey/connections/postgres/pool_connection.py` — Logging, ExitStack test, check_on_checkout
-- `src/pgmonkey/connections/postgres/async_pool_connection.py` — Logging, async_settings configure callback, check_on_checkout
-- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` — Config validation, async_settings passthrough
-- `src/pgmonkey/managers/pgconnection_manager.py` — Logging, double-check locking
-- `src/pgmonkey/common/templates/postgres.yaml` — timeout, check_on_checkout
-- `src/pgmonkey/tools/connection_code_generator.py` — Native psycopg templates, library dispatch
-- `src/pgmonkey/managers/pgcodegen_manager.py` — Library parameter
-- `src/pgmonkey/cli/cli_pgconfig_subparser.py` — `--library` CLI argument
-- `src/pgmonkey/tests/unit/` — Updated and new test files
-- `PROJECTSCOPE.md` — New project scope document
-- `README.md` — Documentation updates
-- `docs/` — Website documentation updates
+- `src/pgmonkey/connections/postgres/normal_connection.py` - Logging, transaction fix
+- `src/pgmonkey/connections/postgres/async_connection.py` - Logging
+- `src/pgmonkey/connections/postgres/pool_connection.py` - Logging, ExitStack test, check_on_checkout
+- `src/pgmonkey/connections/postgres/async_pool_connection.py` - Logging, async_settings configure callback, check_on_checkout
+- `src/pgmonkey/connections/postgres/postgres_connection_factory.py` - Config validation, async_settings passthrough
+- `src/pgmonkey/managers/pgconnection_manager.py` - Logging, double-check locking
+- `src/pgmonkey/common/templates/postgres.yaml` - timeout, check_on_checkout
+- `src/pgmonkey/tools/connection_code_generator.py` - Native psycopg templates, library dispatch
+- `src/pgmonkey/managers/pgcodegen_manager.py` - Library parameter
+- `src/pgmonkey/cli/cli_pgconfig_subparser.py` - `--library` CLI argument
+- `src/pgmonkey/tests/unit/` - Updated and new test files
+- `PROJECTSCOPE.md` - New project scope document
+- `README.md` - Documentation updates
+- `docs/` - Website documentation updates
 
 ---
 
@@ -283,7 +283,7 @@ pgmonkey v2.1.0 adds always-on connection caching to prevent pool storms, fixes 
 
 Connections and pools are now automatically cached by config content. Repeated calls to `get_database_connection()` with the same configuration return the existing connection or pool instead of creating a new one.
 
-This prevents "pool storms" — a common pitfall where each call inadvertently opens a brand-new connection pool, quickly exhausting database server connections.
+This prevents "pool storms" - a common pitfall where each call inadvertently opens a brand-new connection pool, quickly exhausting database server connections.
 
 **New API:**
 
@@ -304,7 +304,7 @@ An `atexit` handler automatically performs best-effort cleanup of all cached con
 
 Previously, `PGAsyncPoolConnection.__aexit__()` called `disconnect()`, which closed the entire `AsyncConnectionPool`. This meant the pool was destroyed after a single `async with` block and could not be reused.
 
-Now, `async with` borrows a connection from the pool and returns it when the block exits — matching how the sync pool (`PGPoolConnection`) already works. The pool stays open for reuse across multiple `async with` blocks. Clean exits auto-commit; exceptions auto-rollback.
+Now, `async with` borrows a connection from the pool and returns it when the block exits - matching how the sync pool (`PGPoolConnection`) already works. The pool stays open for reuse across multiple `async with` blocks. Clean exits auto-commit; exceptions auto-rollback.
 
 `cursor()` and `transaction()` are now dual-mode: inside an `async with` block they use the already-acquired connection; outside they acquire their own connection from the pool (standalone usage).
 
@@ -312,13 +312,13 @@ Now, `async with` borrows a connection from the pool and returns it when the blo
 
 New documentation covering production-ready usage patterns:
 
-- **Best Practices page** (`docs/best_practices.html`) — Code recipes for all 4 connection types, Flask and FastAPI app-level design patterns, cache management API reference, and a quick reference table.
-- **README section** — Best Practice Recipes with app-level patterns and cache management reference.
+- **Best Practices page** (`docs/best_practices.html`) - Code recipes for all 4 connection types, Flask and FastAPI app-level design patterns, cache management API reference, and a quick reference table.
+- **README section** - Best Practice Recipes with app-level patterns and cache management reference.
 - Navigation updated across all doc pages.
 
 ## Compatibility
 
-No breaking API changes. All existing code continues to work as before — caching is transparent and automatic. The `force_reload` parameter is the only new parameter on existing methods, and it defaults to `False`.
+No breaking API changes. All existing code continues to work as before - caching is transparent and automatic. The `force_reload` parameter is the only new parameter on existing methods, and it defaults to `False`.
 
 | Dependency | Supported Versions |
 |---|---|
@@ -341,12 +341,12 @@ No breaking API changes. All existing code continues to work as before — cachi
 
 ## Files Changed
 
-- `src/pgmonkey/managers/pgconnection_manager.py` — Connection caching, atexit cleanup, cache management API
-- `src/pgmonkey/connections/postgres/async_pool_connection.py` — Async pool lifecycle fix
-- `src/pgmonkey/tests/unit/test_connection_caching.py` — 19 new tests
-- `docs/best_practices.html` — New documentation page
-- `docs/index.html` — Navigation update
-- `docs/reference.html` — Navigation update, test count update
-- `README.md` — Best Practice Recipes section
-- `ISSUES.md` — Internal issue tracker (not published)
-- `pyproject.toml` — Version bump to 2.1.0
+- `src/pgmonkey/managers/pgconnection_manager.py` - Connection caching, atexit cleanup, cache management API
+- `src/pgmonkey/connections/postgres/async_pool_connection.py` - Async pool lifecycle fix
+- `src/pgmonkey/tests/unit/test_connection_caching.py` - 19 new tests
+- `docs/best_practices.html` - New documentation page
+- `docs/index.html` - Navigation update
+- `docs/reference.html` - Navigation update, test count update
+- `README.md` - Best Practice Recipes section
+- `ISSUES.md` - Internal issue tracker (not published)
+- `pyproject.toml` - Version bump to 2.1.0

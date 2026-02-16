@@ -290,8 +290,8 @@ pgmonkey pgconfig generate-code --filepath /path/to/config.yaml --connection-typ
 
 The `--library` flag controls which library the generated code targets:
 
-- `pgmonkey` (default) — generates code using pgmonkey's `PGConnectionManager`.
-- `psycopg` — generates code using `psycopg` and `psycopg_pool` directly, reading connection settings from the same YAML config file.
+- `pgmonkey` (default) - generates code using pgmonkey's `PGConnectionManager`.
+- `psycopg` - generates code using `psycopg` and `psycopg_pool` directly, reading connection settings from the same YAML config file.
 
 ### Server Configuration Recommendations
 
@@ -350,7 +350,7 @@ This queries the server's `pg_settings` (read-only) and displays a comparison ta
 
 The audit also inspects `pg_hba_file_rules` (PostgreSQL 15+) when available, showing current HBA rules alongside recommendations.
 
-If the connected role lacks permission to query `pg_settings`, the audit fails gracefully with a message and falls back to showing recommendations only. No server settings are ever modified — the audit is entirely read-only.
+If the connected role lacks permission to query `pg_settings`, the audit fails gracefully with a message and falls back to showing recommendations only. No server settings are ever modified - the audit is entirely read-only.
 
 ### Importing and Exporting Data
 
@@ -502,11 +502,11 @@ except Exception as e:
 
 pgmonkey handles several production concerns behind the scenes so you don't have to:
 
-- **Connection caching** — Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance, preventing "pool storms" where each call opens a new pool.
-- **Async pool lifecycle** — `async with pool_conn:` borrows a connection from the pool and returns it when the block exits. The pool stays open for reuse. Auto-commits on clean exit, rolls back on exception.
-- **atexit cleanup** — All cached connections are automatically closed when the process exits.
-- **Thread-safe caching** — The connection cache is protected by a threading lock with double-check locking to prevent race conditions.
-- **Config validation** — Unknown connection setting keys produce a warning log message. Pool settings are validated (e.g., `min_size` cannot exceed `max_size`).
+- **Connection caching** - Connections and pools are cached by config content (SHA-256 hash). Repeated calls with the same config return the existing instance, preventing "pool storms" where each call opens a new pool.
+- **Async pool lifecycle** - `async with pool_conn:` borrows a connection from the pool and returns it when the block exits. The pool stays open for reuse. Auto-commits on clean exit, rolls back on exception.
+- **atexit cleanup** - All cached connections are automatically closed when the process exits.
+- **Thread-safe caching** - The connection cache is protected by a threading lock with double-check locking to prevent race conditions.
+- **Config validation** - Unknown connection setting keys produce a warning log message. Pool settings are validated (e.g., `min_size` cannot exceed `max_size`).
 
 ### App-Level Pattern: Sync Database Class (Flask)
 
