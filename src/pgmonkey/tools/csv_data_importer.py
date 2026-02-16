@@ -266,12 +266,6 @@ class CSVDataImporter:
                 else:
                     reader = csv.reader(file, quotechar=self.quotechar)  # No delimiter for single-column files
 
-                # Debugging output to check first row
-                for row in reader:
-                    print(f"First row: {row}, Length: {len(row)}")
-                    break  # Only print first row
-
-                file.seek(0)  # Reset file position after debug print
                 # Skip leading blank lines to find the header or first row
                 header = None
                 for row in reader:
