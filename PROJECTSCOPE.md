@@ -56,7 +56,7 @@ migration runners. Use Alembic, Flyway, or pg_dump/pg_restore.
 
 ### No Cloud Secrets Management
 
-As of v3.4.0, pgmonkey provides opt-in environment variable interpolation
+As of v3.5.0, pgmonkey provides opt-in environment variable interpolation
 (`${VAR}`, `from_env`, `from_file`) for injecting secrets at runtime without
 hardcoding them in YAML. This covers the standard deployment patterns: local
 dev via env vars, containers via `ENV`, and Kubernetes via mounted secret files.
@@ -214,7 +214,7 @@ parsing and print output. Business logic lives in `managers/` and `tools/`.
 
 ## Version & Compatibility
 
-- **Current version:** 3.4.0
+- **Current version:** 3.5.0
 - **Python:** 3.10+
 - **psycopg:** >=3.1.20, <4.0.0
 - **psycopg_pool:** >=3.1.9, <4.0.0

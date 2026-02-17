@@ -30,6 +30,9 @@ def cli_pgconfig_subparser(subparsers):
     test_parser.add_argument('--resolve-env', action='store_true', default=False,
                              help='Resolve ${VAR} environment variable references and '
                                   'from_env/from_file secret references in the config file.')
+    test_parser.add_argument('--allow-sensitive-defaults', action='store_true', default=False,
+                             help='Allow ${VAR:-default} fallback values for sensitive keys '
+                                  'like password. Only useful with --resolve-env.')
     test_parser.set_defaults(func=pgconfig_test_handler, pgconfig_manager=pgconfig_manager)
 
     # The "generate-code" subcommand
@@ -63,7 +66,11 @@ def pgconfig_test_handler(args):
     pgconfig_manager = args.pgconfig_manager
     connection_type = getattr(args, 'connection_type', None)
     resolve_env = getattr(args, 'resolve_env', False)
-    pgconfig_manager.test_connection(args.filepath, connection_type, resolve_env=resolve_env)
+    allow_sensitive_defaults = getattr(args, 'allow_sensitive_defaults', False)
+    pgconfig_manager.test_connection(
+        args.filepath, connection_type, resolve_env=resolve_env,
+        allow_sensitive_defaults=allow_sensitive_defaults,
+    )
 
 
 def pgconfig_generate_code_handler(args):

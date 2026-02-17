@@ -149,7 +149,7 @@ def _is_structured_ref(value):
     )
 
 
-def resolve_env_vars(config, strict=False, allow_sensitive_defaults=False, _path=''):
+def resolve_env_vars(config, allow_sensitive_defaults=False, _path=''):
     """Recursively resolve environment references in a config dictionary.
 
     Parameters
@@ -157,9 +157,6 @@ def resolve_env_vars(config, strict=False, allow_sensitive_defaults=False, _path
     config : dict
         The parsed YAML config dictionary (will NOT be mutated; a new dict
         is returned).
-    strict : bool
-        If True, unknown top-level keys raise ``EnvInterpolationError``.
-        (Currently reserved for future use.)
     allow_sensitive_defaults : bool
         If True, ``${VAR:-default}`` is allowed even for sensitive keys
         like ``password``.  Default is False for safety.
@@ -188,7 +185,6 @@ def resolve_env_vars(config, strict=False, allow_sensitive_defaults=False, _path
         elif isinstance(value, dict):
             result[key] = resolve_env_vars(
                 value,
-                strict=strict,
                 allow_sensitive_defaults=allow_sensitive_defaults,
                 _path=current_path,
             )

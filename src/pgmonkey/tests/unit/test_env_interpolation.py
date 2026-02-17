@@ -345,16 +345,26 @@ class TestLoadConfig:
             result = load_config(str(config_file))
         assert result['connection_type'] == 'normal'
 
-    def test_strict_mode_passes_through(self, tmp_path, monkeypatch):
-        monkeypatch.setenv('PGHOST', 'host.com')
+    def test_allow_sensitive_defaults_via_load_config(self, tmp_path, monkeypatch):
+        monkeypatch.delenv('PGPASSWORD', raising=False)
         config_file = tmp_path / "test.yaml"
         config_file.write_text(yaml.dump({
             'connection_type': 'normal',
-            'connection_settings': {'host': '${PGHOST}'},
+            'connection_settings': {'password': '${PGPASSWORD:-devpass}'},
         }))
-        # strict=True should not raise if vars are set
-        result = load_config(str(config_file), resolve_env=True, strict=True)
-        assert result['connection_settings']['host'] == 'host.com'
+        result = load_config(str(config_file), resolve_env=True,
+                             allow_sensitive_defaults=True)
+        assert result['connection_settings']['password'] == 'devpass'
+
+    def test_sensitive_default_blocked_by_default_via_load_config(self, tmp_path, monkeypatch):
+        monkeypatch.delenv('PGPASSWORD', raising=False)
+        config_file = tmp_path / "test.yaml"
+        config_file.write_text(yaml.dump({
+            'connection_type': 'normal',
+            'connection_settings': {'password': '${PGPASSWORD:-devpass}'},
+        }))
+        with pytest.raises(EnvInterpolationError, match="sensitive key"):
+            load_config(str(config_file), resolve_env=True)
 
     def test_missing_var_raises_on_resolve(self, tmp_path, monkeypatch):
         monkeypatch.delenv('MISSING', raising=False)
@@ -458,6 +468,20 @@ class TestManagerResolveEnv:
         sig = inspect.signature(PGConnectionManager.get_database_connection_from_dict)
         assert 'resolve_env' in sig.parameters
 
+    def test_allow_sensitive_defaults_param_exists(self):
+        """Verify allow_sensitive_defaults is accepted on file-based method."""
+        from pgmonkey.managers.pgconnection_manager import PGConnectionManager
+        import inspect
+        sig = inspect.signature(PGConnectionManager.get_database_connection)
+        assert 'allow_sensitive_defaults' in sig.parameters
+
+    def test_allow_sensitive_defaults_from_dict_param_exists(self):
+        """Verify allow_sensitive_defaults is accepted on dict-based method."""
+        from pgmonkey.managers.pgconnection_manager import PGConnectionManager
+        import inspect
+        sig = inspect.signature(PGConnectionManager.get_database_connection_from_dict)
+        assert 'allow_sensitive_defaults' in sig.parameters
+
 
 # ---------------------------------------------------------------------------
 # EnvInterpolationError messages - no secret values leaked
@@ -488,3 +512,24 @@ class TestErrorMessages:
             resolve_env_vars(config)
         assert '/no/such/file' in str(exc_info.value)
         assert 'from_file' in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# Top-level re-exports
+# ---------------------------------------------------------------------------
+
+class TestTopLevelExports:
+
+    def test_redact_config_importable_from_pgmonkey(self):
+        """Verify redact_config is re-exported from the top-level package."""
+        from pgmonkey import redact_config as top_level_redact
+        from pgmonkey.common.utils.redaction import redact_config as internal_redact
+        assert top_level_redact is internal_redact
+
+    def test_redact_config_works_via_top_level_import(self):
+        """Verify the re-exported redact_config actually works."""
+        from pgmonkey import redact_config
+        config = {'connection_settings': {'password': 'secret', 'host': 'localhost'}}
+        result = redact_config(config)
+        assert result['connection_settings']['password'] == '***REDACTED***'
+        assert result['connection_settings']['host'] == 'localhost'
