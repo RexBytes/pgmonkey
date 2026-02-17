@@ -51,7 +51,7 @@ class TestPGAsyncPoolConnectionConnect:
         conn = PGAsyncPoolConnection({'host': 'localhost'}, {'min_size': 2})
         await conn.connect()
 
-        mock_pool_cls.assert_called_once_with(conninfo='host=localhost', min_size=2)
+        mock_pool_cls.assert_called_once_with(conninfo='host=localhost', open=False, min_size=2)
         mock_pool.open.assert_called_once()
 
 

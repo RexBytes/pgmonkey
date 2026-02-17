@@ -301,6 +301,7 @@ async def main():
 
     pool = AsyncConnectionPool(
         conninfo=conninfo_str,
+        open=False,
         configure=configure if async_settings else None,
         **pool_settings,
     )
