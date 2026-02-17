@@ -90,7 +90,8 @@ class PGConnectionManager:
     # -- Public connection API --------------------------------------------------
 
     def get_database_connection(self, config_file_path, connection_type=None,
-                                force_reload=False, resolve_env=False):
+                                force_reload=False, resolve_env=False,
+                                allow_sensitive_defaults=False):
         """Establish a PostgreSQL database connection using a configuration file.
 
         Connections are cached by config content. Repeated calls with the same
@@ -106,6 +107,9 @@ class PGConnectionManager:
             resolve_env: If True, resolve ``${VAR}`` patterns and
                 ``from_env``/``from_file`` references in the config before
                 connecting.
+            allow_sensitive_defaults: If True (and *resolve_env* is True),
+                ``${VAR:-default}`` is permitted even for sensitive keys
+                like ``password``.  Default is False for safety.
 
         Returns:
             A connection object (sync types) or a coroutine (async types - must be awaited).
@@ -115,11 +119,15 @@ class PGConnectionManager:
 
         config_data_dictionary = normalize_config(config_data_dictionary)
         if resolve_env:
-            config_data_dictionary = resolve_env_vars(config_data_dictionary)
+            config_data_dictionary = resolve_env_vars(
+                config_data_dictionary,
+                allow_sensitive_defaults=allow_sensitive_defaults,
+            )
         return self._get_connection(config_data_dictionary, connection_type, force_reload=force_reload)
 
     def get_database_connection_from_dict(self, config_data_dictionary, connection_type=None,
-                                          force_reload=False, resolve_env=False):
+                                          force_reload=False, resolve_env=False,
+                                          allow_sensitive_defaults=False):
         """Establish a PostgreSQL database connection using an in-memory configuration dictionary.
 
         Connections are cached by config content. Repeated calls with the same
@@ -135,13 +143,19 @@ class PGConnectionManager:
             resolve_env: If True, resolve ``${VAR}`` patterns and
                 ``from_env``/``from_file`` references in the config before
                 connecting.
+            allow_sensitive_defaults: If True (and *resolve_env* is True),
+                ``${VAR:-default}`` is permitted even for sensitive keys
+                like ``password``.  Default is False for safety.
 
         Returns:
             A connection object (sync types) or a coroutine (async types - must be awaited).
         """
         config_data_dictionary = normalize_config(config_data_dictionary)
         if resolve_env:
-            config_data_dictionary = resolve_env_vars(config_data_dictionary)
+            config_data_dictionary = resolve_env_vars(
+                config_data_dictionary,
+                allow_sensitive_defaults=allow_sensitive_defaults,
+            )
         return self._get_connection(config_data_dictionary, connection_type, force_reload=force_reload)
 
     # -- Internal routing -------------------------------------------------------

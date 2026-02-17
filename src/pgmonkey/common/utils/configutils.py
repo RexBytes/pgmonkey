@@ -5,8 +5,7 @@ import yaml
 from pgmonkey.common.utils.envutils import resolve_env_vars
 
 
-def load_config(file_path, resolve_env=False, strict=False,
-                allow_sensitive_defaults=False):
+def load_config(file_path, resolve_env=False, allow_sensitive_defaults=False):
     """Load and optionally interpolate a pgmonkey YAML configuration file.
 
     This is the recommended entry point for programmatic config loading.
@@ -18,10 +17,6 @@ def load_config(file_path, resolve_env=False, strict=False,
     resolve_env : bool
         If True, ``${VAR}`` / ``${VAR:-default}`` patterns and
         ``from_env`` / ``from_file`` structured references are resolved.
-    strict : bool
-        If True (and *resolve_env* is True), missing env vars with no
-        default raise immediately.  Passed through to
-        :func:`resolve_env_vars`.
     allow_sensitive_defaults : bool
         If True, ``${VAR:-default}`` is permitted even for sensitive keys
         like ``password``.  Default is False for safety.
@@ -39,7 +34,6 @@ def load_config(file_path, resolve_env=False, strict=False,
     if resolve_env:
         config = resolve_env_vars(
             config,
-            strict=strict,
             allow_sensitive_defaults=allow_sensitive_defaults,
         )
 

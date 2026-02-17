@@ -547,8 +547,7 @@ manager = PGConnectionManager()
         <span class="tag async">redaction</span>
         <h3>Redacting Secrets for Logging</h3>
         <p>Best for: logging resolved configs without leaking credentials.</p>
-<pre><code><span class="keyword">from</span> pgmonkey <span class="keyword">import</span> load_config
-<span class="keyword">from</span> pgmonkey.common.utils.redaction <span class="keyword">import</span> redact_config
+<pre><code><span class="keyword">from</span> pgmonkey <span class="keyword">import</span> load_config, redact_config
 
 cfg = load_config(<span class="string">'config.yaml'</span>, resolve_env=True)
 
@@ -630,6 +629,7 @@ print(redact_config(cfg))
             </tr>
         </tbody>
     </table>
+    <p><strong>Note on caching with <code>resolve_env=True</code>:</strong> The cache key is computed from the <em>resolved</em> config. If an environment variable changes between calls, the new value produces a different cache key and a new connection is created. The old connection remains cached until you call <code>clear_cache()</code> or the process exits. In normal deployments this is a non-issue since environment variables do not change mid-process.</p>
 
 </div>
 

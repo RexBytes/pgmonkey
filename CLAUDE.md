@@ -289,4 +289,38 @@ secret references for YAML configs. Disabled by default (`resolve_env=False`).
 - `from_file` trims trailing newline (Kubernetes Secret convention)
 - `resolve_env_vars()` returns a new dict (never mutates input)
 - Error messages name the missing variable/file and config key path, never the resolved value
-- 58 unit tests in `tests/unit/test_env_interpolation.py`
+- 63 unit tests in `tests/unit/test_env_interpolation.py`
+
+## Env Interpolation API Cleanup (v3.5.0)
+
+### allow_sensitive_defaults exposed end-to-end
+**Files:** `managers/pgconnection_manager.py`, `managers/pgconfig_manager.py`,
+`tools/database_connection_tester.py`, `cli/cli_pgconfig_subparser.py`
+**Problem:** `load_config()` accepted `allow_sensitive_defaults` but
+`PGConnectionManager.get_database_connection()` did not - it always hardcoded `False`.
+Users going through the manager (the primary API) could not use `${PGPASSWORD:-devpass}`
+for local dev convenience.
+**Fix:** Added `allow_sensitive_defaults=False` parameter to both `get_database_connection()`
+and `get_database_connection_from_dict()`, threaded through the connection tester, config
+manager, and CLI (`--allow-sensitive-defaults` flag on `pgconfig test`).
+
+### Removed no-op strict parameter
+**Files:** `common/utils/envutils.py`, `common/utils/configutils.py`
+**Problem:** `resolve_env_vars()` and `load_config()` accepted a `strict` parameter
+documented as "reserved for future use" but it was a complete no-op - accepted, propagated
+recursively, but never checked. This confused users who set `strict=True` expecting validation.
+**Fix:** Removed the `strict` parameter from both functions.
+
+### Re-exported redact_config from top-level package
+**File:** `__init__.py`
+**Problem:** `redact_config` was only importable from `pgmonkey.common.utils.redaction`,
+which felt like reaching into internals.
+**Fix:** Added `from .common.utils.redaction import redact_config` to `__init__.py`.
+Users can now `from pgmonkey import redact_config`.
+
+### Docs: cache behavior note with resolve_env
+**File:** `docs/best_practices.html`
+**Note:** Added a paragraph in the Cache Management section explaining that when
+`resolve_env=True`, the cache key is computed from resolved config values. Changed env
+vars produce new cache keys (new connections). Old connections stay cached until
+`clear_cache()` or process exit.
