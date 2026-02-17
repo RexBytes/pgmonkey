@@ -1,0 +1,82 @@
+# pgmonkey Integration Test Harness - Docker Compose
+#
+# Three PostgreSQL 16 instances:
+#   pg-plain       (5441) - Password auth, no SSL
+#   pg-ssl         (5442) - SSL enabled, password auth (all sslmodes testable)
+#   pg-clientcert  (5443) - SSL + client certificate required
+
+services:
+  pg-plain:
+    image: postgres:16
+    container_name: pgmonkey-plain
+    ports:
+      - "5441:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres_admin
+      POSTGRES_DB: pgmonkey_test
+    volumes:
+      - ./pg_configs/pg_hba_plain.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/10_init_db.sql:ro
+    command: >
+      postgres
+      -c hba_file=/etc/postgresql/pg_hba.conf
+      -c password_encryption=scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  pg-ssl:
+    image: postgres:16
+    container_name: pgmonkey-ssl
+    ports:
+      - "5442:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres_admin
+      POSTGRES_DB: pgmonkey_test
+    volumes:
+      - ./pg_configs/pg_hba_ssl.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/10_init_db.sql:ro
+      - ./scripts/setup_certs.sh:/docker-entrypoint-initdb.d/00_setup_certs.sh:ro
+      - ./certs:/certs-staging:ro
+    command: >
+      postgres
+      -c hba_file=/etc/postgresql/pg_hba.conf
+      -c ssl=on
+      -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
+      -c ssl_key_file=/var/lib/postgresql/certs/server.key
+      -c ssl_ca_file=/var/lib/postgresql/certs/ca.crt
+      -c password_encryption=scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  pg-clientcert:
+    image: postgres:16
+    container_name: pgmonkey-clientcert
+    ports:
+      - "5443:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres_admin
+      POSTGRES_DB: pgmonkey_test
+    volumes:
+      - ./pg_configs/pg_hba_clientcert.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/10_init_db.sql:ro
+      - ./scripts/setup_certs.sh:/docker-entrypoint-initdb.d/00_setup_certs.sh:ro
+      - ./certs:/certs-staging:ro
+    command: >
+      postgres
+      -c hba_file=/etc/postgresql/pg_hba.conf
+      -c ssl=on
+      -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
+      -c ssl_key_file=/var/lib/postgresql/certs/server.key
+      -c ssl_ca_file=/var/lib/postgresql/certs/ca.crt
+      -c password_encryption=scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
