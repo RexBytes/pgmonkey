@@ -324,3 +324,17 @@ Users can now `from pgmonkey import redact_config`.
 `resolve_env=True`, the cache key is computed from resolved config values. Changed env
 vars produce new cache keys (new connections). Old connections stay cached until
 `clear_cache()` or process exit.
+
+## Bug Fixes Applied (2026-02-17 review)
+
+### Fix: AsyncConnectionPool deprecation warning (auto-open in constructor)
+**Files:** `connections/postgres/async_pool_connection.py`, `tools/connection_code_generator.py`
+**Problem:** `AsyncConnectionPool(conninfo=conninfo, **kwargs)` auto-opened the pool in the
+constructor (deprecated in psycopg_pool, will be removed in a future release). The previous
+workaround suppressed the RuntimeWarning with `warnings.catch_warnings()` rather than fixing
+the root cause. The pool was effectively opened twice - once in the constructor, once by the
+explicit `await self.pool.open()`.
+**Fix:** Added `open=False` to the constructor call so the pool is created without auto-opening.
+The existing `await self.pool.open()` then does the only open. Removed the warning suppression
+hack and the unused `import warnings`. Also updated the generated psycopg code template to
+include `open=False` so users learn the correct pattern.
