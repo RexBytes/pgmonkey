@@ -251,7 +251,7 @@ connection_settings:
 
 ## Environment Variable Interpolation (Advanced)
 
-pgmonkey v3.4.0 adds opt-in support for resolving environment variables and secret file references inside YAML configuration files. This lets you keep your config files free of hardcoded credentials while staying compatible with standard deployment workflows (12-factor env vars, Docker, Kubernetes).
+pgmonkey v4.0.0 adds opt-in support for resolving environment variables and secret file references inside YAML configuration files. This lets you keep your config files free of hardcoded credentials while staying compatible with standard deployment workflows (12-factor env vars, Docker, Kubernetes).
 
 **Interpolation is disabled by default.** If you do not enable it, pgmonkey treats every YAML value as a literal string - exactly as it always has.
 

@@ -33,7 +33,7 @@ with the `postgresql:` key are auto-detected and unwrapped with a DeprecationWar
 
 ## Test Commands
 ```bash
-python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (257 tests)
+python -m pytest src/pgmonkey/tests/unit/ -v       # unit tests (327 tests)
 python -m pytest src/pgmonkey/tests/unit/ -v -x     # stop on first failure
 ```
 
