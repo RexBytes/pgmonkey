@@ -439,6 +439,78 @@ db = AsyncDatabase(<span class="string">'/path/to/config.yaml'</span>)
     <span class="keyword">return</span> {<span class="string">"orders"</span>: [{<span class="string">"id"</span>: r[0], <span class="string">"total"</span>: r[1]} <span class="keyword">for</span> r <span class="keyword">in</span> rows]}</code></pre>
     </div>
 
+    <!-- Env interpolation patterns -->
+    <h2>Environment Variable Interpolation Patterns</h2>
+    <p>pgmonkey v3.4.0 adds opt-in environment variable interpolation. Enable it with <code>resolve_env=True</code> in Python or <code>--resolve-env</code> on the CLI. Without it, configs work exactly as before.</p>
+
+    <div class="recipe">
+        <span class="tag">local dev</span>
+        <h3>Local Development with Environment Variables</h3>
+        <p>Best for: keeping passwords out of config files during local development. Set env vars in your shell or with a <code>.env</code> loader of your choice.</p>
+<pre><code><span class="comment"># config.yaml</span>
+connection_type: <span class="string">'normal'</span>
+
+connection_settings:
+  user: <span class="string">'${PGUSER:-postgres}'</span>
+  password: <span class="string">'${PGPASSWORD}'</span>
+  host: <span class="string">'${PGHOST:-localhost}'</span>
+  port: <span class="string">'${PGPORT:-5432}'</span>
+  dbname: <span class="string">'${PGDATABASE:-mydb}'</span></code></pre>
+<pre><code><span class="comment"># In your shell:</span>
+export PGPASSWORD=dev_password
+
+<span class="comment"># Test the connection</span>
+pgmonkey pgconfig test --connconfig config.yaml --resolve-env</code></pre>
+<pre><code><span class="comment"># In Python:</span>
+<span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+manager = PGConnectionManager()
+conn = manager.get_database_connection(<span class="string">'config.yaml'</span>, resolve_env=True)</code></pre>
+        <p><strong>Tip:</strong> Non-sensitive values like <code>host</code> use defaults (<code>${PGHOST:-localhost}</code>) so the config works out of the box on a dev machine. Sensitive values like <code>password</code> have no default and will fail with a clear error if the env var is missing.</p>
+    </div>
+
+    <div class="recipe">
+        <span class="tag pool">kubernetes</span>
+        <h3>Kubernetes Secrets with from_file</h3>
+        <p>Best for: production Kubernetes deployments. Mount secrets as files and let pgmonkey read them at startup.</p>
+<pre><code><span class="comment"># config.yaml</span>
+connection_type: <span class="string">'async_pool'</span>
+
+connection_settings:
+  user: <span class="string">'${PGUSER:-appuser}'</span>
+  password:
+    from_file: /var/run/secrets/db/password
+  host: <span class="string">'${PGHOST:-db-service}'</span>
+  port: <span class="string">'${PGPORT:-5432}'</span>
+  dbname: <span class="string">'${PGDATABASE:-appdb}'</span>
+  sslmode: <span class="string">'require'</span></code></pre>
+<pre><code><span class="comment"># Python (FastAPI example):</span>
+<span class="keyword">from</span> pgmonkey <span class="keyword">import</span> PGConnectionManager
+
+manager = PGConnectionManager()
+
+<span class="keyword">async def</span> startup():
+    pool = <span class="keyword">await</span> manager.get_database_connection(
+        <span class="string">'config.yaml'</span>, <span class="string">'async_pool'</span>, resolve_env=True
+    )</code></pre>
+        <p><strong>How from_file works:</strong> pgmonkey reads the file and trims the trailing newline, matching the Kubernetes Secret convention. If the file is missing, <code>EnvInterpolationError</code> is raised immediately at startup - not on the first query.</p>
+    </div>
+
+    <div class="recipe">
+        <span class="tag async">redaction</span>
+        <h3>Redacting Secrets for Logging</h3>
+        <p>Best for: logging resolved configs without leaking credentials.</p>
+<pre><code><span class="keyword">from</span> pgmonkey <span class="keyword">import</span> load_config
+<span class="keyword">from</span> pgmonkey.common.utils.redaction <span class="keyword">import</span> redact_config
+
+cfg = load_config(<span class="string">'config.yaml'</span>, resolve_env=True)
+
+<span class="comment"># Safe to log - sensitive values are masked</span>
+print(redact_config(cfg))
+<span class="comment"># {'connection_settings': {'password': '***REDACTED***', 'host': 'db.prod.com', ...}}</span></code></pre>
+        <p><strong>What gets redacted:</strong> <code>password</code>, <code>sslkey</code>, <code>sslcert</code>, <code>sslrootcert</code>, and any key containing <code>token</code>, <code>secret</code>, or <code>credential</code>. Empty strings and <code>None</code> are left as-is.</p>
+    </div>
+
     <!-- Summary table -->
     <h2>Quick Reference</h2>
     <table>

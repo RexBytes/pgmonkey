@@ -1,3 +1,151 @@
+# pgmonkey v3.4.0 Release Notes
+
+## Environment Variable Interpolation
+
+pgmonkey v3.4.0 adds opt-in support for resolving environment variables and file-based secrets
+inside YAML configuration files. This lets you keep config files free of hardcoded credentials
+while staying compatible with standard deployment workflows (12-factor env vars, Docker,
+Kubernetes mounted secrets).
+
+**Interpolation is disabled by default.** Existing configs with literal values work exactly as
+before. Enable it with `resolve_env=True` in Python or `--resolve-env` on the CLI.
+
+## Highlights
+
+### Inline ${VAR} Substitution
+
+Reference environment variables with `${VAR}` syntax. Provide fallbacks with `${VAR:-default}`:
+
+```yaml
+connection_settings:
+  user: '${PGUSER:-postgres}'
+  password: '${PGPASSWORD}'          # required - error if not set
+  host: '${PGHOST:-localhost}'
+  port: '${PGPORT:-5432}'
+  dbname: '${PGDATABASE:-mydb}'
+```
+
+If a variable is not set and no default is provided, pgmonkey raises `EnvInterpolationError`
+with a clear message naming the variable and the config key.
+
+### Structured from_env / from_file References
+
+For secrets, a structured YAML form makes the intent unambiguous:
+
+```yaml
+# Read from an environment variable
+password:
+  from_env: PGMONKEY_DB_PASSWORD
+
+# Read from a file (Kubernetes Secret-style, trailing newline trimmed)
+password:
+  from_file: /var/run/secrets/db/password
+```
+
+`from_file` reads file contents and trims the trailing newline, matching Kubernetes Secret
+conventions. Missing files or variables raise `EnvInterpolationError` immediately.
+
+### Sensitive Key Protection
+
+Defaults (`${VAR:-fallback}`) are disallowed for sensitive keys (`password`, `sslkey`,
+`sslcert`, `sslrootcert`, and any key containing `token`, `secret`, or `credential`). This
+prevents accidentally shipping a config with a hardcoded fallback password. Override with
+`allow_sensitive_defaults=True` for local development.
+
+### load_config() Public API
+
+A new `load_config()` function provides the simplest path to loading and resolving configs:
+
+```python
+from pgmonkey import load_config
+
+# Without interpolation (default)
+cfg = load_config('config.yaml')
+
+# With interpolation
+cfg = load_config('config.yaml', resolve_env=True)
+```
+
+### Redaction Utility
+
+`redact_config()` masks sensitive values with `***REDACTED***` for safe logging:
+
+```python
+from pgmonkey.common.utils.redaction import redact_config
+print(redact_config(cfg))
+# {'connection_settings': {'password': '***REDACTED***', 'host': 'db.prod.com', ...}}
+```
+
+### CLI --resolve-env Flag
+
+The `pgconfig test` and `pgconfig generate-code` CLI commands accept `--resolve-env`:
+
+```bash
+pgmonkey pgconfig test --connconfig config.yaml --resolve-env
+```
+
+Without `--resolve-env`, the CLI treats `${VAR}` patterns as literal strings, exactly as before.
+
+## New Public Exports
+
+| Export | Description |
+|---|---|
+| `pgmonkey.load_config()` | Load and optionally interpolate a YAML config file |
+| `pgmonkey.EnvInterpolationError` | Raised when env interpolation fails |
+| `pgmonkey.common.utils.redaction.redact_config()` | Mask sensitive config values |
+
+## Compatibility
+
+No breaking API changes. All existing code continues to work as before. Interpolation is
+entirely opt-in.
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | >= 3.10, < 4.0 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+| chardet | >= 5.2.0, < 6.0.0 |
+| tqdm | >= 4.64.0, < 5.0.0 |
+
+## Test Suite
+
+293 unit tests (up from 264 in v3.3.0), all passing. New tests cover:
+
+- Inline `${VAR}` and `${VAR:-default}` substitution (set, missing, multiple)
+- Sensitive key default protection and opt-in override
+- Structured `from_env` and `from_file` resolution
+- `from_file` trailing newline trimming
+- Missing env var and missing file error messages
+- Redaction of passwords, SSL keys, tokens, and credential keys
+- `load_config()` with and without interpolation
+- Old-format config normalization through `load_config()`
+- Error messages do not leak secret values
+- `resolve_env` parameter acceptance on `PGConnectionManager` methods
+
+## Files Changed
+
+- `pyproject.toml` - Version bump to 3.4.0
+- `src/pgmonkey/__init__.py` - Export `load_config` and `EnvInterpolationError`
+- `src/pgmonkey/common/utils/configutils.py` - New `load_config()` function
+- `src/pgmonkey/common/utils/envutils.py` - New: env interpolation engine
+- `src/pgmonkey/common/utils/redaction.py` - New: config redaction utility
+- `src/pgmonkey/managers/pgconnection_manager.py` - `resolve_env` parameter
+- `src/pgmonkey/managers/pgconfig_manager.py` - `resolve_env` parameter
+- `src/pgmonkey/managers/pgcodegen_manager.py` - `resolve_env` parameter
+- `src/pgmonkey/tools/database_connection_tester.py` - `resolve_env` parameter
+- `src/pgmonkey/cli/cli_pgconfig_subparser.py` - `--resolve-env` CLI flag
+- `src/pgmonkey/common/templates/postgres.yaml` - Interpolation docs (advanced section)
+- `src/pgmonkey/tests/unit/test_env_interpolation.py` - New: 58 tests
+- `README.md` - New section: Environment Variable Interpolation (Advanced)
+- `docs/reference.html` - Env interpolation API reference, CLI flag docs
+- `docs/best_practices.html` - Env interpolation recipes (local dev, k8s, redaction)
+- `PROJECTSCOPE.md` - Updated scope and version
+- `CLAUDE.md` - Feature documentation
+- `RELEASE_NOTES.md` - This release notes entry
+
+---
+
 # pgmonkey v3.3.0 Release Notes
 
 ## Correctness and Library Usability
