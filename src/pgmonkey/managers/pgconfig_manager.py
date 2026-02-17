@@ -51,12 +51,13 @@ class PGConfigManager:
             f.write(config_text)
         print(f'New configuration template created: {file_path}')
 
-    def test_connection(self, config_file_path, connection_type=None):
+    def test_connection(self, config_file_path, connection_type=None, resolve_env=False):
         """Test database connection using a configuration file.
 
         Args:
             config_file_path: Path to the YAML configuration file.
             connection_type: Optional connection type override.
+            resolve_env: If True, resolve environment variable references in the config.
         """
         with open(config_file_path, 'r') as config_file:
             config_data = yaml.safe_load(config_file)
@@ -64,4 +65,6 @@ class PGConfigManager:
         print("postgresql database config file has been detected...")
 
         integration_tester = DatabaseConnectionTester()
-        asyncio.run(integration_tester.test_postgresql_connection(config_file_path, connection_type))
+        asyncio.run(integration_tester.test_postgresql_connection(
+            config_file_path, connection_type, resolve_env=resolve_env,
+        ))

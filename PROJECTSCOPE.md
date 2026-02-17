@@ -23,6 +23,7 @@ These are the things pgmonkey owns:
 | **Connection lifecycle** | Connect, disconnect, commit, rollback, cursor, context managers. |
 | **Connection pooling** | Expose psycopg_pool's `ConnectionPool` and `AsyncConnectionPool` with sane defaults. |
 | **YAML configuration** | One file drives connection settings, pool sizing, SSL, and GUC params. |
+| **Config interpolation** | Opt-in `${VAR}` / `from_env` / `from_file` substitution for injecting secrets at runtime without hardcoding. |
 | **Connection caching** | Cache connections/pools by config hash so repeated calls reuse the same instance. |
 | **Thread safety** | Protect the cache with locks; support concurrent sync and async callers. |
 | **Automatic cleanup** | atexit handler + explicit `clear_cache()` / `clear_cache_async()`. |
@@ -53,13 +54,17 @@ or raw SQL.
 We manage connections, not schemas. No DDL generation, version tracking, or
 migration runners. Use Alembic, Flyway, or pg_dump/pg_restore.
 
-### No Secrets Management
+### No Cloud Secrets Management
 
-Passwords live in the YAML file (or are injected by the caller before passing
-the config dict). pgmonkey does not read environment variables, integrate with
-vaults, or do config interpolation. Solve this with `os.environ`,
-`pydantic-settings`, SOPS, or whatever your stack uses - then hand the resolved
-dict to `get_database_connection_from_dict()`.
+As of v3.4.0, pgmonkey provides opt-in environment variable interpolation
+(`${VAR}`, `from_env`, `from_file`) for injecting secrets at runtime without
+hardcoding them in YAML. This covers the standard deployment patterns: local
+dev via env vars, containers via `ENV`, and Kubernetes via mounted secret files.
+
+pgmonkey does **not** integrate with cloud secret managers (AWS Secrets Manager,
+GCP Secret Manager, Azure Key Vault, HashiCorp Vault). For those, resolve
+secrets in your deployment pipeline and either set env vars (which pgmonkey
+can read) or hand a resolved dict to `get_database_connection_from_dict()`.
 
 ### No Multi-Host / Failover / Replica Routing
 
@@ -209,7 +214,7 @@ parsing and print output. Business logic lives in `managers/` and `tools/`.
 
 ## Version & Compatibility
 
-- **Current version:** 3.2.0
+- **Current version:** 3.4.0
 - **Python:** 3.10+
 - **psycopg:** >=3.1.20, <4.0.0
 - **psycopg_pool:** >=3.1.9, <4.0.0

@@ -63,3 +63,21 @@ async_pool_settings:
   # max_waiting: 0  # Max clients queued waiting for a connection (0 = unlimited)
   # reconnect_timeout: 300  # Seconds to keep trying to reconnect failed connections (0 = forever)
   # num_workers: 3  # Number of background workers maintaining pool connections
+
+# -- Advanced: environment variable interpolation (opt-in) --
+# By default, pgmonkey uses the literal values above as-is.
+# If you need to inject secrets at runtime instead of hardcoding them,
+# enable interpolation with resolve_env=True in Python or --resolve-env on the CLI.
+#
+#   Inline syntax:
+#     host: '${PGHOST:-localhost}'     # uses env var, falls back to 'localhost'
+#     password: '${PGPASSWORD}'        # required - error if not set
+#
+#   Structured syntax (recommended for secrets):
+#     password:
+#       from_env: PGMONKEY_DB_PASSWORD       # reads env var
+#     password:
+#       from_file: /var/run/secrets/db/pass   # reads file, trims trailing newline
+#
+# Sensitive keys (password, sslkey, sslcert, sslrootcert) do not allow
+# defaults in ${VAR:-default} by default, to prevent accidental fallbacks.

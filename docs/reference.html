@@ -232,12 +232,12 @@ footer p { margin-bottom: 8px; }
         </tr>
         <tr>
             <td>pgmonkey pgconfig test</td>
-            <td>Test a database connection.</td>
-            <td><code>pgmonkey pgconfig test --connconfig config.yaml --connection-type pool</code></td>
+            <td>Test a database connection. Add <code>--resolve-env</code> to resolve <code>${VAR}</code> and <code>from_env</code>/<code>from_file</code> references.</td>
+            <td><code>pgmonkey pgconfig test --connconfig config.yaml --connection-type pool --resolve-env</code></td>
         </tr>
         <tr>
             <td>pgmonkey pgconfig generate-code</td>
-            <td>Generate example Python code. Use <code>--library psycopg</code> for native psycopg code.</td>
+            <td>Generate example Python code. Use <code>--library psycopg</code> for native psycopg code. Accepts <code>--resolve-env</code>.</td>
             <td><code>pgmonkey pgconfig generate-code --connconfig config.yaml --connection-type async --library psycopg</code></td>
         </tr>
         <tr>
@@ -373,6 +373,117 @@ async_pool_settings:
         <tr><td>async_pool_settings.check_on_checkout</td><td>Validate connections with <code>SELECT 1</code> before use.</td><td><code>false</code></td></tr>
     </tbody>
 </table>
+
+<!-- ============================================================ -->
+<h2>Environment Variable Interpolation</h2>
+
+<p>pgmonkey v3.4.0 adds opt-in support for resolving environment variables and file-based secrets inside YAML configs. <strong>Interpolation is disabled by default</strong> - existing configs with literal values work exactly as before.</p>
+
+<h3>Enabling Interpolation</h3>
+
+<table>
+    <thead>
+        <tr><th>Method</th><th>How to enable</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Python (<code>load_config</code>)</td><td><code>load_config('config.yaml', resolve_env=True)</code></td></tr>
+        <tr><td>Python (<code>PGConnectionManager</code>)</td><td><code>manager.get_database_connection('config.yaml', resolve_env=True)</code></td></tr>
+        <tr><td>CLI</td><td><code>pgmonkey pgconfig test --connconfig config.yaml --resolve-env</code></td></tr>
+    </tbody>
+</table>
+
+<h3>Inline Syntax</h3>
+
+<p>Reference environment variables with <code>${VAR}</code>. Provide a fallback with <code>${VAR:-default}</code>:</p>
+
+<pre><code>connection_settings:
+  user: <span class="st">'${PGUSER:-postgres}'</span>
+  password: <span class="st">'${PGPASSWORD}'</span>             <span class="cm"># required - error if not set</span>
+  host: <span class="st">'${PGHOST:-localhost}'</span>
+  port: <span class="st">'${PGPORT:-5432}'</span>
+  dbname: <span class="st">'${PGDATABASE:-mydb}'</span></code></pre>
+
+<h3>Structured Syntax (from_env / from_file)</h3>
+
+<p>For secrets, use a structured form that makes the intent unambiguous:</p>
+
+<pre><code><span class="cm"># Read from an environment variable</span>
+connection_settings:
+  password:
+    from_env: PGMONKEY_DB_PASSWORD
+
+<span class="cm"># Read from a file (Kubernetes Secret-style, trailing newline trimmed)</span>
+connection_settings:
+  password:
+    from_file: /var/run/secrets/db/password</code></pre>
+
+<h3>Sensitive Key Rules</h3>
+
+<p>Defaults (<code>${VAR:-fallback}</code>) are <strong>disallowed</strong> for sensitive keys by default. This prevents shipping a config with a hardcoded fallback password.</p>
+
+<table>
+    <thead>
+        <tr><th>Sensitive Keys</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>password</code></td><td>Database password</td></tr>
+        <tr><td><code>sslkey</code></td><td>Client SSL key path</td></tr>
+        <tr><td><code>sslcert</code></td><td>Client SSL certificate path</td></tr>
+        <tr><td><code>sslrootcert</code></td><td>Root SSL certificate path</td></tr>
+        <tr><td>Keys containing <code>token</code>, <code>secret</code>, <code>credential</code></td><td>Detected by substring match</td></tr>
+    </tbody>
+</table>
+
+<p>Override with <code>allow_sensitive_defaults=True</code>:</p>
+
+<pre><code>cfg = <span class="fn">load_config</span>(<span class="st">'config.yaml'</span>, resolve_env=<span class="kw">True</span>, allow_sensitive_defaults=<span class="kw">True</span>)</code></pre>
+
+<h3>load_config() Function</h3>
+
+<pre><code><span class="kw">from</span> pgmonkey <span class="kw">import</span> load_config
+
+<span class="cm"># Load without interpolation (default)</span>
+cfg = <span class="fn">load_config</span>(<span class="st">'config.yaml'</span>)
+
+<span class="cm"># Load with env interpolation enabled</span>
+cfg = <span class="fn">load_config</span>(<span class="st">'config.yaml'</span>, resolve_env=<span class="kw">True</span>)
+
+<span class="cm"># Strict mode + allow sensitive defaults</span>
+cfg = <span class="fn">load_config</span>(<span class="st">'config.yaml'</span>, resolve_env=<span class="kw">True</span>, strict=<span class="kw">True</span>, allow_sensitive_defaults=<span class="kw">True</span>)</code></pre>
+
+<table>
+    <thead>
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>file_path</code></td><td>str</td><td>(required)</td><td>Path to the YAML configuration file.</td></tr>
+        <tr><td><code>resolve_env</code></td><td>bool</td><td><code>False</code></td><td>Resolve <code>${VAR}</code> and <code>from_env</code>/<code>from_file</code> references.</td></tr>
+        <tr><td><code>strict</code></td><td>bool</td><td><code>False</code></td><td>Fail on missing env vars with no default.</td></tr>
+        <tr><td><code>allow_sensitive_defaults</code></td><td>bool</td><td><code>False</code></td><td>Allow <code>${VAR:-default}</code> for sensitive keys.</td></tr>
+    </tbody>
+</table>
+
+<h3>Redacting Secrets</h3>
+
+<p>Use <code>redact_config()</code> to mask sensitive values before printing or logging:</p>
+
+<pre><code><span class="kw">from</span> pgmonkey.common.utils.redaction <span class="kw">import</span> redact_config
+
+safe = <span class="fn">redact_config</span>(cfg)
+<span class="cm"># {'connection_settings': {'password': '***REDACTED***', 'host': 'db.prod.com', ...}}</span></code></pre>
+
+<h3>Error Handling</h3>
+
+<p>All interpolation errors raise <code>EnvInterpolationError</code> (importable from <code>pgmonkey</code>). Error messages name the missing variable or file and the config key - never the resolved secret value.</p>
+
+<pre><code><span class="kw">from</span> pgmonkey <span class="kw">import</span> load_config, EnvInterpolationError
+
+<span class="kw">try</span>:
+    cfg = <span class="fn">load_config</span>(<span class="st">'config.yaml'</span>, resolve_env=<span class="kw">True</span>)
+<span class="kw">except</span> EnvInterpolationError <span class="kw">as</span> e:
+    <span class="nb">print</span>(<span class="st">f"Config error: </span>{e}<span class="st">"</span>)
+    <span class="cm"># "Environment variable 'PGPASSWORD' is not set and no default was provided</span>
+    <span class="cm">#  (referenced by config key 'connection_settings.password')."</span></code></pre>
 
 <!-- ============================================================ -->
 <h2>Working with PGConnectionManager</h2>

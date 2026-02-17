@@ -6,26 +6,34 @@ class DatabaseConnectionTester:
     def __init__(self):
         self.pgconnection_manager = PGConnectionManager()
 
-    async def test_async_postgresql_connection(self, config_file_path, connection_type):
+    async def test_async_postgresql_connection(self, config_file_path, connection_type,
+                                               resolve_env=False):
         """Test an asynchronous PostgreSQL connection."""
-        connection = await self.pgconnection_manager.get_database_connection(config_file_path, connection_type)
+        connection = await self.pgconnection_manager.get_database_connection(
+            config_file_path, connection_type, resolve_env=resolve_env,
+        )
         await connection.test_connection()
         print("Async connection test completed successfully.")
         await connection.disconnect()
 
-    def test_sync_postgresql_connection(self, config_file_path, connection_type):
+    def test_sync_postgresql_connection(self, config_file_path, connection_type,
+                                        resolve_env=False):
         """Test a synchronous PostgreSQL connection."""
-        connection = self.pgconnection_manager.get_database_connection(config_file_path, connection_type)
+        connection = self.pgconnection_manager.get_database_connection(
+            config_file_path, connection_type, resolve_env=resolve_env,
+        )
         connection.test_connection()
         print("Sync connection test completed successfully.")
         connection.disconnect()
 
-    async def test_postgresql_connection(self, config_file_path, connection_type=None):
+    async def test_postgresql_connection(self, config_file_path, connection_type=None,
+                                         resolve_env=False):
         """Test a PostgreSQL connection of the given type.
 
         Args:
             config_file_path: Path to the YAML configuration file.
             connection_type: Connection type to test. If None, uses the config file default.
+            resolve_env: If True, resolve environment variable references in the config.
         """
         try:
             # Determine effective connection type
@@ -37,9 +45,13 @@ class DatabaseConnectionTester:
                 connection_type = config.get('connection_type', 'normal')
 
             if connection_type in ('async', 'async_pool'):
-                await self.test_async_postgresql_connection(config_file_path, connection_type)
+                await self.test_async_postgresql_connection(
+                    config_file_path, connection_type, resolve_env=resolve_env,
+                )
             else:
-                self.test_sync_postgresql_connection(config_file_path, connection_type)
+                self.test_sync_postgresql_connection(
+                    config_file_path, connection_type, resolve_env=resolve_env,
+                )
 
         except Exception as e:
             print(f"An error occurred while testing the connection: {e}")

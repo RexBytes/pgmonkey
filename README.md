@@ -15,24 +15,33 @@
    - [Password-Based Authentication](#password-based-authentication)
    - [SSL/TLS Encryption](#ssltls-encryption)
    - [Certificate-Based Authentication](#certificate-based-authentication)
-5. [Using the CLI](#using-the-cli)
+5. [Environment Variable Interpolation (Advanced)](#environment-variable-interpolation-advanced)
+   - [Standard YAML (Default)](#standard-yaml-default)
+   - [Inline Syntax: ${VAR}](#inline-syntax-var)
+   - [Structured Syntax: from_env / from_file](#structured-syntax-from_env--from_file)
+   - [Sensitive Key Protection](#sensitive-key-protection)
+   - [Python API](#python-api)
+   - [CLI Usage](#cli-usage)
+   - [Redacting Secrets for Logging](#redacting-secrets-for-logging)
+   - [Deployment Patterns](#deployment-patterns)
+6. [Using the CLI](#using-the-cli)
    - [Creating a Configuration Template](#creating-a-configuration-template)
    - [Testing a Connection](#testing-a-connection)
    - [Generating Python Code](#generating-python-code)
    - [Server Configuration Recommendations](#server-configuration-recommendations)
    - [Auditing Live Server Settings](#auditing-live-server-settings)
    - [Importing and Exporting Data](#importing-and-exporting-data)
-6. [Using pgmonkey in Python](#using-pgmonkey-in-python)
+7. [Using pgmonkey in Python](#using-pgmonkey-in-python)
    - [Normal (Synchronous) Connection](#normal-synchronous-connection)
    - [Pooled Connection](#pooled-connection)
    - [Async Connection](#async-connection)
    - [Async Pooled Connection](#async-pooled-connection)
    - [Using the Config File Default](#using-the-config-file-default)
    - [Transactions, Commit, and Rollback](#transactions-commit-and-rollback)
-7. [Best Practice Recipes](#best-practice-recipes)
-8. [Testing All Connection Types](#testing-all-connection-types)
-9. [Testing Pool Capacity](#testing-pool-capacity)
-10. [Running the Test Suite](#running-the-test-suite)
+8. [Best Practice Recipes](#best-practice-recipes)
+9. [Testing All Connection Types](#testing-all-connection-types)
+10. [Testing Pool Capacity](#testing-pool-capacity)
+11. [Running the Test Suite](#running-the-test-suite)
 
 ## Installation
 
@@ -239,6 +248,203 @@ connection_settings:
   sslkey: '/path/to/client.key'
   sslrootcert: '/path/to/ca.crt'
 ```
+
+## Environment Variable Interpolation (Advanced)
+
+pgmonkey v3.4.0 adds opt-in support for resolving environment variables and secret file references inside YAML configuration files. This lets you keep your config files free of hardcoded credentials while staying compatible with standard deployment workflows (12-factor env vars, Docker, Kubernetes).
+
+**Interpolation is disabled by default.** If you do not enable it, pgmonkey treats every YAML value as a literal string - exactly as it always has.
+
+### Standard YAML (Default)
+
+The standard approach is to write literal values directly in the config file. This is the simplest way to get started and requires no extra flags or API parameters:
+
+```yaml
+connection_type: 'normal'
+
+connection_settings:
+  user: 'postgres'
+  password: 'my_password'
+  host: 'localhost'
+  port: '5432'
+  dbname: 'mydatabase'
+```
+
+```python
+from pgmonkey import PGConnectionManager
+
+manager = PGConnectionManager()
+conn = manager.get_database_connection('config.yaml')
+```
+
+This continues to work exactly as before. No changes needed for existing configs.
+
+### Inline Syntax: ${VAR}
+
+When interpolation is enabled, you can reference environment variables using `${VAR}` syntax. Use `${VAR:-default}` to provide a fallback value when the variable is not set:
+
+```yaml
+connection_type: 'normal'
+
+connection_settings:
+  user: '${PGUSER:-postgres}'
+  password: '${PGPASSWORD}'
+  host: '${PGHOST:-localhost}'
+  port: '${PGPORT:-5432}'
+  dbname: '${PGDATABASE:-mydb}'
+```
+
+Rules:
+- If a referenced variable is **not set** and **no default** is provided, pgmonkey raises `EnvInterpolationError` with a clear message naming the variable and the config key.
+- Multiple references can appear in a single value: `'${PGHOST}:${PGPORT}'`
+- Non-string values (integers, booleans) pass through unchanged.
+
+### Structured Syntax: from_env / from_file
+
+For secrets, pgmonkey supports a structured YAML form that makes the intent unambiguous:
+
+**Read from an environment variable:**
+
+```yaml
+connection_settings:
+  password:
+    from_env: PGMONKEY_DB_PASSWORD
+```
+
+**Read from a file (Kubernetes Secret-style):**
+
+```yaml
+connection_settings:
+  password:
+    from_file: /var/run/secrets/db/password
+```
+
+Rules:
+- `from_env` reads the named environment variable. If it is not set, pgmonkey raises `EnvInterpolationError`.
+- `from_file` reads the file contents and trims the trailing newline (matching Kubernetes Secret conventions). If the file does not exist or cannot be read, pgmonkey raises `EnvInterpolationError`.
+- A structured reference must be a dict with exactly one key (`from_env` or `from_file`). Dicts with additional keys are treated as normal nested config.
+
+### Sensitive Key Protection
+
+By default, `${VAR:-default}` fallback values are **disallowed** for sensitive keys. This prevents accidentally shipping a config with a hardcoded fallback password that silently takes over when the env var is missing.
+
+Sensitive keys: `password`, `sslkey`, `sslcert`, `sslrootcert`, and any key containing `token`, `secret`, or `credential`.
+
+```yaml
+# This will FAIL (password is a sensitive key, defaults not allowed):
+password: '${PGPASSWORD:-fallback_password}'
+
+# This is fine (host is not sensitive):
+host: '${PGHOST:-localhost}'
+```
+
+To explicitly allow sensitive defaults (e.g. for local development), pass `allow_sensitive_defaults=True`:
+
+```python
+cfg = load_config('config.yaml', resolve_env=True, allow_sensitive_defaults=True)
+```
+
+### Python API
+
+Use `load_config()` for the simplest path to a resolved config dictionary:
+
+```python
+from pgmonkey import load_config
+
+# Load without interpolation (default - same as always)
+cfg = load_config('config.yaml')
+
+# Load with env interpolation enabled
+cfg = load_config('config.yaml', resolve_env=True)
+
+# Strict mode: fail on missing vars
+cfg = load_config('config.yaml', resolve_env=True, strict=True)
+```
+
+Or pass `resolve_env=True` directly to the connection manager:
+
+```python
+from pgmonkey import PGConnectionManager
+
+manager = PGConnectionManager()
+conn = manager.get_database_connection('config.yaml', resolve_env=True)
+```
+
+Both `get_database_connection()` and `get_database_connection_from_dict()` accept the `resolve_env` parameter.
+
+### CLI Usage
+
+Add `--resolve-env` to any `pgconfig test` or `pgconfig generate-code` command:
+
+```bash
+# Test a connection with env vars resolved
+pgmonkey pgconfig test --connconfig config.yaml --resolve-env
+
+# Generate code (--resolve-env accepted for consistency)
+pgmonkey pgconfig generate-code --connconfig config.yaml --resolve-env
+```
+
+Without `--resolve-env`, the CLI works exactly as before - `${VAR}` patterns are treated as literal strings.
+
+### Redacting Secrets for Logging
+
+pgmonkey includes a `redact_config()` utility that replaces sensitive values with `***REDACTED***`, safe for logging or printing:
+
+```python
+from pgmonkey import load_config
+from pgmonkey.common.utils.redaction import redact_config
+
+cfg = load_config('config.yaml', resolve_env=True)
+print(redact_config(cfg))
+# {'connection_settings': {'password': '***REDACTED***', 'host': 'db.prod.com', ...}}
+```
+
+Redacted keys: `password`, `sslkey`, `sslcert`, `sslrootcert`, and any key containing `token`, `secret`, or `credential`. Empty strings and `None` values are left as-is (nothing to leak).
+
+### Deployment Patterns
+
+**Local development** - set env vars in your shell or a `.env` file (managed by your own tooling):
+
+```bash
+export PGPASSWORD=dev_password
+export PGHOST=localhost
+```
+
+**Docker / containers** - pass env vars via `docker run -e` or `docker-compose.yml`:
+
+```yaml
+# docker-compose.yml
+services:
+  app:
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+      PGHOST: db
+```
+
+**Kubernetes** - mount secrets as files and use `from_file`:
+
+```yaml
+# pgmonkey config
+connection_settings:
+  password:
+    from_file: /var/run/secrets/db/password
+  host: '${PGHOST:-db-service}'
+```
+
+```yaml
+# k8s pod spec
+volumes:
+  - name: db-secret
+    secret:
+      secretName: db-credentials
+containers:
+  - volumeMounts:
+      - name: db-secret
+        mountPath: /var/run/secrets/db
+        readOnly: true
+```
+
+**Cloud secret managers** (AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault) - resolve secrets in your deployment pipeline and set them as env vars. pgmonkey does not integrate with cloud vaults directly.
 
 ## Using the CLI
 

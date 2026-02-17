@@ -11,6 +11,8 @@ connection testing, and code generation.
 - `serversettings/` - Server audit: inspector queries pg_settings/pg_hba_file_rules, generator prints comparisons
 - `tools/` - Code generator, CSV import/export, connection tester
 - `cli/` - Argparse-based CLI subcommands
+- `common/utils/envutils.py` - Env var interpolation engine (${VAR}, from_env, from_file)
+- `common/utils/redaction.py` - Config redaction utility for safe logging
 
 ## Key Design Decisions
 - Connections are cached by config content hash in PGConnectionManager with thread-safe locking
@@ -18,6 +20,7 @@ connection testing, and code generation.
 - All connection __exit__ methods use try/finally to guarantee disconnect() even if commit/rollback fails
 - Config filter uses `is not None` (not truthiness) to preserve valid falsy values like empty passwords, keepalives=0
 - SET statements for GUC settings use `psycopg.sql.SQL`/`sql.Identifier` for safe identifier quoting
+- Env interpolation is opt-in (`resolve_env=False` by default) - existing configs are not affected
 
 ## Config Format (v3.0.0+)
 The YAML config no longer uses a top-level `postgresql:` wrapper key. Settings are at the
@@ -256,3 +259,34 @@ called them via `asyncio.run()`, adding pointless overhead and crashing when cal
 within an existing event loop (e.g. Jupyter notebooks, async frameworks).
 **Fix:** Changed `run()` to regular `def` methods. Removed `asyncio` import from both
 managers and changed `asyncio.run(importer.run())` to `importer.run()`.
+
+## Feature: Environment Variable Interpolation (v3.4.0)
+
+### Overview
+Opt-in `${VAR}` / `${VAR:-default}` substitution and structured `from_env` / `from_file`
+secret references for YAML configs. Disabled by default (`resolve_env=False`).
+
+### New Files
+- `common/utils/envutils.py` - Core interpolation engine: `resolve_env_vars()`,
+  `EnvInterpolationError`, `SENSITIVE_KEYS`, `_is_sensitive_key()`
+- `common/utils/redaction.py` - `redact_config()` masks sensitive values for logging
+
+### Modified Files
+- `__init__.py` - Exports `load_config` and `EnvInterpolationError`
+- `common/utils/configutils.py` - New `load_config()` function
+- `managers/pgconnection_manager.py` - `resolve_env` parameter on both `get_database_connection()`
+  and `get_database_connection_from_dict()`
+- `managers/pgconfig_manager.py` - `resolve_env` threaded through `test_connection()`
+- `managers/pgcodegen_manager.py` - `resolve_env` accepted for CLI consistency
+- `tools/database_connection_tester.py` - `resolve_env` threaded through all test methods
+- `cli/cli_pgconfig_subparser.py` - `--resolve-env` flag on `test` and `generate-code`
+- `common/templates/postgres.yaml` - Interpolation docs at end of template (advanced section)
+
+### Design Decisions
+- Interpolation runs AFTER `normalize_config()` (old-format unwrapping), BEFORE connection creation
+- Sensitive keys (`password`, `sslkey`, `sslcert`, `sslrootcert`, plus token/secret/credential
+  substrings) disallow `${VAR:-default}` by default to prevent accidental fallback passwords
+- `from_file` trims trailing newline (Kubernetes Secret convention)
+- `resolve_env_vars()` returns a new dict (never mutates input)
+- Error messages name the missing variable/file and config key path, never the resolved value
+- 58 unit tests in `tests/unit/test_env_interpolation.py`
