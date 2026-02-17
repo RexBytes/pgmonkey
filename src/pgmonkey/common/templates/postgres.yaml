@@ -4,6 +4,23 @@
 #   manager.get_database_connection('config.yaml', 'pool')
 connection_type: 'normal'
 
+# -- Environment variable interpolation (opt-in) --
+# When enabled (resolve_env=True in Python, or --resolve-env on the CLI),
+# you can reference environment variables instead of hardcoding secrets:
+#
+#   Inline syntax:
+#     host: '${PGHOST:-localhost}'     # uses env var, falls back to 'localhost'
+#     password: '${PGPASSWORD}'        # required - error if not set
+#
+#   Structured syntax (recommended for secrets):
+#     password:
+#       from_env: PGMONKEY_DB_PASSWORD       # reads env var
+#     password:
+#       from_file: /var/run/secrets/db/pass   # reads file, trims trailing newline
+#
+# Sensitive keys (password, sslkey, sslcert, sslrootcert) do not allow
+# defaults in ${VAR:-default} by default, to prevent accidental fallbacks.
+
 connection_settings:
   user: 'postgres'
   password: 'password'

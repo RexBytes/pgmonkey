@@ -27,6 +27,9 @@ def cli_pgconfig_subparser(subparsers):
                              help='Path to the configuration file you want to test.')
     test_parser.add_argument('--connection-type', choices=CONNECTION_TYPE_CHOICES, default=None,
                              help='Connection type to test. Overrides the value in the config file.')
+    test_parser.add_argument('--resolve-env', action='store_true', default=False,
+                             help='Resolve ${VAR} environment variable references and '
+                                  'from_env/from_file secret references in the config file.')
     test_parser.set_defaults(func=pgconfig_test_handler, pgconfig_manager=pgconfig_manager)
 
     # The "generate-code" subcommand
@@ -40,6 +43,9 @@ def cli_pgconfig_subparser(subparsers):
                              help='Target library for generated code. '
                                   '"pgmonkey" (default) generates code using pgmonkey. '
                                   '"psycopg" generates code using psycopg/psycopg_pool directly.')
+    code_parser.add_argument('--resolve-env', action='store_true', default=False,
+                             help='Resolve ${VAR} environment variable references and '
+                                  'from_env/from_file secret references in the config file.')
     code_parser.set_defaults(func=pgconfig_generate_code_handler, pgcodegen_manager=pgcodegen_manager)
 
 
@@ -56,11 +62,15 @@ def pgconfig_create_handler(args):
 def pgconfig_test_handler(args):
     pgconfig_manager = args.pgconfig_manager
     connection_type = getattr(args, 'connection_type', None)
-    pgconfig_manager.test_connection(args.filepath, connection_type)
+    resolve_env = getattr(args, 'resolve_env', False)
+    pgconfig_manager.test_connection(args.filepath, connection_type, resolve_env=resolve_env)
 
 
 def pgconfig_generate_code_handler(args):
     pgcodegen_manager = args.pgcodegen_manager
     connection_type = getattr(args, 'connection_type', None)
     library = getattr(args, 'library', 'pgmonkey')
-    pgcodegen_manager.generate_connection_code(args.filepath, connection_type, library=library)
+    resolve_env = getattr(args, 'resolve_env', False)
+    pgcodegen_manager.generate_connection_code(
+        args.filepath, connection_type, library=library, resolve_env=resolve_env,
+    )

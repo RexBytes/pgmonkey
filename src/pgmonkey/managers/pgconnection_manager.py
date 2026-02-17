@@ -8,6 +8,7 @@ import threading
 import warnings
 from pgmonkey.connections.postgres.postgres_connection_factory import PostgresConnectionFactory
 from pgmonkey.common.utils.configutils import normalize_config
+from pgmonkey.common.utils.envutils import resolve_env_vars
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,8 @@ class PGConnectionManager:
 
     # -- Public connection API --------------------------------------------------
 
-    def get_database_connection(self, config_file_path, connection_type=None, force_reload=False):
+    def get_database_connection(self, config_file_path, connection_type=None,
+                                force_reload=False, resolve_env=False):
         """Establish a PostgreSQL database connection using a configuration file.
 
         Connections are cached by config content. Repeated calls with the same
@@ -101,6 +103,9 @@ class PGConnectionManager:
                 Options: 'normal', 'pool', 'async', 'async_pool'
             force_reload: If True, close the existing cached connection and
                 create a fresh one.
+            resolve_env: If True, resolve ``${VAR}`` patterns and
+                ``from_env``/``from_file`` references in the config before
+                connecting.
 
         Returns:
             A connection object (sync types) or a coroutine (async types - must be awaited).
@@ -109,9 +114,12 @@ class PGConnectionManager:
             config_data_dictionary = yaml.safe_load(f)
 
         config_data_dictionary = normalize_config(config_data_dictionary)
+        if resolve_env:
+            config_data_dictionary = resolve_env_vars(config_data_dictionary)
         return self._get_connection(config_data_dictionary, connection_type, force_reload=force_reload)
 
-    def get_database_connection_from_dict(self, config_data_dictionary, connection_type=None, force_reload=False):
+    def get_database_connection_from_dict(self, config_data_dictionary, connection_type=None,
+                                          force_reload=False, resolve_env=False):
         """Establish a PostgreSQL database connection using an in-memory configuration dictionary.
 
         Connections are cached by config content. Repeated calls with the same
@@ -124,11 +132,16 @@ class PGConnectionManager:
                 Options: 'normal', 'pool', 'async', 'async_pool'
             force_reload: If True, close the existing cached connection and
                 create a fresh one.
+            resolve_env: If True, resolve ``${VAR}`` patterns and
+                ``from_env``/``from_file`` references in the config before
+                connecting.
 
         Returns:
             A connection object (sync types) or a coroutine (async types - must be awaited).
         """
         config_data_dictionary = normalize_config(config_data_dictionary)
+        if resolve_env:
+            config_data_dictionary = resolve_env_vars(config_data_dictionary)
         return self._get_connection(config_data_dictionary, connection_type, force_reload=force_reload)
 
     # -- Internal routing -------------------------------------------------------
