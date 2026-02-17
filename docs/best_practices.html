@@ -441,7 +441,7 @@ db = AsyncDatabase(<span class="string">'/path/to/config.yaml'</span>)
 
     <!-- Env interpolation patterns -->
     <h2>Environment Variable Interpolation Patterns</h2>
-    <p>pgmonkey v3.4.0 adds opt-in environment variable interpolation. Enable it with <code>resolve_env=True</code> in Python or <code>--resolve-env</code> on the CLI. Without it, configs work exactly as before.</p>
+    <p>pgmonkey supports opt-in environment variable interpolation. Enable it with <code>resolve_env=True</code> in Python or <code>--resolve-env</code> on the CLI. Without it, configs work exactly as before.</p>
 
     <div class="recipe">
         <span class="tag">local dev</span>
@@ -555,6 +555,25 @@ cfg = load_config(<span class="string">'config.yaml'</span>, resolve_env=True)
 print(redact_config(cfg))
 <span class="comment"># {'connection_settings': {'password': '***REDACTED***', 'host': 'db.prod.com', ...}}</span></code></pre>
         <p><strong>What gets redacted:</strong> <code>password</code>, <code>sslkey</code>, <code>sslcert</code>, <code>sslrootcert</code>, and any key containing <code>token</code>, <code>secret</code>, or <code>credential</code>. Empty strings and <code>None</code> are left as-is.</p>
+    </div>
+
+    <div class="recipe">
+        <span class="tag">CLI</span>
+        <h3>Testing Configs with Environment Interpolation from the Command Line</h3>
+        <p>The <code>pgconfig test</code> and <code>pgconfig generate-code</code> subcommands both accept <code>--resolve-env</code> to resolve <code>${VAR}</code> references before connecting.</p>
+<pre><code><span class="comment"># Test a config that uses ${VAR} references</span>
+pgmonkey pgconfig test --connconfig config.yaml --resolve-env
+
+<span class="comment"># Override the connection type for the test</span>
+pgmonkey pgconfig test --connconfig config.yaml --resolve-env --connection-type pool
+
+<span class="comment"># Allow ${VAR:-default} on sensitive keys (e.g. password) - local dev convenience</span>
+pgmonkey pgconfig test --connconfig config.yaml --resolve-env --allow-sensitive-defaults
+
+<span class="comment"># Generate example code with env vars resolved</span>
+pgmonkey pgconfig generate-code --connconfig config.yaml --resolve-env</code></pre>
+        <p><strong>How --resolve-env works:</strong> Without this flag, <code>${PGHOST:-localhost}</code> is passed as a literal string to psycopg (which will fail). With it, pgmonkey resolves all <code>${VAR}</code> patterns and <code>from_env</code>/<code>from_file</code> references before connecting.</p>
+        <p><strong>When to use --allow-sensitive-defaults:</strong> By default, pgmonkey blocks <code>${PGPASSWORD:-devpass}</code> because a fallback password in a config file is dangerous in production. If you genuinely want defaults on sensitive keys (e.g. for a local dev config), pass <code>--allow-sensitive-defaults</code> to opt in.</p>
     </div>
 
     <!-- Summary table -->
