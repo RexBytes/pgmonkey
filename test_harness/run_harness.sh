@@ -118,6 +118,10 @@ wait_for_pg() {
         elapsed=$((elapsed + 1))
     done
     fail "$container did not become ready within ${max_wait}s"
+    fail "--- Last 30 lines of $container logs ---"
+    docker logs "$container" 2>&1 | tail -30
+    fail "--- Container status ---"
+    docker inspect --format='{{.State.Status}} (exit={{.State.ExitCode}})' "$container" 2>/dev/null || true
     return 1
 }
 
