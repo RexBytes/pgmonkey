@@ -1,3 +1,143 @@
+# pgmonkey v4.0.0 Release Notes
+
+## Integration-Tested Stability
+
+pgmonkey v4.0.0 is the first release validated against live PostgreSQL instances. A new
+Docker-based integration test harness (61 tests across 10 categories) uncovered bugs that
+327 unit tests with mocks could not catch - including connection leaks, double-commits,
+broken GUC settings, and thread-safety races. Every issue found has been fixed.
+
+This release also ships the test harness itself as a permanent part of the repository, so
+future changes can be verified against real PostgreSQL before release.
+
+## Why v4.0.0
+
+The volume and severity of the fixes warrant a major version bump. While the public API is
+unchanged, the runtime behavior of pool connections, transaction handling, GUC settings, and
+CSV operations has materially improved. Code that depended on (or worked around) the old
+broken behavior may need adjustment.
+
+## Bug Fixes
+
+### Connection Lifecycle
+
+| Fix | Severity | Files |
+|---|---|---|
+| Sync pool `__exit__` double-committed and closed connections instead of returning to pool | Critical | `pool_connection.py` |
+| Normal and async `__exit__` leaked connections if commit/rollback raised | Critical | `normal_connection.py`, `async_connection.py` |
+| `_pool_conn_ctx` not thread-safe - concurrent threads overwrote each other's pool context managers | Critical | `pool_connection.py` |
+| Module-level ContextVars shared across all async pool instances - nested pools clobbered each other | Critical | `async_pool_connection.py` |
+| Cache key missing connection_type - same config with different types returned wrong cached connection | High | `pgconnection_manager.py` |
+| `normal_connection.cursor()` crashed with AttributeError when no active connection | Medium | `normal_connection.py` |
+| AsyncConnectionPool auto-opened in constructor (deprecated) - suppressed warning instead of fixing | Medium | `async_pool_connection.py` |
+
+### SQL Safety
+
+| Fix | Severity | Files |
+|---|---|---|
+| GUC SET statements used f-string interpolation for SQL identifiers | High | All 4 connection types, `connection_code_generator.py` |
+| Generated code templates taught users the same unsafe SET pattern | High | `connection_code_generator.py` |
+
+### Configuration
+
+| Fix | Severity | Files |
+|---|---|---|
+| Empty passwords and falsy values (keepalives=0) silently dropped by config filter | High | `postgres_connection_factory.py` |
+| Generated code also dropped falsy config values | Medium | `connection_code_generator.py` |
+| Unescaped config_file_path in generated code broke paths with quotes | Medium | `connection_code_generator.py` |
+| max_size string type crash in config generator | Low | `postgres_server_config_generator.py` |
+
+### CSV Import/Export
+
+| Fix | Severity | Files |
+|---|---|---|
+| `sys.exit(0)` in library code killed the calling process | High | `csv_data_importer.py`, `csv_data_exporter.py` |
+| `table_name.split('.')` crashed on multi-dot names | Medium | `csv_data_importer.py`, `csv_data_exporter.py` |
+| StopIteration crash on CSV files with fewer than 5 lines | Medium | `csv_data_importer.py` |
+| `auto_create_table` config setting was a no-op | Medium | `csv_data_importer.py` |
+| BOM detection misidentified UTF-32-LE as UTF-16-LE | Medium | `csv_data_importer.py` |
+| Export progress bar counted chunks instead of rows | Low | `csv_data_exporter.py` |
+| Shadowed imports in `_sync_ingest` | Low | `csv_data_importer.py` |
+| Unnecessary `asyncio.run()` wrapping purely sync code | Low | `csv_data_importer.py`, `csv_data_exporter.py` |
+
+### Server Audit
+
+| Fix | Severity | Files |
+|---|---|---|
+| NULL crash in `_evaluate_status` when pg_settings returned NULL | Medium | `postgres_server_settings_inspector.py` |
+| pg_hba generated `host ... reject` for SSL modes - blocked all connections | High | `postgres_server_config_generator.py` |
+| pg_hba recommended deprecated md5 instead of scram-sha-256 | Medium | `postgres_server_config_generator.py` |
+
+### GUC SET Statements (Integration Test Discovery)
+
+| Fix | Severity | Files |
+|---|---|---|
+| SET used `%s` parameter binding which PostgreSQL rejects for utility statements | Critical | All 4 connection types, `csv_data_exporter.py` |
+| Pool configure callbacks left connections in INTRANS state - pool discarded them | High | `pool_connection.py`, `async_pool_connection.py` |
+
+## New: Docker Integration Test Harness
+
+The `test_harness/` directory contains a self-contained test environment:
+
+- **`docker-compose.yml`** - PostgreSQL containers: plain, SSL (require), and mTLS (verify-full)
+- **`run_harness.sh`** - Orchestrator: stands up containers, runs tests, tears down
+- **`run_tests.py`** - 61 integration tests across 10 categories
+
+### Test Categories (61 tests)
+
+| Category | Tests | What it covers |
+|---|---|---|
+| Connection Types | 4 | Normal, pool, async, async_pool basic connectivity |
+| SSL/TLS Modes | 8 | disable, prefer, require, verify-ca, verify-full across types |
+| Client Certificate Auth | 4 | mTLS with verify-ca and verify-full |
+| Connection Pooling | 4 | min/max sizing, health checks, concurrent threads/tasks |
+| GUC/SET Settings | 4 | sync_settings and async_settings with configure callbacks |
+| Transactions | 3 | Commit on clean exit, rollback on exception, autocommit |
+| Env Var Interpolation | 8 | ${VAR}, defaults, from_env, from_file, sensitive protection |
+| CLI Commands | 8 | create, test, generate-code, server audit |
+| CSV Import/Export | 3 | Export, import, roundtrip |
+| Connection Caching | 5 | Same config, different types, force_reload, clear_cache |
+| Config & Utilities | 3 | load_config, normalize_config, redact_config |
+| Code Generation | 2 | All 8 templates, safe SQL composition |
+| Server Audit | 2 | Recommendations, live pg_settings |
+| Error Handling | 3 | Bad host, wrong password, cursor without connection |
+
+### Running the Harness
+
+```bash
+cd test_harness
+./run_harness.sh
+```
+
+Requires Docker and Docker Compose. Containers are created and destroyed automatically.
+
+## Other Changes
+
+- Added `__main__.py` for `python -m pgmonkey` invocation
+- Redundant `if args.filepath:` guard removed from CLI handler
+
+## Compatibility
+
+No breaking changes to the public Python API. The behavioral fixes (especially pool
+`__exit__` and GUC SET) change runtime behavior in ways that fix correctness. Code that
+relied on the old (broken) behavior should be reviewed.
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | >= 3.10, < 4.0 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+| chardet | >= 5.2.0, < 6.0.0 |
+| tqdm | >= 4.64.0, < 5.0.0 |
+
+## Test Suite
+
+- **327 unit tests** (up from 288 in v3.5.0), all passing
+- **61 integration tests** against live PostgreSQL (new)
+
+---
+
 # pgmonkey v3.5.0 Release Notes
 
 ## API Cleanup and Documentation

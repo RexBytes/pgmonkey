@@ -1,5 +1,4 @@
 import logging
-import warnings
 import contextvars
 from psycopg_pool import AsyncConnectionPool
 from psycopg import conninfo as psycopg_conninfo, sql
@@ -38,19 +37,16 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
             if self.async_settings:
                 async_settings = self.async_settings
                 async def _configure(conn):
+                    await conn.set_autocommit(True)
                     for setting, value in async_settings.items():
                         try:
-                            await conn.execute(sql.SQL("SET {} = %s").format(sql.Identifier(setting)), (str(value),))
+                            await conn.execute(sql.SQL("SET {} = {}").format(sql.Identifier(setting), sql.Literal(str(value))))
                         except Exception as e:
                             logger.warning("Could not apply setting '%s': %s", setting, e)
+                    await conn.set_autocommit(False)
                 kwargs['configure'] = _configure
 
-            # Suppress RuntimeWarnings that psycopg_pool may emit during
-            # pool construction. Scoped to construction only so that
-            # warnings during normal pool operation remain visible.
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', category=RuntimeWarning, module='psycopg_pool')
-                self.pool = AsyncConnectionPool(conninfo=conninfo, **kwargs)
+            self.pool = AsyncConnectionPool(conninfo=conninfo, open=False, **kwargs)
             await self.pool.open()
 
     async def test_connection(self):

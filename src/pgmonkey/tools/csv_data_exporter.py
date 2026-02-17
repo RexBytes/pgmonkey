@@ -78,7 +78,7 @@ class CSVDataExporter:
 
         # Set the desired encoding if different from the original one
         if self.encoding.lower() != original_encoding.lower():
-            cur.execute("SET CLIENT_ENCODING TO %s", (self.encoding,))
+            cur.execute(sql.SQL("SET CLIENT_ENCODING TO {}").format(sql.Literal(self.encoding)))
             print(f"Client encoding set to: {self.encoding}")
 
         return original_encoding
@@ -86,7 +86,7 @@ class CSVDataExporter:
     def _restore_client_encoding(self, cur, original_encoding):
         """Restore the original client encoding after the export."""
         if self.encoding.lower() != original_encoding.lower():
-            cur.execute("SET CLIENT_ENCODING TO %s", (original_encoding,))
+            cur.execute(sql.SQL("SET CLIENT_ENCODING TO {}").format(sql.Literal(original_encoding)))
             print(f"Restored client encoding to: {original_encoding}")
 
     def _prepopulate_export_config(self):
