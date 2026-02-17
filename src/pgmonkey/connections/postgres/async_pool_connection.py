@@ -38,11 +38,13 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
             if self.async_settings:
                 async_settings = self.async_settings
                 async def _configure(conn):
+                    await conn.set_autocommit(True)
                     for setting, value in async_settings.items():
                         try:
                             await conn.execute(sql.SQL("SET {} = {}").format(sql.Identifier(setting), sql.Literal(str(value))))
                         except Exception as e:
                             logger.warning("Could not apply setting '%s': %s", setting, e)
+                    await conn.set_autocommit(False)
                 kwargs['configure'] = _configure
 
             # Suppress RuntimeWarnings that psycopg_pool may emit during

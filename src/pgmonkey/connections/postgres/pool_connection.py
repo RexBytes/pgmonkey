@@ -45,11 +45,13 @@ class PGPoolConnection(PostgresBaseConnection):
                 sync_settings = self.sync_settings
 
                 def _configure(conn):
+                    conn.autocommit = True
                     for setting, value in sync_settings.items():
                         try:
                             conn.execute(sql.SQL("SET {} = {}").format(sql.Identifier(setting), sql.Literal(str(value))))
                         except Exception as e:
                             logger.warning("Could not apply setting '%s': %s", setting, e)
+                    conn.autocommit = False
                 kwargs['configure'] = _configure
 
             self.pool = ConnectionPool(conninfo=conninfo, **kwargs)

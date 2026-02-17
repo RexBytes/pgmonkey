@@ -104,6 +104,14 @@ def write_config(name, cfg):
     return str(path)
 
 
+def _run_cli(*args, timeout=30):
+    """Run pgmonkey CLI and return (returncode, stdout, stderr)."""
+    cmd = [sys.executable, "-m", "pgmonkey"] + list(args)
+    result = subprocess.run(cmd, capture_output=True, text=True,
+                            timeout=timeout, cwd=str(PROJECT_ROOT))
+    return result.returncode, result.stdout, result.stderr
+
+
 # ---------------------------------------------------------------------------
 # Harness
 # ---------------------------------------------------------------------------
@@ -814,13 +822,6 @@ class TestHarness:
         cat = "CLI Commands"
         print(f"\n--- {cat} ---")
 
-        def _run_cli(*args, timeout=30):
-            """Run pgmonkey CLI and return (returncode, stdout, stderr)."""
-            cmd = [sys.executable, "-m", "pgmonkey"] + list(args)
-            result = subprocess.run(cmd, capture_output=True, text=True,
-                                    timeout=timeout, cwd=str(PROJECT_ROOT))
-            return result.returncode, result.stdout, result.stderr
-
         def t_pgconfig_create():
             out_path = str(CONFIGS_DIR / "cli_created.yaml")
             rc, stdout, stderr = _run_cli("pgconfig", "create", "--type", "pg",
@@ -1198,14 +1199,14 @@ class TestHarness:
             from pgmonkey.tools.connection_code_generator import ConnectionCodeGenerator
             gen = ConnectionCodeGenerator()
             cfg_path = write_config("codegen_sql_safe", _base_config(
-                PG_PLAIN_PORT, "normal", "disable",
-                sync_settings={"statement_timeout": "5000"}
+                PG_PLAIN_PORT, "async", "disable",
+                async_settings={"statement_timeout": "5000"}
             ))
             buf = io.StringIO()
             with redirect_stdout(buf):
-                gen.generate_connection_code(cfg_path, "normal", "psycopg")
+                gen.generate_connection_code(cfg_path, "async", "psycopg")
             code = buf.getvalue()
-            assert "sql.SQL" in code or "sql.Identifier" in code, \
+            assert "sql.SQL" in code and "sql.Identifier" in code, \
                 "Generated code should use safe SQL composition for GUC settings"
             return "Generated code uses psycopg.sql for safe GUC SET"
         self.run_sync(cat, "Generated code uses safe SQL composition", t_codegen_safe_sql)
