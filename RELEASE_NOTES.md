@@ -1,3 +1,119 @@
+# pgmonkey v3.5.0 Release Notes
+
+## API Cleanup and Documentation
+
+pgmonkey v3.5.0 is a focused quality release that finishes the environment variable
+interpolation API introduced in v3.4.0. It exposes `allow_sensitive_defaults` end-to-end
+so local-dev configs can use `${PGPASSWORD:-devpass}` through the manager and CLI, removes
+an unimplemented `strict` parameter that could confuse users, promotes `redact_config` to
+a top-level export, and adds documentation for CLI-based config testing with interpolation.
+
+## Highlights
+
+### allow_sensitive_defaults Exposed End-to-End
+
+In v3.4.0, `load_config()` accepted `allow_sensitive_defaults` but the primary API -
+`PGConnectionManager.get_database_connection()` - did not. It always hardcoded `False`,
+meaning users going through the manager could not use `${PGPASSWORD:-devpass}` for local
+dev convenience.
+
+The parameter is now available on:
+
+- `PGConnectionManager.get_database_connection(..., allow_sensitive_defaults=True)`
+- `PGConnectionManager.get_database_connection_from_dict(..., allow_sensitive_defaults=True)`
+- `DatabaseConnectionTester.test_postgresql_connection()`
+- `PGConfigManager.test_connection()`
+- CLI: `pgmonkey pgconfig test --resolve-env --allow-sensitive-defaults`
+
+### Removed No-Op strict Parameter
+
+`resolve_env_vars()` and `load_config()` accepted a `strict` parameter documented as
+"currently reserved for future use." It was accepted and propagated recursively but never
+checked - a no-op that could confuse anyone who set `strict=True` expecting validation.
+The parameter has been removed from both functions.
+
+### redact_config Re-Exported from Top-Level Package
+
+`redact_config` was only importable from `pgmonkey.common.utils.redaction`, which felt
+like reaching into internals. It is now re-exported from the top-level package:
+
+```python
+# Before (still works)
+from pgmonkey.common.utils.redaction import redact_config
+
+# Now (preferred)
+from pgmonkey import redact_config
+```
+
+### CLI Documentation for Config Testing with Interpolation
+
+New recipe card in `best_practices.html` covering `pgconfig test` and `pgconfig generate-code`
+with `--resolve-env`, `--allow-sensitive-defaults`, and `--connection-type` flags. Explains
+what happens without `--resolve-env` and when `--allow-sensitive-defaults` is appropriate.
+
+### Docker / Docker Compose Recipe
+
+New recipe card showing a complete Docker Compose workflow: a `config.yaml` with `${VAR}`
+references (safe to commit), a `docker-compose.yml` passing env vars to the app container,
+Python code with `resolve_env=True`, and a one-liner to run it all.
+
+### Cache Behavior Note
+
+Added documentation explaining that with `resolve_env=True`, the cache key is computed
+from the resolved config values. Changed env vars produce new cache keys and new connections.
+Old connections stay cached until `clear_cache()` or process exit.
+
+## New Public Exports
+
+| Export | Description |
+|---|---|
+| `pgmonkey.redact_config()` | Mask sensitive config values for safe logging |
+
+## Compatibility
+
+No breaking API changes for normal usage. The removal of the `strict` parameter is
+technically a signature change, but since it was a no-op that no code could have
+meaningfully depended on, this is not considered breaking.
+
+| Dependency | Supported Versions |
+|---|---|
+| Python | >= 3.10, < 4.0 |
+| psycopg[binary] | >= 3.1.20, < 4.0.0 |
+| psycopg_pool | >= 3.1.9, < 4.0.0 |
+| PyYAML | >= 6.0.2, < 7.0.0 |
+| chardet | >= 5.2.0, < 6.0.0 |
+| tqdm | >= 4.64.0, < 5.0.0 |
+
+## Test Suite
+
+288 unit tests (up from 293 in v3.4.0 - 7 added, 1 removed for the `strict` no-op, net
+decrease due to test renumbering after removing the strict passthrough test), all passing.
+New tests cover:
+
+- `allow_sensitive_defaults` parameter on `PGConnectionManager.get_database_connection()`
+- `allow_sensitive_defaults` parameter on `PGConnectionManager.get_database_connection_from_dict()`
+- `allow_sensitive_defaults` via `load_config()` (allowed and blocked paths)
+- `redact_config` importable from top-level `pgmonkey` package
+- `redact_config` works correctly via top-level import
+
+## Files Changed
+
+- `pyproject.toml` - Version bump to 3.5.0
+- `src/pgmonkey/__init__.py` - Re-export `redact_config`
+- `src/pgmonkey/common/utils/envutils.py` - Removed `strict` parameter from `resolve_env_vars()`
+- `src/pgmonkey/common/utils/configutils.py` - Removed `strict` parameter from `load_config()`
+- `src/pgmonkey/managers/pgconnection_manager.py` - `allow_sensitive_defaults` parameter
+- `src/pgmonkey/managers/pgconfig_manager.py` - `allow_sensitive_defaults` parameter
+- `src/pgmonkey/tools/database_connection_tester.py` - `allow_sensitive_defaults` parameter
+- `src/pgmonkey/cli/cli_pgconfig_subparser.py` - `--allow-sensitive-defaults` CLI flag
+- `src/pgmonkey/tests/unit/test_env_interpolation.py` - 7 new tests, 1 removed
+- `docs/best_practices.html` - Docker recipe, CLI recipe, cache note, updated redaction import
+- `PROJECTSCOPE.md` - Version update
+- `CLAUDE.md` - API cleanup documentation
+- `RELEASE_NOTES.md` - This release notes entry
+
+---
+
 # pgmonkey v3.4.0 Release Notes
 
 ## Environment Variable Interpolation
