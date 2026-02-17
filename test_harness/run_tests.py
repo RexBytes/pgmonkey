@@ -944,6 +944,16 @@ class TestHarness:
             cfg_path = write_config("csv_export_conn", _base_config(
                 PG_PLAIN_PORT, "normal", "disable"))
             export_file = str(CONFIGS_DIR / "exported_test_data.csv")
+            # First run: auto-creates export settings config, raises ConfigFileCreatedError
+            rc, stdout, stderr = _run_cli(
+                "pgexport",
+                "--table", "test_data",
+                "--connconfig", cfg_path,
+                "--export_file", export_file,
+                timeout=60
+            )
+            assert rc == 0, f"Config generation exit code {rc}: {stderr}"
+            # Second run: settings config exists, performs actual export
             rc, stdout, stderr = _run_cli(
                 "pgexport",
                 "--table", "test_data",
@@ -971,6 +981,16 @@ class TestHarness:
             )
             cfg_path = write_config("csv_import_conn", _base_config(
                 PG_PLAIN_PORT, "normal", "disable"))
+            # First run: auto-creates import settings config, raises ConfigFileCreatedError
+            rc, stdout, stderr = _run_cli(
+                "pgimport",
+                "--table", "imported_data",
+                "--connconfig", cfg_path,
+                "--import_file", str(import_csv),
+                timeout=60
+            )
+            assert rc == 0, f"Config generation exit code {rc}: {stderr}"
+            # Second run: settings config exists, performs actual import
             rc, stdout, stderr = _run_cli(
                 "pgimport",
                 "--table", "imported_data",
@@ -997,13 +1017,20 @@ class TestHarness:
             cfg_path = write_config("csv_roundtrip_conn", _base_config(
                 PG_PLAIN_PORT, "normal", "disable"))
             export_file = str(CONFIGS_DIR / "roundtrip_export.csv")
-            # Export
+            # Export: first run generates settings config, second run exports
+            _run_cli("pgexport", "--table", "test_data",
+                     "--connconfig", cfg_path,
+                     "--export_file", export_file, timeout=60)
             rc, stdout, stderr = _run_cli(
                 "pgexport", "--table", "test_data",
                 "--connconfig", cfg_path,
                 "--export_file", export_file, timeout=60)
             assert rc == 0, f"Export failed: {stderr}"
-            # Import into new table
+            assert Path(export_file).exists(), "Export file not created after roundtrip export"
+            # Import: first run generates settings config, second run imports
+            _run_cli("pgimport", "--table", "roundtrip_imported",
+                     "--connconfig", cfg_path,
+                     "--import_file", export_file, timeout=60)
             rc, stdout, stderr = _run_cli(
                 "pgimport", "--table", "roundtrip_imported",
                 "--connconfig", cfg_path,
