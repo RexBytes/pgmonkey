@@ -940,20 +940,40 @@ class TestHarness:
         cat = "CSV Import/Export"
         print(f"\n--- {cat} ---")
 
+        # Helper: pre-create a CSV export/import settings config so the tool
+        # doesn't trigger the two-step "config generated, please review" workflow.
+        def _write_csv_settings(name):
+            """Write a minimal CSV settings config and return its path."""
+            settings = {
+                'delimiter': ',',
+                'quotechar': '"',
+                'encoding': 'utf-8',
+                'has_headers': True,
+                'auto_create_table': True,
+                'enforce_lowercase': True,
+            }
+            path = CONFIGS_DIR / f"{name}.yaml"
+            with open(path, 'w') as f:
+                yaml.dump(settings, f)
+            return str(path)
+
+        # Helper: drop a table if it exists (cleanup between runs)
+        def _drop_table(cfg_path, table_name):
+            from pgmonkey import PGConnectionManager
+            mgr = PGConnectionManager()
+            with mgr.get_database_connection(cfg_path) as conn:
+                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                conn.commit()
+            mgr.clear_cache()
+
         def t_csv_export():
             cfg_path = write_config("csv_export_conn", _base_config(
                 PG_PLAIN_PORT, "normal", "disable"))
             export_file = str(CONFIGS_DIR / "exported_test_data.csv")
-            # First run: auto-creates export settings config, raises ConfigFileCreatedError
-            rc, stdout, stderr = _run_cli(
-                "pgexport",
-                "--table", "test_data",
-                "--connconfig", cfg_path,
-                "--export_file", export_file,
-                timeout=60
-            )
-            assert rc == 0, f"Config generation exit code {rc}: {stderr}"
-            # Second run: settings config exists, performs actual export
+            # Pre-create export settings config (same basename as CSV but .yaml)
+            _write_csv_settings("exported_test_data")
+            # Remove stale export file from previous run
+            Path(export_file).unlink(missing_ok=True)
             rc, stdout, stderr = _run_cli(
                 "pgexport",
                 "--table", "test_data",
@@ -971,7 +991,11 @@ class TestHarness:
         self.run_sync(cat, "Export table to CSV", t_csv_export)
 
         def t_csv_import():
-            # First create a CSV to import
+            cfg_path = write_config("csv_import_conn", _base_config(
+                PG_PLAIN_PORT, "normal", "disable"))
+            # Drop table from any previous run
+            _drop_table(cfg_path, "imported_data")
+            # Create a CSV to import
             import_csv = CONFIGS_DIR / "import_test.csv"
             import_csv.write_text(
                 "name,value,category\n"
@@ -979,18 +1003,8 @@ class TestHarness:
                 "eta,700,group_d\n"
                 "theta,800,group_e\n"
             )
-            cfg_path = write_config("csv_import_conn", _base_config(
-                PG_PLAIN_PORT, "normal", "disable"))
-            # First run: auto-creates import settings config, raises ConfigFileCreatedError
-            rc, stdout, stderr = _run_cli(
-                "pgimport",
-                "--table", "imported_data",
-                "--connconfig", cfg_path,
-                "--import_file", str(import_csv),
-                timeout=60
-            )
-            assert rc == 0, f"Config generation exit code {rc}: {stderr}"
-            # Second run: settings config exists, performs actual import
+            # Pre-create import settings config (same basename as CSV but .yaml)
+            _write_csv_settings("import_test")
             rc, stdout, stderr = _run_cli(
                 "pgimport",
                 "--table", "imported_data",
@@ -1017,25 +1031,26 @@ class TestHarness:
             cfg_path = write_config("csv_roundtrip_conn", _base_config(
                 PG_PLAIN_PORT, "normal", "disable"))
             export_file = str(CONFIGS_DIR / "roundtrip_export.csv")
-            # Export: first run generates settings config, second run exports
-            _run_cli("pgexport", "--table", "test_data",
-                     "--connconfig", cfg_path,
-                     "--export_file", export_file, timeout=60)
+            # Cleanup from previous runs
+            Path(export_file).unlink(missing_ok=True)
+            _drop_table(cfg_path, "roundtrip_imported")
+            # Pre-create settings configs for both export and import
+            _write_csv_settings("roundtrip_export")
+            # Export
             rc, stdout, stderr = _run_cli(
                 "pgexport", "--table", "test_data",
                 "--connconfig", cfg_path,
                 "--export_file", export_file, timeout=60)
-            assert rc == 0, f"Export failed: {stderr}"
+            assert rc == 0, f"Export failed: {stdout + stderr}"
             assert Path(export_file).exists(), "Export file not created after roundtrip export"
-            # Import: first run generates settings config, second run imports
-            _run_cli("pgimport", "--table", "roundtrip_imported",
-                     "--connconfig", cfg_path,
-                     "--import_file", export_file, timeout=60)
+            # Import into new table (settings config will be auto-created from
+            # the exported CSV on first run, but we already have a matching one
+            # from the export step with the same basename)
             rc, stdout, stderr = _run_cli(
                 "pgimport", "--table", "roundtrip_imported",
                 "--connconfig", cfg_path,
                 "--import_file", export_file, timeout=60)
-            assert rc == 0, f"Import failed: {stderr}"
+            assert rc == 0, f"Import failed: {stdout + stderr}"
             # Verify row counts match
             from pgmonkey import PGConnectionManager
             mgr = PGConnectionManager()
