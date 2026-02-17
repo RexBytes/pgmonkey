@@ -26,7 +26,7 @@ class PGAsyncConnection(PostgresBaseConnection):
         """Applies PostgreSQL GUC settings via SET commands after connection is established."""
         for setting, value in self.async_settings.items():
             try:
-                await self.connection.execute(sql.SQL("SET {} = %s").format(sql.Identifier(setting)), (str(value),))
+                await self.connection.execute(sql.SQL("SET {} = {}").format(sql.Identifier(setting), sql.Literal(str(value))))
             except Exception as e:
                 logger.warning("Could not apply setting '%s': %s", setting, e)
 

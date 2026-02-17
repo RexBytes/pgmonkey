@@ -255,7 +255,7 @@ async def main():
     async with await AsyncConnection.connect(**conn_params) as conn:
         # Apply GUC settings (statement_timeout, lock_timeout, etc.)
         for setting, value in async_settings.items():
-            await conn.execute(sql.SQL("SET {{}} = %s").format(sql.Identifier(setting)), (str(value),))
+            await conn.execute(sql.SQL("SET {{}} = {{}}").format(sql.Identifier(setting), sql.Literal(str(value))))
 
         async with conn.cursor() as cur:
             await cur.execute('SELECT 1;')
@@ -297,7 +297,7 @@ async def main():
     # Optional: configure callback to apply GUC settings to each connection
     async def configure(conn):
         for setting, value in async_settings.items():
-            await conn.execute(sql.SQL("SET {{}} = %s").format(sql.Identifier(setting)), (str(value),))
+            await conn.execute(sql.SQL("SET {{}} = {{}}").format(sql.Identifier(setting), sql.Literal(str(value))))
 
     pool = AsyncConnectionPool(
         conninfo=conninfo_str,

@@ -47,7 +47,7 @@ class PGPoolConnection(PostgresBaseConnection):
                 def _configure(conn):
                     for setting, value in sync_settings.items():
                         try:
-                            conn.execute(sql.SQL("SET {} = %s").format(sql.Identifier(setting)), (str(value),))
+                            conn.execute(sql.SQL("SET {} = {}").format(sql.Identifier(setting), sql.Literal(str(value))))
                         except Exception as e:
                             logger.warning("Could not apply setting '%s': %s", setting, e)
                 kwargs['configure'] = _configure

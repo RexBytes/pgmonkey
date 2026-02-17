@@ -40,7 +40,7 @@ class PGAsyncPoolConnection(PostgresBaseConnection):
                 async def _configure(conn):
                     for setting, value in async_settings.items():
                         try:
-                            await conn.execute(sql.SQL("SET {} = %s").format(sql.Identifier(setting)), (str(value),))
+                            await conn.execute(sql.SQL("SET {} = {}").format(sql.Identifier(setting), sql.Literal(str(value))))
                         except Exception as e:
                             logger.warning("Could not apply setting '%s': %s", setting, e)
                 kwargs['configure'] = _configure

@@ -70,10 +70,8 @@ class TestPGNormalConnectionSyncSettings:
 
         calls = mock_pg_conn.execute.call_args_list
         assert len(calls) == 2
-        assert calls[0][0][0] == sql.SQL("SET {} = %s").format(sql.Identifier('statement_timeout'))
-        assert calls[0][0][1] == ('30000',)
-        assert calls[1][0][0] == sql.SQL("SET {} = %s").format(sql.Identifier('lock_timeout'))
-        assert calls[1][0][1] == ('10000',)
+        assert calls[0][0][0] == sql.SQL("SET {} = {}").format(sql.Identifier('statement_timeout'), sql.Literal('30000'))
+        assert calls[1][0][0] == sql.SQL("SET {} = {}").format(sql.Identifier('lock_timeout'), sql.Literal('10000'))
 
     @patch('pgmonkey.connections.postgres.normal_connection.connect')
     def test_warns_on_bad_setting(self, mock_connect, caplog):
