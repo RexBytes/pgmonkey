@@ -30,6 +30,7 @@ services:
   pg-ssl:
     image: postgres:16
     container_name: pgmonkey-ssl
+    entrypoint: ["bash", "/usr/local/bin/setup-certs.sh"]
     ports:
       - "5442:5432"
     environment:
@@ -38,7 +39,7 @@ services:
     volumes:
       - ./pg_configs/pg_hba_ssl.conf:/etc/postgresql/pg_hba.conf:ro
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/10_init_db.sql:ro
-      - ./scripts/setup_certs.sh:/docker-entrypoint-initdb.d/00_setup_certs.sh:ro
+      - ./scripts/setup_certs.sh:/usr/local/bin/setup-certs.sh:ro
       - ./certs:/certs-staging:ro
     command: >
       postgres
@@ -57,6 +58,7 @@ services:
   pg-clientcert:
     image: postgres:16
     container_name: pgmonkey-clientcert
+    entrypoint: ["bash", "/usr/local/bin/setup-certs.sh"]
     ports:
       - "5443:5432"
     environment:
@@ -65,7 +67,7 @@ services:
     volumes:
       - ./pg_configs/pg_hba_clientcert.conf:/etc/postgresql/pg_hba.conf:ro
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/10_init_db.sql:ro
-      - ./scripts/setup_certs.sh:/docker-entrypoint-initdb.d/00_setup_certs.sh:ro
+      - ./scripts/setup_certs.sh:/usr/local/bin/setup-certs.sh:ro
       - ./certs:/certs-staging:ro
     command: >
       postgres
