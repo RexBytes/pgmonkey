@@ -962,7 +962,8 @@ class TestHarness:
             from pgmonkey import PGConnectionManager
             mgr = PGConnectionManager()
             with mgr.get_database_connection(cfg_path) as conn:
-                conn.execute(f"DROP TABLE IF EXISTS {table_name}")
+                with conn.cursor() as cur:
+                    cur.execute(f"DROP TABLE IF EXISTS {table_name}")
                 conn.commit()
             mgr.clear_cache()
 
